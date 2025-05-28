@@ -140,7 +140,7 @@
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -166,7 +166,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/05/28/hello-world/">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/05/28/ElasticSearch-Notes/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -184,7 +184,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/05/28/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+          <a href="/2025/05/28/ElasticSearch-Notes/" class="post-title-link" itemprop="url">ElasticSearch Notes</a>
         </h2>
 
         <div class="post-meta-container">
@@ -194,8 +194,18 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
+      
 
-      <time title="Created: 2025-05-28 15:01:24" itemprop="dateCreated datePublished" datetime="2025-05-28T15:01:24+08:00">2025-05-28</time>
+      <time title="Created: 2025-05-28 16:51:37 / Modified: 16:56:26" itemprop="dateCreated datePublished" datetime="2025-05-28T16:51:37+08:00">2025-05-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JAVA/" itemprop="url" rel="index"><span itemprop="name">JAVA</span></a>
+        </span>
     </span>
 
   
@@ -208,19 +218,187 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+          <ul>
+<li><p>Es基础知识</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p>基于<strong>Lucene</strong>的Restful的分布式实时全文搜索引擎，快速存储、搜索、分析海量数据。</p>
+</li>
+<li><p><strong>Index</strong>索引：存储数据的地方，类似mysql的表。</p>
+</li>
+<li><p><strong>document</strong>文档：类似mysql种的一行数据，但是每个文档可以有不同的字段。</p>
+</li>
+<li><p><strong>field</strong>字段：最小单位。</p>
+</li>
+<li><p><strong>shard</strong>分片：数据切分为多个shard后可以分布在多台服务器，横向扩展，提升吞吐量和性能。</p>
+</li>
+<li><p><strong>replica</strong>副本：一个shard可以创建多个replica副本，提供备用服务，提升搜索吞吐量和可用性。</p>
+</li>
+<li><p><strong>text</strong>与<strong>keyword</strong>：是否分词。</p>
+</li>
+<li><p><strong>query</strong>与<strong>filter</strong>：是否计算分值。</p>
+</li>
+</ul>
+</li>
+<li><p>Es的底层原理</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p><strong>倒排索引</strong></p>
+</li>
+<li><p><strong>前缀树</strong>，也叫做<strong>字典树</strong>（Trie Tree）</p>
+</li>
+<li><p><strong>refresh</strong>操作</p>
+</li>
+<li><p><strong>flush</strong>操作</p>
+</li>
+<li><p><strong>fsync</strong>操作</p>
+</li>
+</ul>
+</li>
+<li><p>什么倒排索引</p>
+</li>
+</ul>
+<blockquote>
+<p>每个文档都有对应的文档ID，文档内容可以表示为一系列关键词（<strong>Term</strong>）的集合。通过倒排索引，可以记录每个关键词在文档中出现的次数和位置。<br>倒排索引是关键词到文档ID、出现频率、位置的映射（<strong>posting list</strong>），每个关键词都对应一系列的文件，这些文件都出现了该关键词。<br>每个字段是分散统计的，也就是说每个字段都有一个posting list。关键词的查找基于前缀树，也叫做字典树（trie tree），es里面叫做<strong>Term Dictionary</strong>。为了节省内存空间，es对前缀树做了优化，压缩了公共前缀、后缀，就是所谓的<strong>FST（Finite State Transducers）</strong>。</p>
+</blockquote>
+<ul>
+<li>写入数据</li>
+</ul>
+<p><strong>文档 -&gt; Indexing Buffer -&gt; Page Cache -&gt; 磁盘</strong></p>
+<p><strong>Translog -&gt; Page Cache -&gt; 磁盘</strong></p>
+<ul>
+<li><p>refresh刷新操作将索引缓存写入到 Page Cache，保存为segment段文件，一个段里面包含了多个文档，refresh默认<strong>1秒钟</strong>执行一次，此时文档才能够被检索，这也是称Es为近实时搜索的原因。</p>
+</li>
+<li><p>Page Cache通过异步刷新（fsync）将数据写入到磁盘文件。</p>
+</li>
+<li><p>文档写入缓存的时候，同时会记录Translog，默认<strong>5秒钟</strong>固定间隔时间刷新到磁盘。</p>
+</li>
+<li><p>前缀树</p>
+</li>
+<li><p>Es怎么保证高可用？</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p>Es高可用的核心是<strong>shard</strong>分片与<strong>replica</strong>副本</p>
+</li>
+<li><p><strong>TransLog</strong>保障数据写入的高可用，避免掉电时的写入丢失</p>
+</li>
+</ul>
+</li>
+<li><p>Es高可用的基本保证</p>
+</li>
+</ul>
+<blockquote>
+<p>Es高可用的核心是分片，并且每个分片都有主从之分，万一主分片崩溃了，还可以使用从分片，也就是副本分片，从而保证了最基本的可用性。<br>Es在写入数据的过程中，为了保证高性能，都是写入到自己的Buffer里面，后面再刷新到磁盘上。所以为了降低数据丢失的风险，es还额外写了一个Translog，类似于Mysql里的redo log。后面es崩溃之后，可以利用Translog来恢复数据。</p>
+</blockquote>
+<ul>
+<li><p>Es高可用的额外优化</p>
+<ul>
+<li><p>限流保护节点：插件、网关或代理、客户端限流。</p>
+</li>
+<li><p>利用消息队列削峰：数据写入数据库，监听binlog，发消息到MQ，消费消息并写入Es。</p>
+</li>
+<li><p>保护协调节点：使用单一角色；分组与隔离。</p>
+</li>
+<li><p>双集群部署：消息队列两个消费者双写到AB两个集群。</p>
+</li>
+</ul>
+</li>
+<li><p>Es查询性能优化？</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p>jvm参数</p>
+</li>
+<li><p>本地内存优化</p>
+</li>
+</ul>
+</li>
+<li><p>高性能方案</p>
+<ul>
+<li><p>常规方案</p>
+<ul>
+<li><p>优化垃圾回收</p>
+</li>
+<li><p>优化swap</p>
+</li>
+<li><p>文件描述符</p>
+</li>
+</ul>
+</li>
+<li><p>优化分页查询</p>
+</li>
+<li><p>批量提交</p>
+</li>
+<li><p>调大refresh时间间隔</p>
+</li>
+<li><p>优化不必要字段</p>
+</li>
+<li><p>冷热分离</p>
+</li>
+</ul>
+</li>
+<li><p>JVM本地内存优化</p>
+</li>
+</ul>
+<p>场景：Elasticsearch 的 Lucene 索引占用大量堆外内存（Off-Heap），配置不当易引发 OOM。</p>
+<p>优化方案：</p>
+<ul>
+<li><p>限制字段数据缓存（fielddata）大小，不超过堆内存的 30%</p>
+<ul>
+<li>indices.fielddata.cache.size: 30%</li>
+</ul>
+</li>
+<li><p>优化分片（shard）数量</p>
+<ul>
+<li><p>单个分片大小建议在 10-50GB 之间，<strong>过多分片会增加堆外内存开销</strong>。</p>
+</li>
+<li><p>例如：100GB 索引，分配 2-5 个分片。</p>
+</li>
+</ul>
+</li>
+<li><p>Es的实战应用</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://shimo.im/docs/PJtKVDqYkYXddjgJ">视频图片结构化分析系统</a>使用<strong>ElasticSearch</strong>存储结构化信息支持目标检索功能</p>
+<ul>
+<li><p>技术选型分析</p>
+<ul>
+<li><p>需要存储哪些数据：视频分析结果数据（人形、车辆、人脸、骑行等）存储。</p>
+</li>
+<li><p>支持目标检索</p>
+</li>
+</ul>
+</li>
+<li><p>部署架构与高可用：三节点部署集群。</p>
+</li>
+<li><p>性能优化：Es批量写入、Es使用Kafka异步写入、refresh时间间隔配置修改。</p>
+</li>
+<li><p>常见问题解决经验</p>
+<ul>
+<li><p>数据丢失与备份</p>
+</li>
+<li><p>分页查询（&#x2F;image_result&#x2F;_search?scroll&#x3D;10m）</p>
+</li>
+<li><p>脑裂问题</p>
+</li>
+<li><p>中文分词</p>
+<ul>
+<li><p>ik中文分词器</p>
+</li>
+<li><p><strong>定制分词器</strong>：结巴分词+公安特征词库（10万+专用词汇）</p>
+<ul>
+<li>ik分词器的配置文件中<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/468392276">修改远程扩展词典</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 
       
     </div>
@@ -512,75 +690,6 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/15/start-anew-hard/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Feng Shiyi">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Feng">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Feng">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/05/15/start-anew-hard/" class="post-title-link" itemprop="url">Start Anew Hard</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2021-05-15 13:12:17 / Modified: 13:19:29" itemprop="dateCreated datePublished" datetime="2021-05-15T13:12:17+08:00">2021-05-15</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="Start-Anew-Hard"><a href="#Start-Anew-Hard" class="headerlink" title="Start Anew Hard"></a>Start Anew Hard</h1><h2 id="新的开始"><a href="#新的开始" class="headerlink" title="新的开始"></a>新的开始</h2><h3 id="为什么要重新开始"><a href="#为什么要重新开始" class="headerlink" title="为什么要重新开始"></a>为什么要重新开始</h3><h3 id="新的目标"><a href="#新的目标" class="headerlink" title="新的目标"></a>新的目标</h3><h3 id="新的计划"><a href="#新的计划" class="headerlink" title="新的计划"></a>新的计划</h3><h2 id="技术学习"><a href="#技术学习" class="headerlink" title="技术学习"></a>技术学习</h2><h3 id="学习路线"><a href="#学习路线" class="headerlink" title="学习路线"></a>学习路线</h3><h3 id="学习方法"><a href="#学习方法" class="headerlink" title="学习方法"></a>学习方法</h3><h3 id="学习资源"><a href="#学习资源" class="headerlink" title="学习资源"></a>学习资源</h3><h2 id="项目实践"><a href="#项目实践" class="headerlink" title="项目实践"></a>项目实践</h2><h3 id="项目选择"><a href="#项目选择" class="headerlink" title="项目选择"></a>项目选择</h3><h3 id="项目规划"><a href="#项目规划" class="headerlink" title="项目规划"></a>项目规划</h3><h3 id="项目执行"><a href="#项目执行" class="headerlink" title="项目执行"></a>项目执行</h3><h2 id="时间管理"><a href="#时间管理" class="headerlink" title="时间管理"></a>时间管理</h2><h3 id="时间规划"><a href="#时间规划" class="headerlink" title="时间规划"></a>时间规划</h3><h3 id="效率提升"><a href="#效率提升" class="headerlink" title="效率提升"></a>效率提升</h3><h3 id="习惯养成"><a href="#习惯养成" class="headerlink" title="习惯养成"></a>习惯养成</h3><h2 id="总结与展望"><a href="#总结与展望" class="headerlink" title="总结与展望"></a>总结与展望</h2><h3 id="阶段性总结"><a href="#阶段性总结" class="headerlink" title="阶段性总结"></a>阶段性总结</h3><h3 id="未来规划"><a href="#未来规划" class="headerlink" title="未来规划"></a>未来规划</h3><h3 id="持续改进"><a href="#持续改进" class="headerlink" title="持续改进"></a>持续改进</h3>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/15/Multithreading-Programming-Patterns-Guarded-Suspension/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -634,6 +743,75 @@
     
     <div class="post-body" itemprop="articleBody">
           <h1 id="Multithreading-Programming-Patterns-Guarded-Suspension"><a href="#Multithreading-Programming-Patterns-Guarded-Suspension" class="headerlink" title="Multithreading Programming Patterns - Guarded Suspension"></a>Multithreading Programming Patterns - Guarded Suspension</h1><h2 id="Guarded-Suspension-Pattern"><a href="#Guarded-Suspension-Pattern" class="headerlink" title="Guarded Suspension Pattern"></a>Guarded Suspension Pattern</h2><h3 id="什么是Guarded-Suspension模式"><a href="#什么是Guarded-Suspension模式" class="headerlink" title="什么是Guarded Suspension模式"></a>什么是Guarded Suspension模式</h3><h3 id="Guarded-Suspension模式的应用场景"><a href="#Guarded-Suspension模式的应用场景" class="headerlink" title="Guarded Suspension模式的应用场景"></a>Guarded Suspension模式的应用场景</h3><h3 id="Guarded-Suspension模式的实现"><a href="#Guarded-Suspension模式的实现" class="headerlink" title="Guarded Suspension模式的实现"></a>Guarded Suspension模式的实现</h3><h2 id="生产者-消费者模式"><a href="#生产者-消费者模式" class="headerlink" title="生产者-消费者模式"></a>生产者-消费者模式</h2><h3 id="什么是生产者-消费者模式"><a href="#什么是生产者-消费者模式" class="headerlink" title="什么是生产者-消费者模式"></a>什么是生产者-消费者模式</h3><h3 id="生产者-消费者模式的应用场景"><a href="#生产者-消费者模式的应用场景" class="headerlink" title="生产者-消费者模式的应用场景"></a>生产者-消费者模式的应用场景</h3><h3 id="生产者-消费者模式的实现"><a href="#生产者-消费者模式的实现" class="headerlink" title="生产者-消费者模式的实现"></a>生产者-消费者模式的实现</h3><h2 id="线程池模式"><a href="#线程池模式" class="headerlink" title="线程池模式"></a>线程池模式</h2><h3 id="什么是线程池模式"><a href="#什么是线程池模式" class="headerlink" title="什么是线程池模式"></a>什么是线程池模式</h3><h3 id="线程池模式的应用场景"><a href="#线程池模式的应用场景" class="headerlink" title="线程池模式的应用场景"></a>线程池模式的应用场景</h3><h3 id="线程池模式的实现"><a href="#线程池模式的实现" class="headerlink" title="线程池模式的实现"></a>线程池模式的实现</h3><h2 id="读写锁模式"><a href="#读写锁模式" class="headerlink" title="读写锁模式"></a>读写锁模式</h2><h3 id="什么是读写锁模式"><a href="#什么是读写锁模式" class="headerlink" title="什么是读写锁模式"></a>什么是读写锁模式</h3><h3 id="读写锁模式的应用场景"><a href="#读写锁模式的应用场景" class="headerlink" title="读写锁模式的应用场景"></a>读写锁模式的应用场景</h3><h3 id="读写锁模式的实现"><a href="#读写锁模式的实现" class="headerlink" title="读写锁模式的实现"></a>读写锁模式的实现</h3><h2 id="两阶段终止模式"><a href="#两阶段终止模式" class="headerlink" title="两阶段终止模式"></a>两阶段终止模式</h2><h3 id="什么是两阶段终止模式"><a href="#什么是两阶段终止模式" class="headerlink" title="什么是两阶段终止模式"></a>什么是两阶段终止模式</h3><h3 id="两阶段终止模式的应用场景"><a href="#两阶段终止模式的应用场景" class="headerlink" title="两阶段终止模式的应用场景"></a>两阶段终止模式的应用场景</h3><h3 id="两阶段终止模式的实现"><a href="#两阶段终止模式的实现" class="headerlink" title="两阶段终止模式的实现"></a>两阶段终止模式的实现</h3>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/15/start-anew-hard/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Feng Shiyi">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Feng">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Feng">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/05/15/start-anew-hard/" class="post-title-link" itemprop="url">Start Anew Hard</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2021-05-15 13:12:17 / Modified: 13:19:29" itemprop="dateCreated datePublished" datetime="2021-05-15T13:12:17+08:00">2021-05-15</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="Start-Anew-Hard"><a href="#Start-Anew-Hard" class="headerlink" title="Start Anew Hard"></a>Start Anew Hard</h1><h2 id="新的开始"><a href="#新的开始" class="headerlink" title="新的开始"></a>新的开始</h2><h3 id="为什么要重新开始"><a href="#为什么要重新开始" class="headerlink" title="为什么要重新开始"></a>为什么要重新开始</h3><h3 id="新的目标"><a href="#新的目标" class="headerlink" title="新的目标"></a>新的目标</h3><h3 id="新的计划"><a href="#新的计划" class="headerlink" title="新的计划"></a>新的计划</h3><h2 id="技术学习"><a href="#技术学习" class="headerlink" title="技术学习"></a>技术学习</h2><h3 id="学习路线"><a href="#学习路线" class="headerlink" title="学习路线"></a>学习路线</h3><h3 id="学习方法"><a href="#学习方法" class="headerlink" title="学习方法"></a>学习方法</h3><h3 id="学习资源"><a href="#学习资源" class="headerlink" title="学习资源"></a>学习资源</h3><h2 id="项目实践"><a href="#项目实践" class="headerlink" title="项目实践"></a>项目实践</h2><h3 id="项目选择"><a href="#项目选择" class="headerlink" title="项目选择"></a>项目选择</h3><h3 id="项目规划"><a href="#项目规划" class="headerlink" title="项目规划"></a>项目规划</h3><h3 id="项目执行"><a href="#项目执行" class="headerlink" title="项目执行"></a>项目执行</h3><h2 id="时间管理"><a href="#时间管理" class="headerlink" title="时间管理"></a>时间管理</h2><h3 id="时间规划"><a href="#时间规划" class="headerlink" title="时间规划"></a>时间规划</h3><h3 id="效率提升"><a href="#效率提升" class="headerlink" title="效率提升"></a>效率提升</h3><h3 id="习惯养成"><a href="#习惯养成" class="headerlink" title="习惯养成"></a>习惯养成</h3><h2 id="总结与展望"><a href="#总结与展望" class="headerlink" title="总结与展望"></a>总结与展望</h2><h3 id="阶段性总结"><a href="#阶段性总结" class="headerlink" title="阶段性总结"></a>阶段性总结</h3><h3 id="未来规划"><a href="#未来规划" class="headerlink" title="未来规划"></a>未来规划</h3><h3 id="持续改进"><a href="#持续改进" class="headerlink" title="持续改进"></a>持续改进</h3>
       
     </div>
 
