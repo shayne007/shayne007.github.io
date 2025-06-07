@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="OverviewMySQL’s InnoDB storage engine uses a sophisticated combination of locking mechanisms and MVCC (Multi-Version Concurrency Control) to prevent phantom reads in the REPEATABLE READ isolation leve">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How MySQL Prevents Most Phantom Reads">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/07/How-MySQL-Prevents-Most-Phantom-Reads/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="OverviewMySQL’s InnoDB storage engine uses a sophisticated combination of locking mechanisms and MVCC (Multi-Version Concurrency Control) to prevent phantom reads in the REPEATABLE READ isolation leve">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-07T14:08:41.000Z">
+<meta property="article:modified_time" content="2025-06-07T14:10:23.678Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/07/How-MySQL-Prevents-Most-Phantom-Reads/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/07/How-MySQL-Prevents-Most-Phantom-Reads/","path":"2025/06/07/How-MySQL-Prevents-Most-Phantom-Reads/","title":"How MySQL Prevents Most Phantom Reads"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>How MySQL Prevents Most Phantom Reads | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Overview"><span class="nav-number">1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Key-Mechanisms"><span class="nav-number">2.</span> <span class="nav-text">Key Mechanisms</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Next-Key-Locking"><span class="nav-number">2.1.</span> <span class="nav-text">Next-Key Locking</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Gap-Locking"><span class="nav-number">2.2.</span> <span class="nav-text">Gap Locking</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consistent-Nonlocking-Reads-MVCC"><span class="nav-number">2.3.</span> <span class="nav-text">Consistent Nonlocking Reads (MVCC)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Practical-Demonstration"><span class="nav-number">3.</span> <span class="nav-text">Practical Demonstration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Setup-Creating-Test-Environment"><span class="nav-number">3.1.</span> <span class="nav-text">Setup: Creating Test Environment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scenario-1-Regular-SELECT-MVCC-Protection"><span class="nav-number">3.2.</span> <span class="nav-text">Scenario 1: Regular SELECT (MVCC Protection)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scenario-2-SELECT-FOR-UPDATE-Next-Key-Locking"><span class="nav-number">3.3.</span> <span class="nav-text">Scenario 2: SELECT FOR UPDATE (Next-Key Locking)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scenario-3-Gap-Locking-Visualization"><span class="nav-number">3.4.</span> <span class="nav-text">Scenario 3: Gap Locking Visualization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Types-of-Locks-Used"><span class="nav-number">4.</span> <span class="nav-text">Types of Locks Used</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Record-Locks"><span class="nav-number">4.1.</span> <span class="nav-text">Record Locks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Gap-Locks"><span class="nav-number">4.2.</span> <span class="nav-text">Gap Locks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Next-Key-Locks"><span class="nav-number">4.3.</span> <span class="nav-text">Next-Key Locks</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Important-Limitations-and-Caveats"><span class="nav-number">5.</span> <span class="nav-text">Important Limitations and Caveats</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Index-Dependency"><span class="nav-number">5.1.</span> <span class="nav-text">Index Dependency</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Disabling-Gap-Locks"><span class="nav-number">5.2.</span> <span class="nav-text">Disabling Gap Locks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Different-Behavior-by-Query-Type"><span class="nav-number">5.3.</span> <span class="nav-text">Different Behavior by Query Type</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Edge-Cases-Where-Phantoms-Can-Still-Occur"><span class="nav-number">5.4.</span> <span class="nav-text">4. Edge Cases Where Phantoms Can Still Occur</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Best-Practices"><span class="nav-number">6.</span> <span class="nav-text">Best Practices</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Use-Indexed-Columns-for-Range-Queries"><span class="nav-number">6.1.</span> <span class="nav-text">Use Indexed Columns for Range Queries</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Understand-Your-Query-Patterns"><span class="nav-number">6.2.</span> <span class="nav-text">Understand Your Query Patterns</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitor-Lock-Contention"><span class="nav-number">6.3.</span> <span class="nav-text">Monitor Lock Contention</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Considerations"><span class="nav-number">7.</span> <span class="nav-text">Performance Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Advantages"><span class="nav-number">7.1.</span> <span class="nav-text">Advantages</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Trade-offs"><span class="nav-number">7.2.</span> <span class="nav-text">Trade-offs</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">8.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Testing-Your-Understanding"><span class="nav-number">9.</span> <span class="nav-text">Testing Your Understanding</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/07/How-MySQL-Prevents-Most-Phantom-Reads/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="How MySQL Prevents Most Phantom Reads | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          How MySQL Prevents Most Phantom Reads
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-07 22:08:41 / Modified: 22:10:23" itemprop="dateCreated datePublished" datetime="2025-06-07T22:08:41+08:00">2025-06-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p>MySQL’s InnoDB storage engine uses a sophisticated combination of locking mechanisms and MVCC (Multi-Version Concurrency Control) to prevent phantom reads in the REPEATABLE READ isolation level. This makes MySQL’s implementation more restrictive than the SQL standard, effectively providing near-Serializable behavior while maintaining better performance.</p>
+<h2 id="Key-Mechanisms"><a href="#Key-Mechanisms" class="headerlink" title="Key Mechanisms"></a>Key Mechanisms</h2><h3 id="Next-Key-Locking"><a href="#Next-Key-Locking" class="headerlink" title="Next-Key Locking"></a>Next-Key Locking</h3><p>Next-key locking is InnoDB’s primary mechanism for preventing phantom reads. It combines:</p>
+<ul>
+<li><strong>Record locks</strong>: Lock existing rows</li>
+<li><strong>Gap locks</strong>: Lock the spaces between index records</li>
+</ul>
+<p>This combination ensures that no new rows can be inserted in the gaps where phantom reads could occur.</p>
+<h3 id="Gap-Locking"><a href="#Gap-Locking" class="headerlink" title="Gap Locking"></a>Gap Locking</h3><p>Gap locks specifically target the empty spaces between index records:</p>
+<ul>
+<li>Prevents INSERT operations in those gaps</li>
+<li>Only applies to indexed columns</li>
+<li>Can be disabled (though not recommended)</li>
+</ul>
+<h3 id="Consistent-Nonlocking-Reads-MVCC"><a href="#Consistent-Nonlocking-Reads-MVCC" class="headerlink" title="Consistent Nonlocking Reads (MVCC)"></a>Consistent Nonlocking Reads (MVCC)</h3><p>For regular SELECT statements, MySQL uses MVCC snapshots:</p>
+<ul>
+<li>Each transaction sees a consistent view of data</li>
+<li>No locking overhead for read operations</li>
+<li>Phantom reads are prevented through snapshot isolation</li>
+</ul>
+<h2 id="Practical-Demonstration"><a href="#Practical-Demonstration" class="headerlink" title="Practical Demonstration"></a>Practical Demonstration</h2><h3 id="Setup-Creating-Test-Environment"><a href="#Setup-Creating-Test-Environment" class="headerlink" title="Setup: Creating Test Environment"></a>Setup: Creating Test Environment</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Create test table</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> employees (</span><br><span class="line">    id <span class="type">INT</span> <span class="keyword">PRIMARY KEY</span> AUTO_INCREMENT,</span><br><span class="line">    name <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    salary <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    department <span class="type">VARCHAR</span>(<span class="number">30</span>),</span><br><span class="line">    INDEX idx_salary (salary),</span><br><span class="line">    INDEX idx_department (department)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Insert initial data</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, salary, department) <span class="keyword">VALUES</span></span><br><span class="line">(<span class="string">&#x27;Alice&#x27;</span>, <span class="number">50000</span>, <span class="string">&#x27;Engineering&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Bob&#x27;</span>, <span class="number">60000</span>, <span class="string">&#x27;Engineering&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Charlie&#x27;</span>, <span class="number">55000</span>, <span class="string">&#x27;Marketing&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Diana&#x27;</span>, <span class="number">70000</span>, <span class="string">&#x27;Engineering&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Scenario-1-Regular-SELECT-MVCC-Protection"><a href="#Scenario-1-Regular-SELECT-MVCC-Protection" class="headerlink" title="Scenario 1: Regular SELECT (MVCC Protection)"></a>Scenario 1: Regular SELECT (MVCC Protection)</h3><p><strong>Session A (Transaction 1):</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Start transaction with REPEATABLE READ</span></span><br><span class="line"><span class="keyword">SET</span> TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- First query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">55000</span>;</span><br><span class="line"><span class="comment">-- Results: Bob (60000), Diana (70000)</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Session B (Transaction 2):</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Insert new high-salary employee</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, salary, department) </span><br><span class="line"><span class="keyword">VALUES</span> (<span class="string">&#x27;Eve&#x27;</span>, <span class="number">65000</span>, <span class="string">&#x27;Engineering&#x27;</span>);</span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Back to Session A:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Repeat the same query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">55000</span>;</span><br><span class="line"><span class="comment">-- Results: Still Bob (60000), Diana (70000)</span></span><br><span class="line"><span class="comment">-- Eve is NOT visible - phantom read prevented!</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Scenario-2-SELECT-FOR-UPDATE-Next-Key-Locking"><a href="#Scenario-2-SELECT-FOR-UPDATE-Next-Key-Locking" class="headerlink" title="Scenario 2: SELECT FOR UPDATE (Next-Key Locking)"></a>Scenario 2: SELECT FOR UPDATE (Next-Key Locking)</h3><p><strong>Session A (Transaction 1):</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Query with FOR UPDATE</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="keyword">BETWEEN</span> <span class="number">50000</span> <span class="keyword">AND</span> <span class="number">60000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- This creates next-key locks on the range</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Session B (Transaction 2):</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Try to insert in the locked range</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, salary, department) </span><br><span class="line"><span class="keyword">VALUES</span> (<span class="string">&#x27;Frank&#x27;</span>, <span class="number">55000</span>, <span class="string">&#x27;Sales&#x27;</span>);</span><br><span class="line"><span class="comment">-- This will BLOCK until Transaction 1 commits</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Session A continues:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Repeat the query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="keyword">BETWEEN</span> <span class="number">50000</span> <span class="keyword">AND</span> <span class="number">60000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Results remain consistent</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"><span class="comment">-- Now Session B&#x27;s INSERT will proceed</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Scenario-3-Gap-Locking-Visualization"><a href="#Scenario-3-Gap-Locking-Visualization" class="headerlink" title="Scenario 3: Gap Locking Visualization"></a>Scenario 3: Gap Locking Visualization</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Current salary values: 50000, 55000, 60000, 70000</span></span><br><span class="line"><span class="comment">-- Gap locks are placed between these values:</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Gaps protected by next-key locks:</span></span><br><span class="line"><span class="comment">-- (-∞, 50000)</span></span><br><span class="line"><span class="comment">-- (50000, 55000)</span></span><br><span class="line"><span class="comment">-- (55000, 60000)</span></span><br><span class="line"><span class="comment">-- (60000, 70000)</span></span><br><span class="line"><span class="comment">-- (70000, +∞)</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Types-of-Locks-Used"><a href="#Types-of-Locks-Used" class="headerlink" title="Types of Locks Used"></a>Types of Locks Used</h2><h3 id="Record-Locks"><a href="#Record-Locks" class="headerlink" title="Record Locks"></a>Record Locks</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Locks specific existing rows</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Locks only the row with id = 1</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Gap-Locks"><a href="#Gap-Locks" class="headerlink" title="Gap Locks"></a>Gap Locks</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Locks gaps between index values</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">55000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Locks gaps: (55000, 60000), (60000, 70000), (70000, +∞)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Next-Key-Locks"><a href="#Next-Key-Locks" class="headerlink" title="Next-Key Locks"></a>Next-Key Locks</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Combination of record + gap locks</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;=</span> <span class="number">55000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Locks: record(55000) + gap(55000, 60000) + record(60000) + gap(60000, 70000) + etc.</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Important-Limitations-and-Caveats"><a href="#Important-Limitations-and-Caveats" class="headerlink" title="Important Limitations and Caveats"></a>Important Limitations and Caveats</h2><h3 id="Index-Dependency"><a href="#Index-Dependency" class="headerlink" title="Index Dependency"></a>Index Dependency</h3><p>Gap locking only works effectively with indexed columns:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- This uses gap locking (salary is indexed)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">50000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- This may not prevent phantoms effectively (name is not indexed)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;A%&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Disabling-Gap-Locks"><a href="#Disabling-Gap-Locks" class="headerlink" title="Disabling Gap Locks"></a>Disabling Gap Locks</h3><p>Gap locking can be disabled, which reintroduces phantom read risks:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Disable gap locking (NOT recommended)</span></span><br><span class="line"><span class="keyword">SET</span> SESSION innodb_locks_unsafe_for_binlog <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="comment">-- or</span></span><br><span class="line"><span class="keyword">SET</span> SESSION transaction_isolation <span class="operator">=</span> <span class="string">&#x27;READ-COMMITTED&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Different-Behavior-by-Query-Type"><a href="#Different-Behavior-by-Query-Type" class="headerlink" title="Different Behavior by Query Type"></a>Different Behavior by Query Type</h3><table>
+<thead>
+<tr>
+<th>Query Type</th>
+<th>Locking Mechanism</th>
+<th>Phantom Prevention</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SELECT</code></td>
+<td>MVCC snapshot</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>SELECT FOR UPDATE</code></td>
+<td>Next-key locks</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>SELECT FOR SHARE</code></td>
+<td>Next-key locks</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>UPDATE</code></td>
+<td>Next-key locks</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td>Next-key locks</td>
+<td>✅ Yes</td>
+</tr>
+</tbody></table>
+<h3 id="4-Edge-Cases-Where-Phantoms-Can-Still-Occur"><a href="#4-Edge-Cases-Where-Phantoms-Can-Still-Occur" class="headerlink" title="4. Edge Cases Where Phantoms Can Still Occur"></a>4. Edge Cases Where Phantoms Can Still Occur</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Case 1: Non-indexed column queries</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;Z%&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- May not prevent phantoms effectively</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Case 2: After updating a row in the same transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">50000</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> <span class="number">55000</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">50000</span>;</span><br><span class="line"><span class="comment">-- Second SELECT might see changes from other committed transactions</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Best-Practices"><a href="#Best-Practices" class="headerlink" title="Best Practices"></a>Best Practices</h2><h3 id="Use-Indexed-Columns-for-Range-Queries"><a href="#Use-Indexed-Columns-for-Range-Queries" class="headerlink" title="Use Indexed Columns for Range Queries"></a>Use Indexed Columns for Range Queries</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Good: Uses index for gap locking</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="keyword">BETWEEN</span> <span class="number">50000</span> <span class="keyword">AND</span> <span class="number">70000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Less effective: No index on name</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> name <span class="keyword">BETWEEN</span> <span class="string">&#x27;A&#x27;</span> <span class="keyword">AND</span> <span class="string">&#x27;M&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Understand-Your-Query-Patterns"><a href="#Understand-Your-Query-Patterns" class="headerlink" title="Understand Your Query Patterns"></a>Understand Your Query Patterns</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- For read-only queries, regular SELECT is sufficient</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> department <span class="operator">=</span> <span class="string">&#x27;Engineering&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- For queries that need to prevent concurrent inserts</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> department <span class="operator">=</span> <span class="string">&#x27;Engineering&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Monitor-Lock-Contention"><a href="#Monitor-Lock-Contention" class="headerlink" title="Monitor Lock Contention"></a>Monitor Lock Contention</h3><p><strong>For MySQL 8.0+:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check current locks</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> performance_schema.data_locks;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check lock waits</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> performance_schema.data_lock_waits;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- More detailed lock information</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    dl.OBJECT_SCHEMA,</span><br><span class="line">    dl.OBJECT_NAME,</span><br><span class="line">    dl.LOCK_TYPE,</span><br><span class="line">    dl.LOCK_MODE,</span><br><span class="line">    dl.LOCK_STATUS,</span><br><span class="line">    dl.LOCK_DATA</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.data_locks dl;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check which transactions are waiting</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    dlw.REQUESTING_ENGINE_TRANSACTION_ID <span class="keyword">as</span> waiting_trx,</span><br><span class="line">    dlw.BLOCKING_ENGINE_TRANSACTION_ID <span class="keyword">as</span> blocking_trx,</span><br><span class="line">    dl.LOCK_MODE <span class="keyword">as</span> waiting_lock_mode,</span><br><span class="line">    dl.LOCK_TYPE <span class="keyword">as</span> waiting_lock_type,</span><br><span class="line">    dl.OBJECT_NAME <span class="keyword">as</span> table_name</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.data_lock_waits dlw</span><br><span class="line"><span class="keyword">JOIN</span> performance_schema.data_locks dl </span><br><span class="line">    <span class="keyword">ON</span> dlw.REQUESTING_ENGINE_LOCK_ID <span class="operator">=</span> dl.ENGINE_LOCK_ID;</span><br></pre></td></tr></table></figure>
+
+<p><strong>For MySQL 5.7 and earlier:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check current locks (deprecated in 8.0)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_LOCKS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check lock waits (deprecated in 8.0)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_LOCK_WAITS;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Considerations"><a href="#Performance-Considerations" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h2><h3 id="Advantages"><a href="#Advantages" class="headerlink" title="Advantages"></a>Advantages</h3><ul>
+<li>Prevents phantom reads without full table locking</li>
+<li>MVCC provides excellent read performance</li>
+<li>Better concurrency than Serializable isolation</li>
+</ul>
+<h3 id="Trade-offs"><a href="#Trade-offs" class="headerlink" title="Trade-offs"></a>Trade-offs</h3><ul>
+<li>Gap locks can increase lock contention</li>
+<li>More complex lock management overhead</li>
+<li>Potential for deadlocks in high-concurrency scenarios</li>
+</ul>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>MySQL InnoDB’s approach to preventing phantom reads is highly effective, combining:</p>
+<ul>
+<li><strong>MVCC snapshots</strong> for regular SELECT operations</li>
+<li><strong>Next-key locking</strong> for locking reads and modifications</li>
+<li><strong>Gap locking</strong> to prevent insertions in critical ranges</li>
+</ul>
+<p>This makes MySQL’s REPEATABLE READ isolation level more restrictive than the SQL standard, effectively preventing most phantom read scenarios while maintaining good performance characteristics. However, understanding the limitations and edge cases is crucial for designing robust database applications.</p>
+<h2 id="Testing-Your-Understanding"><a href="#Testing-Your-Understanding" class="headerlink" title="Testing Your Understanding"></a>Testing Your Understanding</h2><p>Try these scenarios in your own MySQL environment:</p>
+<ol>
+<li><strong>Test MVCC behavior</strong>: Use two sessions with regular SELECT statements</li>
+<li><strong>Test gap locking</strong>: Use SELECT FOR UPDATE with range queries</li>
+<li><strong>Test limitations</strong>: Try queries on non-indexed columns</li>
+<li><strong>Observe lock contention</strong>: Monitor <code>INFORMATION_SCHEMA.INNODB_LOCKS</code> during concurrent operations</li>
+</ol>
+<p>Understanding these mechanisms will help you design more robust database applications and troubleshoot concurrency issues effectively.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mysql/" rel="tag"># mysql</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/07/MVCC-Detailed-Guide/" rel="prev" title="MVCC Detailed Guide">
+                  <i class="fa fa-angle-left"></i> MVCC Detailed Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
