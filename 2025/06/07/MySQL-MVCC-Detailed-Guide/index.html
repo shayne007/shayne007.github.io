@@ -21,25 +21,25 @@
 
     <meta name="description" content="What is MVCC(Multi-Version Concurrency Control)?MVCC is a concurrency control method that allows multiple transactions to access the same data simultaneously without blocking each other. Instead of us">
 <meta property="og:type" content="article">
-<meta property="og:title" content="MVCC Detailed Guide">
-<meta property="og:url" content="https://shayne007.github.io/2025/06/07/MVCC-Detailed-Guide/index.html">
+<meta property="og:title" content="MySQL MVCC Detailed Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/07/MySQL-MVCC-Detailed-Guide/index.html">
 <meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
 <meta property="og:description" content="What is MVCC(Multi-Version Concurrency Control)?MVCC is a concurrency control method that allows multiple transactions to access the same data simultaneously without blocking each other. Instead of us">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-06-07T12:12:50.000Z">
-<meta property="article:modified_time" content="2025-06-07T12:21:22.342Z">
+<meta property="article:modified_time" content="2025-06-08T13:36:30.696Z">
 <meta property="article:author" content="Charlie Feng">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="https://shayne007.github.io/2025/06/07/MVCC-Detailed-Guide/">
+<link rel="canonical" href="https://shayne007.github.io/2025/06/07/MySQL-MVCC-Detailed-Guide/">
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/07/MVCC-Detailed-Guide/","path":"2025/06/07/MVCC-Detailed-Guide/","title":"MVCC Detailed Guide"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/07/MySQL-MVCC-Detailed-Guide/","path":"2025/06/07/MySQL-MVCC-Detailed-Guide/","title":"MySQL MVCC Detailed Guide"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>MVCC Detailed Guide | Charlie Feng's Tech Space</title>
+<title>MySQL MVCC Detailed Guide | Charlie Feng's Tech Space</title>
   
 
 
@@ -142,7 +142,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">13</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -180,7 +180,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/07/MVCC-Detailed-Guide/">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/07/MySQL-MVCC-Detailed-Guide/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -193,12 +193,12 @@
     </span>
 
     <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="MVCC Detailed Guide | Charlie Feng's Tech Space">
+      <meta itemprop="name" content="MySQL MVCC Detailed Guide | Charlie Feng's Tech Space">
       <meta itemprop="description" content="">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          MVCC Detailed Guide
+          MySQL MVCC Detailed Guide
         </h1>
 
         <div class="post-meta-container">
@@ -208,9 +208,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2025-06-07 20:12:50 / Modified: 20:21:22" itemprop="dateCreated datePublished" datetime="2025-06-07T20:12:50+08:00">2025-06-07</time>
+      <time title="Created: 2025-06-07 20:12:50" itemprop="dateCreated datePublished" datetime="2025-06-07T20:12:50+08:00">2025-06-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2025-06-08 21:36:30" itemprop="dateModified" datetime="2025-06-08T21:36:30+08:00">2025-06-08</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
