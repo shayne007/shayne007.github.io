@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="MySQL’s logging mechanisms are fundamental to its reliability, performance, and replication capabilities. Understanding the three primary logs—binary log (binlog), redo log, and undo log—is crucial fo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL Logs: Binlog, Redo Log, and Undo Log">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/09/MySQL-Logs-Binlog-Redo-Log-and-Undo-Log/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="MySQL’s logging mechanisms are fundamental to its reliability, performance, and replication capabilities. Understanding the three primary logs—binary log (binlog), redo log, and undo log—is crucial fo">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-08T18:23:31.000Z">
+<meta property="article:modified_time" content="2025-06-08T19:05:23.231Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/09/MySQL-Logs-Binlog-Redo-Log-and-Undo-Log/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/09/MySQL-Logs-Binlog-Redo-Log-and-Undo-Log/","path":"2025/06/09/MySQL-Logs-Binlog-Redo-Log-and-Undo-Log/","title":"MySQL Logs: Binlog, Redo Log, and Undo Log"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>MySQL Logs: Binlog, Redo Log, and Undo Log | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Overview-and-Architecture"><span class="nav-number">1.</span> <span class="nav-text">Overview and Architecture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redo-Log-Durability-and-Crash-Recovery"><span class="nav-number">2.</span> <span class="nav-text">Redo Log: Durability and Crash Recovery</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Core-Concepts"><span class="nav-number">2.1.</span> <span class="nav-text">Core Concepts</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Technical-Implementation"><span class="nav-number">2.2.</span> <span class="nav-text">Technical Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-and-Monitoring"><span class="nav-number">2.3.</span> <span class="nav-text">Configuration and Monitoring</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interview-Deep-Dive-Checkpoint-Frequency-vs-Recovery-Time"><span class="nav-number">2.4.</span> <span class="nav-text">Interview Deep Dive: Checkpoint Frequency vs Recovery Time</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Undo-Log-Transaction-Rollback-and-MVCC"><span class="nav-number">3.</span> <span class="nav-text">Undo Log: Transaction Rollback and MVCC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Fundamental-Role"><span class="nav-number">3.1.</span> <span class="nav-text">Fundamental Role</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Undo-Log-Structure-and-MVCC-Showcase"><span class="nav-number">3.2.</span> <span class="nav-text">Undo Log Structure and MVCC Showcase</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Management-and-Troubleshooting"><span class="nav-number">3.3.</span> <span class="nav-text">Management and Troubleshooting</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Binary-Log-Replication-and-Recovery"><span class="nav-number">4.</span> <span class="nav-text">Binary Log: Replication and Recovery</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-and-Purpose"><span class="nav-number">4.1.</span> <span class="nav-text">Architecture and Purpose</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Replication-Mechanics"><span class="nav-number">4.2.</span> <span class="nav-text">Replication Mechanics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-and-Format-Comparison"><span class="nav-number">4.3.</span> <span class="nav-text">Configuration and Format Comparison</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interview-Scenario-Replication-Lag-Analysis"><span class="nav-number">4.4.</span> <span class="nav-text">Interview Scenario: Replication Lag Analysis</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Transaction-Commit-Flow-Integration"><span class="nav-number">5.</span> <span class="nav-text">Transaction Commit Flow Integration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Group-Commit-Optimization"><span class="nav-number">5.1.</span> <span class="nav-text">Group Commit Optimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Crash-Recovery-and-Point-in-Time-Recovery"><span class="nav-number">6.</span> <span class="nav-text">Crash Recovery and Point-in-Time Recovery</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Recovery-Process-Flow"><span class="nav-number">6.1.</span> <span class="nav-text">Recovery Process Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Point-in-Time-Recovery-Example"><span class="nav-number">6.2.</span> <span class="nav-text">Point-in-Time Recovery Example</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Environment-Specific-Configurations"><span class="nav-number">7.</span> <span class="nav-text">Environment-Specific Configurations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Grade-Configuration"><span class="nav-number">7.1.</span> <span class="nav-text">Production-Grade Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interview-Scenario-Financial-Application-Design"><span class="nav-number">7.2.</span> <span class="nav-text">Interview Scenario: Financial Application Design</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Alerting"><span class="nav-number">8.</span> <span class="nav-text">Monitoring and Alerting</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Comprehensive-Health-Check-Script"><span class="nav-number">8.1.</span> <span class="nav-text">Comprehensive Health Check Script</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Alert-Thresholds"><span class="nav-number">8.2.</span> <span class="nav-text">Key Alert Thresholds</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Real-Time-Monitoring-Dashboard"><span class="nav-number">8.3.</span> <span class="nav-text">Real-Time Monitoring Dashboard</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">9.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/MySQL-Logs-Binlog-Redo-Log-and-Undo-Log/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="MySQL Logs: Binlog, Redo Log, and Undo Log | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL Logs: Binlog, Redo Log, and Undo Log
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 02:23:31 / Modified: 03:05:23" itemprop="dateCreated datePublished" datetime="2025-06-09T02:23:31+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>MySQL’s logging mechanisms are fundamental to its reliability, performance, and replication capabilities. Understanding the three primary logs—binary log (binlog), redo log, and undo log—is crucial for database administrators and developers working with MySQL at scale.</p>
+<h2 id="Overview-and-Architecture"><a href="#Overview-and-Architecture" class="headerlink" title="Overview and Architecture"></a>Overview and Architecture</h2><p>MySQL employs a multi-layered logging architecture where each log serves specific purposes:</p>
+<ul>
+<li><strong>Redo Log (InnoDB)</strong>: Ensures crash recovery and durability (ACID compliance)</li>
+<li><strong>Undo Log (InnoDB)</strong>: Enables transaction rollback and MVCC (Multi-Version Concurrency Control)</li>
+<li><strong>Binary Log (Server Level)</strong>: Facilitates replication and point-in-time recovery</li>
+</ul>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;MySQL Server&quot;
+    subgraph &quot;Server Layer&quot;
+        SQL[SQL Layer]
+        BL[Binary Log]
+    end
+    
+    subgraph &quot;InnoDB Storage Engine&quot;
+        BP[Buffer Pool]
+        RL[Redo Log]
+        UL[Undo Log]
+        DF[Data Files]
+    end
+end
+
+Client[Client Application] --&gt; SQL
+SQL --&gt; BL
+SQL --&gt; BP
+BP --&gt; RL
+BP --&gt; UL
+BP --&gt; DF
+
+BL --&gt; Slave[Replica Server]
+RL --&gt; Recovery[Crash Recovery]
+UL --&gt; MVCC[MVCC Reads]
+
+style RL fill:#e1f5fe
+style UL fill:#f3e5f5
+style BL fill:#e8f5e8
+</code>
+</pre>
+
+<p>These logs work together to provide MySQL’s ACID guarantees while supporting high-availability architectures through replication.</p>
+<h2 id="Redo-Log-Durability-and-Crash-Recovery"><a href="#Redo-Log-Durability-and-Crash-Recovery" class="headerlink" title="Redo Log: Durability and Crash Recovery"></a>Redo Log: Durability and Crash Recovery</h2><h3 id="Core-Concepts"><a href="#Core-Concepts" class="headerlink" title="Core Concepts"></a>Core Concepts</h3><p>The redo log is InnoDB’s crash recovery mechanism that ensures committed transactions survive system failures. It operates on the Write-Ahead Logging (WAL) principle, where changes are logged before being written to data files.</p>
+<p><strong>Key Characteristics:</strong></p>
+<ul>
+<li>Physical logging of page-level changes</li>
+<li>Circular buffer structure with configurable size</li>
+<li>Synchronous writes for committed transactions</li>
+<li>Critical for MySQL’s durability guarantee</li>
+</ul>
+<h3 id="Technical-Implementation"><a href="#Technical-Implementation" class="headerlink" title="Technical Implementation"></a>Technical Implementation</h3><p>The redo log consists of multiple files (typically <code>ib_logfile0</code>, <code>ib_logfile1</code>) that form a circular buffer. When InnoDB modifies a page, it first writes the change to the redo log, then marks the page as “dirty” in the buffer pool for eventual flushing to disk.</p>
+<pre>
+<code class="mermaid">
+graph LR
+subgraph &quot;Redo Log Circular Buffer&quot;
+    LF1[ib_logfile0]
+    LF2[ib_logfile1]
+    LF1 --&gt; LF2
+    LF2 --&gt; LF1
+end
+
+subgraph &quot;Write Process&quot;
+    Change[Data Change] --&gt; WAL[Write to Redo Log]
+    WAL --&gt; Mark[Mark Page Dirty]
+    Mark --&gt; Flush[Background Flush to Disk]
+end
+
+LSN1[LSN: 12345]
+LSN2[LSN: 12346] 
+LSN3[LSN: 12347]
+
+Change --&gt; LSN1
+LSN1 --&gt; LSN2
+LSN2 --&gt; LSN3
+
+style LF1 fill:#e1f5fe
+style LF2 fill:#e1f5fe
+</code>
+</pre>
+
+<p><strong>Log Sequence Number (LSN):</strong> A monotonically increasing number that uniquely identifies each redo log record. LSNs are crucial for recovery operations and determining which changes need to be applied during crash recovery.</p>
+<h3 id="Configuration-and-Monitoring"><a href="#Configuration-and-Monitoring" class="headerlink" title="Configuration and Monitoring"></a>Configuration and Monitoring</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Monitor redo log activity and health</span></span><br><span class="line"><span class="keyword">SHOW</span> ENGINE INNODB STATUS\G</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Key metrics to watch:</span></span><br><span class="line"><span class="comment">-- Log sequence number: Current LSN</span></span><br><span class="line"><span class="comment">-- Log flushed up to: Last flushed LSN  </span></span><br><span class="line"><span class="comment">-- Pages flushed up to: Last checkpoint LSN</span></span><br><span class="line"><span class="comment">-- Last checkpoint at: Checkpoint LSN</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check for redo log waits (performance bottleneck indicator)</span></span><br><span class="line"><span class="keyword">SHOW</span> <span class="keyword">GLOBAL</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Innodb_log_waits&#x27;</span>;</span><br><span class="line"><span class="comment">-- Should be 0 or very low in healthy systems</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Diagnostic script for redo log issues</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Log Waits&#x27;</span> <span class="keyword">as</span> Metric,</span><br><span class="line">    variable_value <span class="keyword">as</span> <span class="keyword">Value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> <span class="built_in">CAST</span>(variable_value <span class="keyword">AS</span> UNSIGNED) <span class="operator">&gt;</span> <span class="number">100</span> <span class="keyword">THEN</span> <span class="string">&#x27;CRITICAL - Increase redo log size&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> <span class="built_in">CAST</span>(variable_value <span class="keyword">AS</span> UNSIGNED) <span class="operator">&gt;</span> <span class="number">10</span> <span class="keyword">THEN</span> <span class="string">&#x27;WARNING - Monitor closely&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;OK&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> Status</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line"><span class="keyword">WHERE</span> variable_name <span class="operator">=</span> <span class="string">&#x27;Innodb_log_waits&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Key Configuration Parameters:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Optimal production settings</span></span><br><span class="line">innodb_log_file_size <span class="operator">=</span> <span class="number">2</span>G          <span class="comment">-- Size of each redo log file</span></span><br><span class="line">innodb_log_files_in_group <span class="operator">=</span> <span class="number">2</span>      <span class="comment">-- Number of redo log files  </span></span><br><span class="line">innodb_flush_log_at_trx_commit <span class="operator">=</span> <span class="number">1</span> <span class="comment">-- Full ACID compliance</span></span><br><span class="line">innodb_log_buffer_size <span class="operator">=</span> <span class="number">64</span>M       <span class="comment">-- Buffer for high concurrency</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Performance Tuning Guidelines:</strong></p>
+<ol>
+<li><p><strong>Log File Sizing</strong>: Size the total redo log space to handle 60-90 minutes of peak write activity. Larger logs reduce checkpoint frequency but increase recovery time.</p>
+</li>
+<li><p><strong>Flush Strategy</strong>: The <code>innodb_flush_log_at_trx_commit</code> parameter controls durability vs. performance:</p>
+<ul>
+<li><code>1</code> (default): Full ACID compliance, flush and sync on each commit</li>
+<li><code>2</code>: Flush on commit, sync every second (risk: 1 second of transactions on OS crash)</li>
+<li><code>0</code>: Flush and sync every second (risk: 1 second of transactions on MySQL crash)</li>
+</ul>
+</li>
+</ol>
+<h3 id="Interview-Deep-Dive-Checkpoint-Frequency-vs-Recovery-Time"><a href="#Interview-Deep-Dive-Checkpoint-Frequency-vs-Recovery-Time" class="headerlink" title="Interview Deep Dive: Checkpoint Frequency vs Recovery Time"></a>Interview Deep Dive: Checkpoint Frequency vs Recovery Time</h3><p><strong>Common Question</strong>: “Explain the relationship between checkpoint frequency and redo log size. How does this impact recovery time?”</p>
+<pre>
+<code class="mermaid">
+graph LR
+subgraph &quot;Small Redo Logs&quot;
+    SRL1[Frequent Checkpoints] --&gt; SRL2[Less Dirty Pages]
+    SRL2 --&gt; SRL3[Fast Recovery]
+    SRL1 --&gt; SRL4[More I&#x2F;O Overhead]
+    SRL4 --&gt; SRL5[Slower Performance]
+end
+
+subgraph &quot;Large Redo Logs&quot;  
+    LRL1[Infrequent Checkpoints] --&gt; LRL2[More Dirty Pages]
+    LRL2 --&gt; LRL3[Slower Recovery]
+    LRL1 --&gt; LRL4[Less I&#x2F;O Overhead]
+    LRL4 --&gt; LRL5[Better Performance]
+end
+
+style SRL3 fill:#e8f5e8
+style SRL5 fill:#ffebee
+style LRL3 fill:#ffebee
+style LRL5 fill:#e8f5e8
+</code>
+</pre>
+
+<p><strong>Answer Framework:</strong></p>
+<ul>
+<li>Checkpoint frequency is inversely related to redo log size</li>
+<li>Small logs: fast recovery, poor performance during high writes</li>
+<li>Large logs: slow recovery, better steady-state performance</li>
+<li>Sweet spot: size logs for 60-90 minutes of peak write activity</li>
+<li>Monitor <code>Innodb_log_waits</code> to detect undersized logs</li>
+</ul>
+<h2 id="Undo-Log-Transaction-Rollback-and-MVCC"><a href="#Undo-Log-Transaction-Rollback-and-MVCC" class="headerlink" title="Undo Log: Transaction Rollback and MVCC"></a>Undo Log: Transaction Rollback and MVCC</h2><h3 id="Fundamental-Role"><a href="#Fundamental-Role" class="headerlink" title="Fundamental Role"></a>Fundamental Role</h3><p>Undo logs serve dual purposes: enabling transaction rollback and supporting MySQL’s MVCC implementation for consistent reads. They store the inverse operations needed to undo changes made by transactions.</p>
+<p><strong>MVCC Implementation:</strong><br>When a transaction reads data, InnoDB uses undo logs to reconstruct the appropriate version of the data based on the transaction’s read view, enabling non-blocking reads even while other transactions are modifying the same data.</p>
+<h3 id="Undo-Log-Structure-and-MVCC-Showcase"><a href="#Undo-Log-Structure-and-MVCC-Showcase" class="headerlink" title="Undo Log Structure and MVCC Showcase"></a>Undo Log Structure and MVCC Showcase</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Transaction Timeline&quot;
+    T1[Transaction 1&lt;br&#x2F;&gt;Read View: LSN 100]
+    T2[Transaction 2&lt;br&#x2F;&gt;Read View: LSN 200]  
+    T3[Transaction 3&lt;br&#x2F;&gt;Read View: LSN 300]
+end
+
+subgraph &quot;Data Versions via Undo Chain&quot;
+    V1[Row Version 1&lt;br&#x2F;&gt;LSN 100&lt;br&#x2F;&gt;Value: &#39;Alice&#39;]
+    V2[Row Version 2&lt;br&#x2F;&gt;LSN 200&lt;br&#x2F;&gt;Value: &#39;Bob&#39;]
+    V3[Row Version 3&lt;br&#x2F;&gt;LSN 300&lt;br&#x2F;&gt;Value: &#39;Charlie&#39;]
+    
+    V3 --&gt; V2
+    V2 --&gt; V1
+end
+
+T1 --&gt; V1
+T2 --&gt; V2
+T3 --&gt; V3
+
+style V1 fill:#f3e5f5
+style V2 fill:#f3e5f5  
+style V3 fill:#f3e5f5
+</code>
+</pre>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Demonstrate MVCC in action</span></span><br><span class="line"><span class="comment">-- Terminal 1: Start long-running transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;  <span class="comment">-- Returns: name = &#x27;Alice&#x27;</span></span><br><span class="line"><span class="comment">-- Don&#x27;t commit yet - keep transaction open</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Terminal 2: Update the same row</span></span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> name <span class="operator">=</span> <span class="string">&#x27;Bob&#x27;</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Terminal 1: Read again - still sees &#x27;Alice&#x27; due to MVCC</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;  <span class="comment">-- Still returns: name = &#x27;Alice&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Terminal 3: New transaction sees latest data</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;  <span class="comment">-- Returns: name = &#x27;Bob&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Management-and-Troubleshooting"><a href="#Management-and-Troubleshooting" class="headerlink" title="Management and Troubleshooting"></a>Management and Troubleshooting</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Comprehensive undo log diagnostic script</span></span><br><span class="line"><span class="comment">-- 1. Check for long-running transactions</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    trx_id,</span><br><span class="line">    trx_started,</span><br><span class="line">    trx_mysql_thread_id,</span><br><span class="line">    TIMESTAMPDIFF(<span class="keyword">MINUTE</span>, trx_started, NOW()) <span class="keyword">as</span> duration_minutes,</span><br><span class="line">    trx_rows_locked,</span><br><span class="line">    trx_rows_modified,</span><br><span class="line">    <span class="keyword">LEFT</span>(trx_query, <span class="number">100</span>) <span class="keyword">as</span> query_snippet</span><br><span class="line"><span class="keyword">FROM</span> information_schema.innodb_trx </span><br><span class="line"><span class="keyword">WHERE</span> trx_started <span class="operator">&lt;</span> NOW() <span class="operator">-</span> <span class="type">INTERVAL</span> <span class="number">5</span> <span class="keyword">MINUTE</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> trx_started;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. Monitor undo tablespace usage</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    tablespace_name,</span><br><span class="line">    file_name,</span><br><span class="line">    ROUND(file_size<span class="operator">/</span><span class="number">1024</span><span class="operator">/</span><span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> size_mb,</span><br><span class="line">    ROUND(allocated_size<span class="operator">/</span><span class="number">1024</span><span class="operator">/</span><span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> allocated_mb</span><br><span class="line"><span class="keyword">FROM</span> information_schema.files </span><br><span class="line"><span class="keyword">WHERE</span> tablespace_name <span class="keyword">LIKE</span> <span class="string">&#x27;%undo%&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. Check purge thread activity</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    variable_name,</span><br><span class="line">    variable_value</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line"><span class="keyword">WHERE</span> variable_name <span class="keyword">IN</span> (</span><br><span class="line">    <span class="string">&#x27;Innodb_purge_trx_id_age&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;Innodb_purge_undo_no&#x27;</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Best Practices:</strong></p>
+<ol>
+<li><strong>Transaction Hygiene</strong>: Keep transactions short to prevent undo log accumulation</li>
+<li><strong>Undo Tablespace Management</strong>: Use dedicated undo tablespaces (<code>innodb_undo_tablespaces = 4</code>)</li>
+<li><strong>Purge Thread Tuning</strong>: Configure <code>innodb_purge_threads = 4</code> for better cleanup performance</li>
+</ol>
+<h2 id="Binary-Log-Replication-and-Recovery"><a href="#Binary-Log-Replication-and-Recovery" class="headerlink" title="Binary Log: Replication and Recovery"></a>Binary Log: Replication and Recovery</h2><h3 id="Architecture-and-Purpose"><a href="#Architecture-and-Purpose" class="headerlink" title="Architecture and Purpose"></a>Architecture and Purpose</h3><p>The binary log operates at the MySQL server level (above storage engines) and records all statements that modify data. It’s essential for replication and point-in-time recovery operations.</p>
+<p><strong>Logging Formats:</strong></p>
+<ul>
+<li><strong>Statement-Based (SBR)</strong>: Logs SQL statements</li>
+<li><strong>Row-Based (RBR)</strong>: Logs actual row changes (recommended)</li>
+<li><strong>Mixed</strong>: Automatically switches between statement and row-based logging</li>
+</ul>
+<h3 id="Replication-Mechanics"><a href="#Replication-Mechanics" class="headerlink" title="Replication Mechanics"></a>Replication Mechanics</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant App as Application
+participant Master as Master Server
+participant BinLog as Binary Log
+participant Slave as Slave Server
+participant RelayLog as Relay Log
+
+App-&gt;&gt;Master: INSERT&#x2F;UPDATE&#x2F;DELETE
+Master-&gt;&gt;BinLog: Write binary log event
+Master-&gt;&gt;App: Acknowledge transaction
+
+Slave-&gt;&gt;BinLog: Request new events (I&#x2F;O Thread)
+BinLog-&gt;&gt;Slave: Send binary log events
+Slave-&gt;&gt;RelayLog: Write to relay log
+
+Note over Slave: SQL Thread processes relay log
+Slave-&gt;&gt;Slave: Apply changes to slave database
+
+Note over Master,Slave: Asynchronous replication
+</code>
+</pre>
+
+<h3 id="Configuration-and-Format-Comparison"><a href="#Configuration-and-Format-Comparison" class="headerlink" title="Configuration and Format Comparison"></a>Configuration and Format Comparison</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- View current binary log files</span></span><br><span class="line"><span class="keyword">SHOW</span> <span class="type">BINARY</span> LOGS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Examine binary log contents</span></span><br><span class="line"><span class="keyword">SHOW</span> BINLOG EVENTS <span class="keyword">IN</span> <span class="string">&#x27;mysql-bin.000002&#x27;</span> LIMIT <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Compare different formats:</span></span><br><span class="line"><span class="comment">-- Statement-based logging</span></span><br><span class="line"><span class="keyword">SET</span> SESSION binlog_format <span class="operator">=</span> <span class="string">&#x27;STATEMENT&#x27;</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> last_login <span class="operator">=</span> NOW() <span class="keyword">WHERE</span> active <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="comment">-- Logs: UPDATE users SET last_login = NOW() WHERE active = 1</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Row-based logging (recommended)</span></span><br><span class="line"><span class="keyword">SET</span> SESSION binlog_format <span class="operator">=</span> <span class="string">&#x27;ROW&#x27;</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> last_login <span class="operator">=</span> NOW() <span class="keyword">WHERE</span> active <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="comment">-- Logs: Actual row changes with before/after images</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Configuration:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- High-availability binary log setup</span></span><br><span class="line">[mysqld]</span><br><span class="line"># Enable <span class="type">binary</span> logging <span class="keyword">with</span> GTID</span><br><span class="line">log<span class="operator">-</span>bin <span class="operator">=</span> mysql<span class="operator">-</span>bin</span><br><span class="line">server<span class="operator">-</span>id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line">binlog_format <span class="operator">=</span> <span class="type">ROW</span></span><br><span class="line">gtid_mode <span class="operator">=</span> <span class="keyword">ON</span></span><br><span class="line">enforce_gtid_consistency <span class="operator">=</span> <span class="keyword">ON</span></span><br><span class="line"></span><br><span class="line"># Performance <span class="keyword">and</span> retention</span><br><span class="line">sync_binlog <span class="operator">=</span> <span class="number">1</span></span><br><span class="line">expire_logs_days <span class="operator">=</span> <span class="number">7</span></span><br><span class="line">max_binlog_size <span class="operator">=</span> <span class="number">1</span>G</span><br><span class="line">binlog_cache_size <span class="operator">=</span> <span class="number">2</span>M</span><br></pre></td></tr></table></figure>
+
+<h3 id="Interview-Scenario-Replication-Lag-Analysis"><a href="#Interview-Scenario-Replication-Lag-Analysis" class="headerlink" title="Interview Scenario: Replication Lag Analysis"></a>Interview Scenario: Replication Lag Analysis</h3><p><strong>Common Question</strong>: “A production database suddenly slowed down with replication lag. How would you diagnose?”</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Step-by-step diagnostic approach</span></span><br><span class="line"><span class="comment">-- 1. Check overall replication status</span></span><br><span class="line"><span class="keyword">SHOW</span> SLAVE STATUS\G</span><br><span class="line"><span class="comment">-- Key metrics: Seconds_Behind_Master, Master_Log_File vs Relay_Master_Log_File</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. Identify bottleneck location</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;I/O Thread Performance&#x27;</span> <span class="keyword">as</span> check_type,</span><br><span class="line">    IF(Master_Log_File <span class="operator">=</span> Relay_Master_Log_File, <span class="string">&#x27;OK&#x27;</span>, <span class="string">&#x27;I/O LAG&#x27;</span>) <span class="keyword">as</span> status</span><br><span class="line"><span class="comment">-- Add actual SHOW SLAVE STATUS parsing logic here</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. Check for problematic queries on slave</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    schema_name,</span><br><span class="line">    digest_text,</span><br><span class="line">    count_star,</span><br><span class="line">    avg_timer_wait<span class="operator">/</span><span class="number">1000000000</span> <span class="keyword">as</span> avg_seconds</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.events_statements_summary_by_digest </span><br><span class="line"><span class="keyword">WHERE</span> avg_timer_wait <span class="operator">&gt;</span> <span class="number">1000000000</span>  <span class="comment">-- &gt; 1 second</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> avg_timer_wait <span class="keyword">DESC</span> </span><br><span class="line">LIMIT <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 4. Monitor slave thread performance</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    thread_id,</span><br><span class="line">    name,</span><br><span class="line">    processlist_state,</span><br><span class="line">    processlist_time</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.threads </span><br><span class="line"><span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;%slave%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Optimization Solutions:</strong></p>
+<ul>
+<li>Enable parallel replication: <code>slave_parallel_workers = 4</code></li>
+<li>Optimize slow queries on slave</li>
+<li>Consider read&#x2F;write splitting</li>
+<li>Network optimization between master and slave</li>
+</ul>
+<h2 id="Transaction-Commit-Flow-Integration"><a href="#Transaction-Commit-Flow-Integration" class="headerlink" title="Transaction Commit Flow Integration"></a>Transaction Commit Flow Integration</h2><p>Understanding how these logs interact during transaction commits is crucial for troubleshooting and optimization:</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+Start([Transaction Begins]) --&gt; Changes[Execute DML Statements]
+Changes --&gt; UndoWrite[Write Undo Records]
+UndoWrite --&gt; RedoWrite[Write Redo Log Records]
+RedoWrite --&gt; Prepare[Prepare Phase]
+
+Prepare --&gt; BinLogCheck{Binary Logging Enabled?}
+BinLogCheck --&gt;|Yes| BinLogWrite[Write to Binary Log]
+BinLogCheck --&gt;|No| RedoCommit[Write Redo Commit Record]
+
+BinLogWrite --&gt; BinLogSync[Sync Binary Log&lt;br&#x2F;&gt;「if sync_binlog&#x3D;1」]
+BinLogSync --&gt; RedoCommit
+
+RedoCommit --&gt; RedoSync[Sync Redo Log&lt;br&#x2F;&gt;「if innodb_flush_log_at_trx_commit&#x3D;1」]
+RedoSync --&gt; Complete([Transaction Complete])
+
+Complete --&gt; UndoPurge[Mark Undo for Purge&lt;br&#x2F;&gt;「Background Process」]
+
+style UndoWrite fill:#f3e5f5
+style RedoWrite fill:#e1f5fe
+style BinLogWrite fill:#e8f5e8
+style RedoCommit fill:#e1f5fe
+</code>
+</pre>
+
+<h3 id="Group-Commit-Optimization"><a href="#Group-Commit-Optimization" class="headerlink" title="Group Commit Optimization"></a>Group Commit Optimization</h3><p><strong>Interview Insight</strong>: “How does MySQL’s group commit feature improve performance with binary logging enabled?”</p>
+<p>Group commit allows multiple transactions to be fsynced together, reducing I&#x2F;O overhead:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Monitor group commit efficiency</span></span><br><span class="line"><span class="keyword">SHOW</span> <span class="keyword">GLOBAL</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Binlog_commits&#x27;</span>;</span><br><span class="line"><span class="keyword">SHOW</span> <span class="keyword">GLOBAL</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Binlog_group_commits&#x27;</span>;</span><br><span class="line"><span class="comment">-- Higher ratio of group_commits to commits indicates better efficiency</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Crash-Recovery-and-Point-in-Time-Recovery"><a href="#Crash-Recovery-and-Point-in-Time-Recovery" class="headerlink" title="Crash Recovery and Point-in-Time Recovery"></a>Crash Recovery and Point-in-Time Recovery</h2><h3 id="Recovery-Process-Flow"><a href="#Recovery-Process-Flow" class="headerlink" title="Recovery Process Flow"></a>Recovery Process Flow</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Crash Recovery Process&quot;
+    Crash[System Crash] --&gt; Start[MySQL Restart]
+    Start --&gt; ScanRedo[Scan Redo Log from&lt;br&#x2F;&gt;Last Checkpoint]
+    ScanRedo --&gt; RollForward[Apply Committed&lt;br&#x2F;&gt;Transactions]
+    RollForward --&gt; ScanUndo[Scan Undo Logs for&lt;br&#x2F;&gt;Uncommitted Transactions]
+    ScanUndo --&gt; RollBack[Rollback Uncommitted&lt;br&#x2F;&gt;Transactions]
+    RollBack --&gt; BinLogSync[Synchronize with&lt;br&#x2F;&gt;Binary Log Position]
+    BinLogSync --&gt; Ready[Database Ready]
+end
+
+style ScanRedo fill:#e1f5fe
+style ScanUndo fill:#f3e5f5
+</code>
+</pre>
+
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Point-in-Time Recovery&quot;
+    Backup[Full Backup] --&gt; RestoreData[Restore Data Files]
+    RestoreData --&gt; ApplyBinLog[Apply Binary Logs&lt;br&#x2F;&gt;to Target Time]
+    ApplyBinLog --&gt; Recovered[Database Recovered&lt;br&#x2F;&gt;to Specific Point]
+end
+
+style ApplyBinLog fill:#e8f5e8
+</code>
+</pre>
+
+<h3 id="Point-in-Time-Recovery-Example"><a href="#Point-in-Time-Recovery-Example" class="headerlink" title="Point-in-Time Recovery Example"></a>Point-in-Time Recovery Example</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Practical PITR scenario</span></span><br><span class="line"><span class="comment">-- 1. Record current position before problematic operation</span></span><br><span class="line"><span class="keyword">SHOW</span> MASTER STATUS;</span><br><span class="line"><span class="comment">-- Example: File: mysql-bin.000003, Position: 1547</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. After accidental data loss (e.g., DROP TABLE)</span></span><br><span class="line"><span class="comment">-- Recovery process (command line):</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Stop MySQL and restore from backup</span></span><br><span class="line"><span class="comment">-- mysql &lt; full_backup_before_incident.sql</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Apply binary logs up to just before the problematic statement</span></span><br><span class="line"><span class="comment">-- mysqlbinlog --stop-position=1500 mysql-bin.000003 | mysql</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Skip the problematic statement and continue</span></span><br><span class="line"><span class="comment">-- mysqlbinlog --start-position=1600 mysql-bin.000003 | mysql</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Environment-Specific-Configurations"><a href="#Environment-Specific-Configurations" class="headerlink" title="Environment-Specific Configurations"></a>Environment-Specific Configurations</h2><h3 id="Production-Grade-Configuration"><a href="#Production-Grade-Configuration" class="headerlink" title="Production-Grade Configuration"></a>Production-Grade Configuration</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- High-Performance Production Template</span></span><br><span class="line">[mysqld]</span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line"># REDO LOG CONFIGURATION</span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line">innodb_log_file_size <span class="operator">=</span> <span class="number">2</span>G</span><br><span class="line">innodb_log_files_in_group <span class="operator">=</span> <span class="number">2</span></span><br><span class="line">innodb_flush_log_at_trx_commit <span class="operator">=</span> <span class="number">1</span>  # <span class="keyword">Full</span> ACID compliance</span><br><span class="line">innodb_log_buffer_size <span class="operator">=</span> <span class="number">64</span>M</span><br><span class="line"></span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line"># UNDO LOG CONFIGURATION  </span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line">innodb_undo_tablespaces <span class="operator">=</span> <span class="number">4</span></span><br><span class="line">innodb_undo_logs <span class="operator">=</span> <span class="number">128</span></span><br><span class="line">innodb_purge_threads <span class="operator">=</span> <span class="number">4</span></span><br><span class="line"></span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line"># <span class="type">BINARY</span> LOG CONFIGURATION</span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line">log<span class="operator">-</span>bin <span class="operator">=</span> mysql<span class="operator">-</span>bin</span><br><span class="line">server<span class="operator">-</span>id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line">binlog_format <span class="operator">=</span> <span class="type">ROW</span></span><br><span class="line">gtid_mode <span class="operator">=</span> <span class="keyword">ON</span></span><br><span class="line">enforce_gtid_consistency <span class="operator">=</span> <span class="keyword">ON</span></span><br><span class="line">sync_binlog <span class="operator">=</span> <span class="number">1</span></span><br><span class="line">expire_logs_days <span class="operator">=</span> <span class="number">7</span></span><br><span class="line">binlog_cache_size <span class="operator">=</span> <span class="number">2</span>M</span><br><span class="line"></span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line"># GENERAL PERFORMANCE SETTINGS</span><br><span class="line"># <span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span><span class="operator">=</span></span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">8</span>G  # <span class="number">70</span><span class="number">-80</span><span class="operator">%</span> <span class="keyword">of</span> RAM</span><br><span class="line">innodb_buffer_pool_instances <span class="operator">=</span> <span class="number">8</span></span><br><span class="line">innodb_flush_method <span class="operator">=</span> O_DIRECT</span><br><span class="line">innodb_io_capacity <span class="operator">=</span> <span class="number">2000</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Interview-Scenario-Financial-Application-Design"><a href="#Interview-Scenario-Financial-Application-Design" class="headerlink" title="Interview Scenario: Financial Application Design"></a>Interview Scenario: Financial Application Design</h3><p><strong>Question</strong>: “How would you design a MySQL setup for a financial application that cannot lose any transactions?”</p>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Financial Grade Setup&quot;
+    App[Application] --&gt; LB[Load Balancer]
+    LB --&gt; Master[Master DB]
+    Master --&gt; Sync1[Synchronous Slave 1]
+    Master --&gt; Sync2[Synchronous Slave 2]
+    
+    subgraph &quot;Master Configuration&quot;
+        MC1[innodb_flush_log_at_trx_commit &#x3D; 1]
+        MC2[sync_binlog &#x3D; 1] 
+        MC3[Large redo logs for performance]
+        MC4[GTID enabled]
+    end
+    
+    subgraph &quot;Monitoring&quot;
+        Mon1[Transaction timeout &lt; 30s]
+        Mon2[Undo log size alerts]
+        Mon3[Replication lag &lt; 1s]
+    end
+end
+
+style Master fill:#e8f5e8
+style Sync1 fill:#e1f5fe
+style Sync2 fill:#e1f5fe
+</code>
+</pre>
+
+<p><strong>Answer Framework:</strong></p>
+<ul>
+<li><strong>Durability</strong>: <code>innodb_flush_log_at_trx_commit = 1</code> and <code>sync_binlog = 1</code></li>
+<li><strong>Consistency</strong>: Row-based binary logging with GTID</li>
+<li><strong>Availability</strong>: Semi-synchronous replication</li>
+<li><strong>Performance</strong>: Larger redo logs to handle synchronous overhead</li>
+<li><strong>Monitoring</strong>: Aggressive alerting on log-related metrics</li>
+</ul>
+<h2 id="Monitoring-and-Alerting"><a href="#Monitoring-and-Alerting" class="headerlink" title="Monitoring and Alerting"></a>Monitoring and Alerting</h2><h3 id="Comprehensive-Health-Check-Script"><a href="#Comprehensive-Health-Check-Script" class="headerlink" title="Comprehensive Health Check Script"></a>Comprehensive Health Check Script</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Complete MySQL logs health check</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="string">&#x27;REDO LOG METRICS&#x27;</span> <span class="keyword">as</span> section, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> metric, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> <span class="keyword">value</span>, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;Log Waits (should be 0)&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    variable_value <span class="keyword">as</span> <span class="keyword">value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> <span class="built_in">CAST</span>(variable_value <span class="keyword">AS</span> UNSIGNED) <span class="operator">=</span> <span class="number">0</span> <span class="keyword">THEN</span> <span class="string">&#x27;✓ EXCELLENT&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> <span class="built_in">CAST</span>(variable_value <span class="keyword">AS</span> UNSIGNED) <span class="operator">&lt;</span> <span class="number">10</span> <span class="keyword">THEN</span> <span class="string">&#x27;⚠ WATCH&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;✗ CRITICAL - Increase redo log size&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line"><span class="keyword">WHERE</span> variable_name <span class="operator">=</span> <span class="string">&#x27;Innodb_log_waits&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="string">&#x27;UNDO LOG METRICS&#x27;</span> <span class="keyword">as</span> section, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> metric, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> <span class="keyword">value</span>, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;Long Running Transactions (&gt;5 min)&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">as</span> <span class="keyword">value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="operator">=</span> <span class="number">0</span> <span class="keyword">THEN</span> <span class="string">&#x27;✓ GOOD&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="operator">&lt;</span> <span class="number">5</span> <span class="keyword">THEN</span> <span class="string">&#x27;⚠ MONITOR&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;✗ CRITICAL - Kill long transactions&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">FROM</span> information_schema.innodb_trx </span><br><span class="line"><span class="keyword">WHERE</span> trx_started <span class="operator">&lt;</span> NOW() <span class="operator">-</span> <span class="type">INTERVAL</span> <span class="number">5</span> <span class="keyword">MINUTE</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="string">&#x27;BINARY LOG METRICS&#x27;</span> <span class="keyword">as</span> section, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> metric, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> <span class="keyword">value</span>, <span class="string">&#x27;&#x27;</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;Binary Logging Status&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    @<span class="variable">@log_bin</span> <span class="keyword">as</span> <span class="keyword">value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> @<span class="variable">@log_bin</span> <span class="operator">=</span> <span class="number">1</span> <span class="keyword">THEN</span> <span class="string">&#x27;✓ ENABLED&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;⚠ DISABLED&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> status</span><br><span class="line"></span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;Binlog Format&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    @<span class="variable">@binlog_format</span> <span class="keyword">as</span> <span class="keyword">value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> @<span class="variable">@binlog_format</span> <span class="operator">=</span> <span class="string">&#x27;ROW&#x27;</span> <span class="keyword">THEN</span> <span class="string">&#x27;✓ RECOMMENDED&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> @<span class="variable">@binlog_format</span> <span class="operator">=</span> <span class="string">&#x27;MIXED&#x27;</span> <span class="keyword">THEN</span> <span class="string">&#x27;⚠ ACCEPTABLE&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;⚠ STATEMENT-BASED&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> status;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Key-Alert-Thresholds"><a href="#Key-Alert-Thresholds" class="headerlink" title="Key Alert Thresholds"></a>Key Alert Thresholds</h3><p>Establish monitoring for:</p>
+<ul>
+<li><strong>Redo log waits</strong> &gt; 100&#x2F;second</li>
+<li><strong>Slave lag</strong> &gt; 30 seconds  </li>
+<li><strong>Long-running transactions</strong> &gt; 1 hour</li>
+<li><strong>Binary log disk usage</strong> &gt; 80%</li>
+<li><strong>Undo tablespace growth</strong> &gt; 20% per hour</li>
+</ul>
+<h3 id="Real-Time-Monitoring-Dashboard"><a href="#Real-Time-Monitoring-Dashboard" class="headerlink" title="Real-Time Monitoring Dashboard"></a>Real-Time Monitoring Dashboard</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Create monitoring view for continuous observation</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> REPLACE <span class="keyword">VIEW</span> mysql_logs_dashboard <span class="keyword">AS</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    NOW() <span class="keyword">as</span> check_time,</span><br><span class="line">    </span><br><span class="line">    <span class="comment">-- Redo Log Metrics</span></span><br><span class="line">    (<span class="keyword">SELECT</span> variable_value <span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line">     <span class="keyword">WHERE</span> variable_name <span class="operator">=</span> <span class="string">&#x27;Innodb_log_waits&#x27;</span>) <span class="keyword">as</span> redo_log_waits,</span><br><span class="line">    </span><br><span class="line">    <span class="comment">-- Undo Log Metrics  </span></span><br><span class="line">    (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> information_schema.innodb_trx </span><br><span class="line">     <span class="keyword">WHERE</span> trx_started <span class="operator">&lt;</span> NOW() <span class="operator">-</span> <span class="type">INTERVAL</span> <span class="number">5</span> <span class="keyword">MINUTE</span>) <span class="keyword">as</span> long_transactions,</span><br><span class="line">    </span><br><span class="line">    <span class="comment">-- Binary Log Metrics</span></span><br><span class="line">    (<span class="keyword">SELECT</span> variable_value <span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line">     <span class="keyword">WHERE</span> variable_name <span class="operator">=</span> <span class="string">&#x27;Binlog_bytes_written&#x27;</span>) <span class="keyword">as</span> binlog_bytes_written,</span><br><span class="line">    </span><br><span class="line">    <span class="comment">-- Buffer Pool Hit Ratio</span></span><br><span class="line">    ROUND(</span><br><span class="line">        (<span class="number">1</span> <span class="operator">-</span> (</span><br><span class="line">            (<span class="keyword">SELECT</span> variable_value <span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line">             <span class="keyword">WHERE</span> variable_name <span class="operator">=</span> <span class="string">&#x27;Innodb_buffer_pool_reads&#x27;</span>) <span class="operator">/</span> </span><br><span class="line">            (<span class="keyword">SELECT</span> variable_value <span class="keyword">FROM</span> performance_schema.global_status </span><br><span class="line">             <span class="keyword">WHERE</span> variable_name <span class="operator">=</span> <span class="string">&#x27;Innodb_buffer_pool_read_requests&#x27;</span>)</span><br><span class="line">        )) <span class="operator">*</span> <span class="number">100</span>, <span class="number">2</span></span><br><span class="line">    ) <span class="keyword">as</span> buffer_pool_hit_ratio;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Use the dashboard</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> mysql_logs_dashboard;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>MySQL’s logging architecture provides a robust foundation for transaction processing, crash recovery, and high-availability deployments. Key takeaways:</p>
+<ol>
+<li><strong>Redo logs</strong> ensure durability through Write-Ahead Logging - size them for 60-90 minutes of peak writes</li>
+<li><strong>Undo logs</strong> enable MVCC and rollbacks - keep transactions short to prevent growth</li>
+<li><strong>Binary logs</strong> facilitate replication and PITR - use ROW format with GTID for modern deployments</li>
+</ol>
+<p>The key to successful MySQL log management lies in understanding your workload’s specific requirements and balancing durability, consistency, and performance. Regular monitoring of log metrics and proactive tuning ensure these critical systems continue to provide reliable service as your database scales.</p>
+<p>Remember: in production environments, always test configuration changes in staging first, and maintain comprehensive monitoring to detect issues before they impact your applications.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mysql/" rel="tag"># mysql</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/09/MySQL-B-Tree-Structure-Theory-Practice-Interview-Guide/" rel="prev" title="MySQL B+ Tree Structure: Theory, Practice &amp; Interview Guide">
+                  <i class="fa fa-angle-left"></i> MySQL B+ Tree Structure: Theory, Practice & Interview Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
