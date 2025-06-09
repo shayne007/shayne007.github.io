@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-count">22</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,84 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/15/Multithreading-Programming-Patterns-Guarded-Suspension/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/05/15/Multithreading-Programming-Patterns-Guarded-Suspension/" class="post-title-link" itemprop="url">Multithreading Programming Patterns - Guarded Suspension</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2021-05-15 13:12:17 / Modified: 13:19:29" itemprop="dateCreated datePublished" datetime="2021-05-15T13:12:17+08:00">2021-05-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="Multithreading-Programming-Patterns-Guarded-Suspension"><a href="#Multithreading-Programming-Patterns-Guarded-Suspension" class="headerlink" title="Multithreading Programming Patterns - Guarded Suspension"></a>Multithreading Programming Patterns - Guarded Suspension</h1><h2 id="Guarded-Suspension-Pattern"><a href="#Guarded-Suspension-Pattern" class="headerlink" title="Guarded Suspension Pattern"></a>Guarded Suspension Pattern</h2><h3 id="什么是Guarded-Suspension模式"><a href="#什么是Guarded-Suspension模式" class="headerlink" title="什么是Guarded Suspension模式"></a>什么是Guarded Suspension模式</h3><h3 id="Guarded-Suspension模式的应用场景"><a href="#Guarded-Suspension模式的应用场景" class="headerlink" title="Guarded Suspension模式的应用场景"></a>Guarded Suspension模式的应用场景</h3><h3 id="Guarded-Suspension模式的实现"><a href="#Guarded-Suspension模式的实现" class="headerlink" title="Guarded Suspension模式的实现"></a>Guarded Suspension模式的实现</h3><h2 id="生产者-消费者模式"><a href="#生产者-消费者模式" class="headerlink" title="生产者-消费者模式"></a>生产者-消费者模式</h2><h3 id="什么是生产者-消费者模式"><a href="#什么是生产者-消费者模式" class="headerlink" title="什么是生产者-消费者模式"></a>什么是生产者-消费者模式</h3><h3 id="生产者-消费者模式的应用场景"><a href="#生产者-消费者模式的应用场景" class="headerlink" title="生产者-消费者模式的应用场景"></a>生产者-消费者模式的应用场景</h3><h3 id="生产者-消费者模式的实现"><a href="#生产者-消费者模式的实现" class="headerlink" title="生产者-消费者模式的实现"></a>生产者-消费者模式的实现</h3><h2 id="线程池模式"><a href="#线程池模式" class="headerlink" title="线程池模式"></a>线程池模式</h2><h3 id="什么是线程池模式"><a href="#什么是线程池模式" class="headerlink" title="什么是线程池模式"></a>什么是线程池模式</h3><h3 id="线程池模式的应用场景"><a href="#线程池模式的应用场景" class="headerlink" title="线程池模式的应用场景"></a>线程池模式的应用场景</h3><h3 id="线程池模式的实现"><a href="#线程池模式的实现" class="headerlink" title="线程池模式的实现"></a>线程池模式的实现</h3><h2 id="读写锁模式"><a href="#读写锁模式" class="headerlink" title="读写锁模式"></a>读写锁模式</h2><h3 id="什么是读写锁模式"><a href="#什么是读写锁模式" class="headerlink" title="什么是读写锁模式"></a>什么是读写锁模式</h3><h3 id="读写锁模式的应用场景"><a href="#读写锁模式的应用场景" class="headerlink" title="读写锁模式的应用场景"></a>读写锁模式的应用场景</h3><h3 id="读写锁模式的实现"><a href="#读写锁模式的实现" class="headerlink" title="读写锁模式的实现"></a>读写锁模式的实现</h3><h2 id="两阶段终止模式"><a href="#两阶段终止模式" class="headerlink" title="两阶段终止模式"></a>两阶段终止模式</h2><h3 id="什么是两阶段终止模式"><a href="#什么是两阶段终止模式" class="headerlink" title="什么是两阶段终止模式"></a>什么是两阶段终止模式</h3><h3 id="两阶段终止模式的应用场景"><a href="#两阶段终止模式的应用场景" class="headerlink" title="两阶段终止模式的应用场景"></a>两阶段终止模式的应用场景</h3><h3 id="两阶段终止模式的实现"><a href="#两阶段终止模式的实现" class="headerlink" title="两阶段终止模式的实现"></a>两阶段终止模式的实现</h3>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
