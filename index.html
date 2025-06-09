@@ -207,7 +207,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2025-06-09 19:27:51 / Modified: 20:33:28" itemprop="dateCreated datePublished" datetime="2025-06-09T19:27:51+08:00">2025-06-09</time>
+      <time title="Created: 2025-06-09 19:27:51 / Modified: 21:06:19" itemprop="dateCreated datePublished" datetime="2025-06-09T19:27:51+08:00">2025-06-09</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -260,27 +260,41 @@ I[Consumer] --&gt;|Sequential Read| B
 <h3 id="Distributed-Commit-Log"><a href="#Distributed-Commit-Log" class="headerlink" title="Distributed Commit Log"></a>Distributed Commit Log</h3><pre>
 <code class="mermaid">
 graph LR
-subgraph &quot;Topic: user-events&quot;
+subgraph &quot;Topic: user-events (Replication Factor &#x3D; 3)&quot;
     P1[Partition 0]
     P2[Partition 1]
     P3[Partition 2]
 end
 
 subgraph &quot;Broker 1&quot;
-    B1P1[P0 Leader]
-    B1P2[P1 Replica]
+    B1P0L[P0 Leader]
+    B1P1F[P1 Follower]
+    B1P2F[P2 Follower]
 end
 
 subgraph &quot;Broker 2&quot;
-    B2P1[P0 Replica]
-    B2P2[P1 Leader]
-    B2P3[P2 Replica]
+    B2P0F[P0 Follower]
+    B2P1L[P1 Leader]
+    B2P2F[P2 Follower]
 end
 
 subgraph &quot;Broker 3&quot;
-    B3P2[P1 Replica]
-    B3P3[P2 Leader]
+    B3P0F[P0 Follower]
+    B3P1F[P1 Follower]
+    B3P2L[P2 Leader]
 end
+
+P1 -.-&gt; B1P0L
+P1 -.-&gt; B2P0F
+P1 -.-&gt; B3P0F
+
+P2 -.-&gt; B1P1F
+P2 -.-&gt; B2P1L
+P2 -.-&gt; B3P1F
+
+P3 -.-&gt; B1P2F
+P3 -.-&gt; B2P2F
+P3 -.-&gt; B3P2L
 </code>
 </pre>
 
