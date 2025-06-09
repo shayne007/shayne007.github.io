@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,378 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/01/Redis-Notes-for-Interview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/01/Redis-Notes-for-Interview/" class="post-title-link" itemprop="url">Redis Notes for Interview</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-01 16:20:52 / Modified: 16:21:41" itemprop="dateCreated datePublished" datetime="2025-06-01T16:20:52+08:00">2025-06-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <ul>
+<li><p>Redis基础知识</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>内存数据库</li>
+<li>数据结构：string、hash、set、sorted set、list、geo、hyperloglog</li>
+<li>集群模式：主从、哨兵、cluster分片</li>
+<li>使用缓存进行性能优化</li>
+</ul>
+</li>
+<li><p>为什么使用redis？</p>
+<ul>
+<li><strong>性能</strong>：我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就特别适合将运行结果放入缓存。这样， 后面的请求就去缓存中读取，使得请求能够迅速响应。</li>
+<li><strong>并发</strong>：在大并发的情况下，所有的请求直接访问数据库，数据库会出现连接异常。这个时候，就需要使用redis 做一个缓冲操作，让请求先访问到redis，而不是直接访问数据库（<strong>MySQl支持1500QPS，而Redis支持2-5wQPS</strong>）。</li>
+</ul>
+</li>
+<li><p>redis的使用场景</p>
+<ul>
+<li>缓存</li>
+<li>秒杀</li>
+<li>分布式锁</li>
+</ul>
+</li>
+<li><p>Redis为什么使用单线程</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>线程任务：命令处理、io处理、持久化、数据同步</li>
+<li>6.0版本、配置开启多线程</li>
+<li>epoll、reactor</li>
+</ul>
+</li>
+<li><p>高性能的原因</p>
+<ul>
+<li>内存操作</li>
+<li>在Linux上采用了epoll和reactor结合的IO模型<ul>
+<li>epoll的本质是管理一堆socket文件描述符<ul>
+<li><strong>红黑树</strong>结构维护的全部监控文件描述符</li>
+<li><strong>双向链表</strong>维护的就绪列表</li>
+<li>中断机制添加就绪文件描述符</li>
+<li>关键api：<strong>epoll_create、epoll_ctl、epoll_wait</strong></li>
+<li>poll和select的区别：</li>
+</ul>
+</li>
+<li>reactor模式<ul>
+<li>Reactor（Dispatcher）调用epoll拿到可用文件描述符，分发事件</li>
+<li>Acceptor处理创建连接事件</li>
+<li>Handler处理IO读写事件，</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Redis数据类型的底层数据结构</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>skiplist</li>
+</ul>
+</li>
+<li><p>String（字符串）</p>
+<ul>
+<li>SDS（简单动态字符串）</li>
+<li>缓存用户信息、计数器、分布式锁（setnx）</li>
+</ul>
+</li>
+<li><p>Hash（哈希表）</p>
+<ul>
+<li>ziplist（小数据） + hashtable（大数据）</li>
+<li>存储对象</li>
+</ul>
+</li>
+<li><p>List（列表）</p>
+<ul>
+<li>双向链表或ziplist</li>
+<li>消息队列、最新文章列表</li>
+</ul>
+</li>
+<li><p>Set（集合）</p>
+<ul>
+<li>intset（整数集合）或hashtable</li>
+<li>标签系统、共同好友（sinter求交集）</li>
+</ul>
+</li>
+<li><p>ZSet（有序集合）</p>
+<ul>
+<li>ziplist + skiplist（跳表）</li>
+<li>排行榜（ZADD&#x2F;ZRANGE）、延时队列</li>
+</ul>
+</li>
+<li><p>Redis怎么做数据持久化</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>AOF、RDB、混合模式</li>
+</ul>
+</li>
+<li><p>RDB</p>
+<ul>
+<li>定时生成内存数据的二进制快照文件</li>
+<li>fork子进程</li>
+<li>每个5分钟甚至更长时间执行一次bgsave，数据丢失问题</li>
+</ul>
+</li>
+<li><p>AOF</p>
+<ul>
+<li>记录所有写操作命令</li>
+<li>同步磁盘策略<ul>
+<li>每秒同步（appendfsync everysec）</li>
+<li>每次修改同步（appendfsync always）</li>
+<li>不同步（appendfsync no）</li>
+</ul>
+</li>
+<li>rewrite机制</li>
+</ul>
+</li>
+<li><p>二者比较</p>
+<ul>
+<li>RDB是每隔一段时间持久化一次, 故障时就会丢失宕机时刻与上一次持久化之间的数据，无法保证数据完整性</li>
+<li>AOF存储的是指令序列, 恢复重放时要花费很长时间并且文件更大</li>
+</ul>
+</li>
+<li><p>Redis有哪些集群部署模式</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>一主多从，读写分离</li>
+<li>哨兵</li>
+<li>Cluster分片模式</li>
+</ul>
+</li>
+<li><p>一主多从</p>
+<ul>
+<li>读操作，主库从库都可以接受</li>
+<li>写操作，首先到主库执行，然后主库将写操作同步给从库</li>
+</ul>
+</li>
+<li><p>哨兵</p>
+<ul>
+<li>主库挂了，数据不能写入，通过哨兵重新选主</li>
+<li>监控、选主、通知<ul>
+<li>哨兵集群</li>
+<li>主观下线</li>
+<li>客观下线，判断主库下线，需要大多数的哨兵都标记下线</li>
+<li>选主打分规则<ul>
+<li>从库优先级配置</li>
+<li>从库复制进度</li>
+<li>从库ID号小的</li>
+</ul>
+</li>
+<li>多个哨兵实例发布订阅连接信息，以此进行信息交换，组成哨兵集群</li>
+<li>基于info命令的从库列表，帮助哨兵与从库建立连接</li>
+<li>客户端从哨兵订阅关键事件<ul>
+<li>主库下线判断</li>
+<li>新主库选定</li>
+<li>从库重新配置</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>哨兵之间也有leader选举，决定由谁进行主从切换</li>
+</ul>
+</li>
+<li><p>cluster分片</p>
+<ul>
+<li>RDB持久化，fork子进程阻塞主线程，当数据量大时导致Redis响应变慢</li>
+<li>数据量大时使用分片集群解决单实例的问题<ul>
+<li>超过25G</li>
+</ul>
+</li>
+<li>CPU密集型任务可以通过分片集群利用多核CPU</li>
+<li>采用hash槽来处理数据与实例之间的映射关系<ul>
+<li>固定16384个槽位</li>
+<li>哈希槽与实例的关系可以灵活分配</li>
+<li>手动分配需要将16384个槽位分配完</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>缓存模式与缓存一致性</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>Cache Aside旁路缓存</li>
+<li>Read Through、Write Through、Write Back、Single Flight</li>
+<li>删除缓存、延迟双删</li>
+</ul>
+</li>
+<li><p> 如何保证缓存与数据库的一致性？</p>
+<ul>
+<li>Cache-Aside 模式：<ul>
+<li>读：缓存命中则返回，否则查数据库并回填缓存。</li>
+<li>写：先更新数据库，再删除缓存。</li>
+</ul>
+</li>
+<li>延迟双删<ul>
+<li>更新数据库后直接删除缓存，过一段时间紧后，再次删除缓存</li>
+<li>降低了缓存命中率</li>
+</ul>
+</li>
+<li>兜底方案：设置缓存过期时间、使用消息队列异步同步。</li>
+</ul>
+</li>
+<li><p>穿透、击穿、雪崩缓存问题</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>热点数据、随机过期时间</li>
+<li>布隆过滤器</li>
+</ul>
+</li>
+<li><p>缓存雪崩</p>
+<ul>
+<li>大量同时过期的key</li>
+<li>redis实例宕机</li>
+<li>应对策略<ul>
+<li>随机过期时间、服务降级</li>
+<li>熔断限流、高可靠集群部署；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>缓存穿透</p>
+<ul>
+<li>数据既不在redis中，也不在数据库（数据误删或恶意攻击）。</li>
+<li>应对策略：<ul>
+<li>缓存空值或缺省值</li>
+<li>布隆过滤器<ul>
+<li>数据结构：位数组 + 多个哈希函数。</li>
+<li>写入：对元素进行多次哈希，将对应位设为 1。</li>
+<li>查询：若所有哈希位均为 1，则元素可能存在（可能存在误判）。</li>
+</ul>
+</li>
+<li>前端进行非法参数校验。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>缓存击穿</p>
+<ul>
+<li>单个热点数据过期失效。</li>
+<li>应对策略：<ul>
+<li>热点数据不设置过期时间；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>怎么使用Redis实现分布式锁</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li>支持排他性操作的中间件都可以实现分布式锁</li>
+<li>setNX同一个key只会有一个执行成功</li>
+<li>过期时间</li>
+<li>超时时间</li>
+<li>锁续期</li>
+</ul>
+</li>
+<li><p>加锁失败后重试</p>
+<ul>
+<li>确定等待时间：业务正常执行完毕的时间（99线或999线）</li>
+<li>实现等待：<ul>
+<li>sleep；</li>
+<li>监听锁的释放（del事件）</li>
+</ul>
+</li>
+<li>lua脚本实现超时重试</li>
+</ul>
+</li>
+<li><p>加锁成功了为什么需要设置过期时间</p>
+<ul>
+<li>加锁成功的线程，执行业务的过程中崩溃，锁未释放</li>
+<li>过期时间应该根据业务设置，99%的业务拿到锁之后，1s内完成，可以设置过期时间为2秒，或者保险起见，设置10秒设置1分钟都行。</li>
+<li>如果业务持有锁在过期时间内执行不完，需要续期<ul>
+<li>过期之前重置下过期时间</li>
+<li>启动守护线程定时检查当前线程是否持有锁，持有则重置过期时间</li>
+<li>redission看门狗机制</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>释放锁</p>
+<ul>
+<li>持有锁的机器宕机后恢复</li>
+<li>释放需要检查这个锁是否是自己的，防止释放掉其他线程持有的锁</li>
+</ul>
+</li>
+<li><p>Redlock</p>
+</li>
+<li><p>SingleFlight模式优化分布式锁</p>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -205,9 +577,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2025-06-01 15:58:13 / Modified: 16:30:44" itemprop="dateCreated datePublished" datetime="2025-06-01T15:58:13+08:00">2025-06-01</time>
+      <time title="Created: 2025-06-01 15:58:13" itemprop="dateCreated datePublished" datetime="2025-06-01T15:58:13+08:00">2025-06-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2025-06-09 17:17:22" itemprop="dateModified" datetime="2025-06-09T17:17:22+08:00">2025-06-09</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
