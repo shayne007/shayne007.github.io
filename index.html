@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">19</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,330 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/" class="post-title-link" itemprop="url">Kafka Consumers: Consumer Groups vs. Standalone Consumers</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 18:42:43 / Modified: 18:47:57" itemprop="dateCreated datePublished" datetime="2025-06-09T18:42:43+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Introduction-to-Kafka-Consumers"><a href="#Introduction-to-Kafka-Consumers" class="headerlink" title="Introduction to Kafka Consumers"></a>Introduction to Kafka Consumers</h3><p>Kafka consumers are applications designed to read and process data from Kafka topics. They are the receiving end of the Kafka ecosystem, complementing Kafka producers which send messages to topics.</p>
+<h3 id="Standalone-Consumers"><a href="#Standalone-Consumers" class="headerlink" title="Standalone Consumers"></a>Standalone Consumers</h3><p>A standalone consumer operates independently, without coordinating with other consumers. This means there is no concept of a consumer group, and it directly subscribes to specific partitions of a topic. Each standalone consumer is responsible for maintaining its own offset, which tracks the last message successfully processed from a given partition.</p>
+<p><strong>Use Cases and Interview Insight:</strong></p>
+<p>Standalone consumers are typically used in scenarios requiring fine-grained control over partition assignments or when a single consumer needs to process all messages from a specific topic without group coordination. Common applications include:</p>
+<ul>
+<li><strong>Debugging and Auditing:</strong> Quickly inspecting messages from a particular partition for troubleshooting or compliance checks.</li>
+<li><strong>Administrative Tasks:</strong> Performing one-off operations on a specific subset of data.</li>
+<li><strong>Specialized Data Processing:</strong> When a dedicated process needs to consume a fixed set of partitions and does not benefit from dynamic rebalancing.</li>
+</ul>
+<p><strong>Interview Question:</strong> <em>“When would you choose to use a standalone Kafka consumer over a consumer group?”</em></p>
+<p><strong>Answer:</strong> “A standalone consumer is ideal for simple applications where a single consumer needs to read all messages from a topic, or for administrative tasks like reading from a specific partition for debugging. It offers precise control over partition assignment and avoids the overhead of consumer group coordination and rebalancing.”</p>
+<h3 id="Consumer-Groups"><a href="#Consumer-Groups" class="headerlink" title="Consumer Groups"></a>Consumer Groups</h3><p>A consumer group is a fundamental concept in Kafka that enables scalable and fault-tolerant consumption of messages. It is a collection of consumers that cooperate to consume data from one or more topics. When multiple consumers subscribe to the same topic and belong to the same consumer group, Kafka ensures that each partition of that topic is consumed by exactly one consumer within that group at any given time. This design allows for parallel processing of messages and provides robust fault tolerance.</p>
+<p><strong>Key Characteristics of Consumer Groups:</strong></p>
+<ul>
+<li><p><strong>Parallelism:</strong> Consumer groups facilitate parallel message processing. By distributing partitions among multiple consumers, messages from different partitions can be processed concurrently, significantly increasing throughput.</p>
+</li>
+<li><p><strong>Fault Tolerance:</strong> If a consumer within a group fails or crashes, Kafka automatically detects this. The partitions previously assigned to the failed consumer are then redistributed among the remaining active consumers in the same group. This process, known as rebalancing, ensures continuous message consumption and high availability.</p>
+</li>
+<li><p><strong>Offset Management:</strong> Kafka meticulously tracks the offset (the position of the last consumed message) for each consumer group per partition. This mechanism is crucial for ensuring that messages are not reprocessed unnecessarily and allows consumers to resume consumption from where they left off after a restart or rebalance.</p>
+</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“Explain the concept of a consumer group in Kafka and elaborate on its importance.”</em></p>
+<p><strong>Answer:</strong> “A consumer group in Kafka is a logical grouping of consumers that collectively consume messages from one or more topics. Its importance lies in enabling scalable and fault-tolerant message consumption. By distributing partitions among multiple consumers, it allows for parallel processing, and through rebalancing, it gracefully handles consumer failures, ensuring continuous data flow.”</p>
+<h3 id="Deep-Dive-into-Consumer-Rebalancing"><a href="#Deep-Dive-into-Consumer-Rebalancing" class="headerlink" title="Deep Dive into Consumer Rebalancing"></a>Deep Dive into Consumer Rebalancing</h3><p>Consumer rebalancing is a crucial and often misunderstood mechanism in Kafka that underpins the high availability and fault tolerance of consumer groups. It is the dynamic process by which Kafka reassigns partitions among the active consumers within a group whenever there are changes in the group’s membership or the subscribed topics’ metadata.</p>
+<p><strong>Triggers for Rebalancing:</strong></p>
+<p>Rebalancing is not a constant process; it is triggered by specific events that necessitate a redistribution of partitions. These triggers include:</p>
+<ul>
+<li><p><strong>New Consumer Joins the Group:</strong> When a new consumer instance starts and attempts to join an existing consumer group, Kafka initiates a rebalance to allocate some partitions to the new member.</p>
+</li>
+<li><p><strong>Existing Consumer Leaves the Group (Graceful or Abrupt):</strong> If a consumer gracefully shuts down (e.g., application exit) or crashes unexpectedly, its assigned partitions must be reassigned to other active consumers in the group to maintain full consumption.</p>
+</li>
+<li><p><strong>Consumer Session Timeout:</strong> Consumers send periodic heartbeats to the Kafka broker acting as the Group Coordinator. If a consumer fails to send a heartbeat within a configured <code>session.timeout.ms</code> period, the broker considers it dead, and a rebalance is triggered to reassign its partitions.</p>
+</li>
+<li><p><strong>Topic Metadata Changes:</strong> Actions such as adding new partitions to a topic or, less commonly, deleting a topic, can also necessitate a rebalance to adjust partition assignments across the consumer group.</p>
+</li>
+</ul>
+<p><strong>The Rebalancing Process:</strong></p>
+<p>Understanding the steps involved in a rebalance is key to appreciating its complexity and impact:</p>
+<ol>
+<li><p><strong>Group Coordinator:</strong> Each consumer group is managed by a designated Kafka broker, known as the Group Coordinator. This coordinator is responsible for overseeing the group’s state, tracking active members, and orchestrating the rebalancing process.</p>
+</li>
+<li><p><strong>JoinGroup Request:</strong> When a consumer wants to join a group, it sends a <code>JoinGroup</code> request to its assigned Group Coordinator. The coordinator then collects <code>JoinGroup</code> requests from all members and, from these, elects one consumer to act as the <em>group leader</em> for the rebalance.</p>
+</li>
+<li><p><strong>SyncGroup Request:</strong> The elected group leader is responsible for determining the partition assignments for all consumers in the group. It gathers metadata about all members and their subscriptions, then proposes a partition assignment strategy. This proposed assignment is sent back to the Group Coordinator via a <code>SyncGroup</code> request.</p>
+</li>
+<li><p><strong>Partition Assignment Distribution:</strong> The Group Coordinator receives the leader’s proposed assignments and then distributes these assignments to all individual consumers within the group. Each consumer receives its specific set of assigned partitions and begins fetching messages from them.</p>
+</li>
+</ol>
+<p><strong>Impact of Rebalancing:</strong></p>
+<p>While essential for fault tolerance and scalability, rebalancing can have noticeable impacts on consumer applications:</p>
+<ul>
+<li><p><strong>Temporary Unavailability:</strong> During a rebalance, consumers temporarily stop processing messages. This pause in consumption lasts until the rebalance is complete and new partition assignments are finalized. For latency-sensitive applications, this temporary halt can be a concern.</p>
+</li>
+<li><p><strong>Increased Latency:</strong> The rebalancing process itself introduces latency. In large consumer groups or environments with frequent consumer churn, the cumulative latency from rebalances can become significant.</p>
+</li>
+<li><p><strong>Potential Message Reprocessing:</strong> If offsets are not committed correctly and promptly before a rebalance occurs, there is a risk that messages already processed by a consumer might be reprocessed by another consumer after the rebalance. This highlights the importance of robust offset management.</p>
+</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“How can you minimize the impact of consumer rebalancing on your Kafka applications?”</em></p>
+<p><strong>Answer:</strong> “To minimize rebalancing impact, it’s crucial to set appropriate <code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code> values to ensure timely detection of dead consumers without premature rebalances. Implementing graceful consumer shutdowns is also vital, allowing consumers to commit offsets and leave the group cleanly. Additionally, for certain use cases, Kafka’s static membership feature can be leveraged to reduce rebalances for known consumer instances.”</p>
+<p><strong>Interview Question:</strong> <em>“What is the role of the Group Coordinator in Kafka’s consumer group management?”</em></p>
+<p><strong>Answer:</strong> “The Group Coordinator is a critical Kafka broker responsible for managing the state of a consumer group. It tracks active members, handles consumer joins and leaves, and orchestrates the entire rebalancing process, ensuring partitions are correctly assigned and re-assigned among consumers.”</p>
+<h3 id="Best-Practices-for-Kafka-Consumer-Groups"><a href="#Best-Practices-for-Kafka-Consumer-Groups" class="headerlink" title="Best Practices for Kafka Consumer Groups"></a>Best Practices for Kafka Consumer Groups</h3><p>Adhering to best practices is essential for building robust, scalable, and efficient Kafka consumer applications. These practices help optimize performance, ensure data integrity, and minimize operational overhead.</p>
+<ol>
+<li><p><strong>Optimize Partition Count:</strong><br>The number of partitions in a topic directly influences the maximum parallelism achievable within a consumer group. A good rule of thumb is to have at least as many partitions as your maximum expected number of consumers in a group. However, having too many partitions can lead to increased overhead during rebalancing and higher resource consumption on brokers.</p>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“How does the number of partitions in a Kafka topic affect consumer group performance and scalability?”</em></p>
+<p><strong>Answer:</strong> “More partitions allow for greater parallelism, as each partition can be consumed independently by a consumer within the group. This enhances scalability. However, an excessive number of partitions can increase rebalancing overhead and resource utilization on brokers. The optimal number often aligns with the number of consumers, ideally with partitions being a multiple of consumers for even distribution.”</p>
+</li>
+<li><p><strong>Maintain Consumer Count Consistency:</strong><br>For optimal resource utilization and to avoid idle consumers, the number of active consumers in a group should ideally be less than or equal to the number of partitions. If there are more consumers than partitions, some consumers will remain idle, wasting resources.</p>
+</li>
+<li><p><strong>Use Unique <code>group.id</code> for Logical Applications:</strong><br>Always assign a unique <code>group.id</code> to each distinct logical application that consumes from a Kafka topic. This ensures that different applications can process the same topic’s messages independently without interfering with each other’s consumption progress or rebalancing cycles.</p>
+</li>
+<li><p><strong>Implement Robust Offset Commitment Strategies:</strong><br>Committing offsets correctly and regularly is paramount to prevent message loss or duplication. While auto-commit (<code>enable.auto.commit=true</code>) offers convenience, it might not be suitable for all scenarios as it commits offsets based on time intervals, not necessarily after successful message processing. Manual commit (<code>enable.auto.commit=false</code>) provides more control and guarantees.</p>
+<ul>
+<li><strong>Synchronous Commit:</strong> <code>consumer.commitSync()</code> ensures that the commit operation completes before the consumer proceeds. This provides strong guarantees but can block the consumer, impacting throughput.</li>
+<li><strong>Asynchronous Commit:</strong> <code>consumer.commitAsync()</code> allows the consumer to continue processing messages while the commit operation happens in the background. This offers higher throughput but requires careful handling of commit failures.</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“Discuss different offset commit strategies in Kafka and their implications regarding message delivery guarantees.”</em></p>
+<p><strong>Answer:</strong> “Kafka offers auto-commit and manual commit strategies. Auto-commit is simpler but can lead to message loss (if the consumer crashes before the auto-commit interval) or duplication (if messages are processed but not committed before a crash). Manual commit, either synchronous or asynchronous, provides more control. Synchronous commit offers stronger guarantees against data loss but can reduce throughput, while asynchronous commit improves throughput but requires custom error handling for commit failures to prevent potential message duplication.”</p>
+</li>
+<li><p><strong>Graceful Handling of Consumer Rebalancing:</strong><br>Design your consumers to gracefully handle rebalancing events. This includes:</p>
+<ul>
+<li><strong>Pre-Rebalance Hook:</strong> Implement a <code>ConsumerRebalanceListener</code> to commit offsets before partitions are revoked during a rebalance. This prevents reprocessing messages that were already processed but not yet committed.</li>
+<li><strong>Post-Rebalance Hook:</strong> Use the <code>ConsumerRebalanceListener</code> to react to new partition assignments, for example, by seeking to the last committed offset for the newly assigned partitions.</li>
+</ul>
+<p>Proper handling minimizes data loss and ensures a smooth transition during rebalances.</p>
+</li>
+<li><p><strong>Efficient Message Processing:</strong><br>Consumers should be designed to process messages as efficiently as possible. If message processing is slow, consumers may fall behind, leading to increased consumer lag. Strategies include:</p>
+<ul>
+<li><strong>Batch Processing:</strong> Process messages in batches rather than individually to reduce overhead.</li>
+<li><strong>Asynchronous Processing:</strong> Delegate message processing to a separate thread pool to avoid blocking the main consumer thread.</li>
+<li><strong>Optimizing Business Logic:</strong> Profile and optimize the actual business logic that processes the Kafka messages.</li>
+</ul>
+</li>
+<li><p><strong>Monitor Consumer Lag:</strong><br>Regularly monitoring consumer lag is critical for identifying performance bottlenecks and ensuring timely message processing. Consumer lag represents the difference between the latest message produced to a partition and the last message consumed by the consumer group from that partition. High or increasing lag indicates that consumers are not keeping up with the message production rate.</p>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“What is consumer lag in Kafka, and how do you monitor it? What does high consumer lag indicate?”</em></p>
+<p><strong>Answer:</strong> “Consumer lag is the difference between the latest offset written to a partition and the last offset committed by a consumer group for that partition. It indicates how far behind a consumer group is in processing messages. It can be monitored using Kafka’s built-in tools (like <code>kafka-consumer-groups.sh</code>), JMX metrics, or external monitoring systems. High consumer lag typically indicates that consumers are not processing messages fast enough, possibly due to slow processing logic, insufficient consumer instances, or network issues.”</p>
+</li>
+</ol>
+<h3 id="Code-Showcase-Practical-Examples"><a href="#Code-Showcase-Practical-Examples" class="headerlink" title="Code Showcase: Practical Examples"></a>Code Showcase: Practical Examples</h3><p>This section provides conceptual code examples to illustrate the differences between standalone consumers and consumers within a group. These examples are simplified for clarity and assume a basic Kafka setup. For production environments, consider using robust Kafka client libraries and error handling.</p>
+<h4 id="Standalone-Consumer-Example-Python"><a href="#Standalone-Consumer-Example-Python" class="headerlink" title="Standalone Consumer Example (Python)"></a>Standalone Consumer Example (Python)</h4><p>A standalone consumer is useful when you need precise control over partition assignments, or when you want a single consumer to process all messages from a specific topic without coordination with other consumers. This is often seen in administrative tools or specialized data processing pipelines.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> kafka <span class="keyword">import</span> KafkaConsumer</span><br><span class="line"><span class="keyword">from</span> kafka.structs <span class="keyword">import</span> TopicPartition</span><br><span class="line"></span><br><span class="line"><span class="comment"># Configuration for the standalone consumer</span></span><br><span class="line">bootstrap_servers = [<span class="string">&quot;localhost:9092&quot;</span>]</span><br><span class="line">topic_name = <span class="string">&quot;my_standalone_topic&quot;</span></span><br><span class="line">partition_to_consume = <span class="number">0</span> <span class="comment"># Consuming from a specific partition</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Create a KafkaConsumer instance</span></span><br><span class="line"><span class="comment"># Note: No group_id is specified for a standalone consumer</span></span><br><span class="line">consumer = KafkaConsumer(</span><br><span class="line">    bootstrap_servers=bootstrap_servers,</span><br><span class="line">    auto_offset_reset=<span class="string">&quot;earliest&quot;</span>, <span class="comment"># Start consuming from the beginning of the partition</span></span><br><span class="line">    enable_auto_commit=<span class="literal">False</span> <span class="comment"># Manual offset management</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Assign the consumer to a specific partition</span></span><br><span class="line">partition = TopicPartition(topic_name, partition_to_consume)</span><br><span class="line">consumer.assign([partition])</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Standalone consumer assigned to topic: <span class="subst">&#123;topic_name&#125;</span>, partition: <span class="subst">&#123;partition_to_consume&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">for</span> message <span class="keyword">in</span> consumer:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Received message: Partition=<span class="subst">&#123;message.partition&#125;</span>, Offset=<span class="subst">&#123;message.offset&#125;</span>, Value=<span class="subst">&#123;message.value.decode(<span class="string">&quot;utf-8&quot;</span>)&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="comment"># Manually commit the offset after processing</span></span><br><span class="line">        consumer.commit()</span><br><span class="line"><span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Stopping standalone consumer.&quot;</span>)</span><br><span class="line"><span class="keyword">finally</span>:</span><br><span class="line">    consumer.close()</span><br></pre></td></tr></table></figure>
+
+<p><strong>Explanation:</strong></p>
+<ul>
+<li>We explicitly do <em>not</em> provide a <code>group_id</code> to the <code>KafkaConsumer</code> constructor, which is the key differentiator for a standalone consumer.</li>
+<li>Instead of subscribing to a topic, we use <code>consumer.assign([partition])</code> to explicitly assign the consumer to a specific <code>TopicPartition</code>. This gives direct control over which partition the consumer reads from.</li>
+<li><code>enable_auto_commit=False</code> is set to allow for manual offset management. This is often preferred for standalone consumers to ensure exactly-once processing semantics or fine-grained control over commit points.</li>
+<li>The consumer commits its offset manually after processing each message, providing explicit control over consumption progress.</li>
+</ul>
+<h4 id="Consumer-Group-Example-Python"><a href="#Consumer-Group-Example-Python" class="headerlink" title="Consumer Group Example (Python)"></a>Consumer Group Example (Python)</h4><p>Consumer groups are the most common and recommended way to consume messages from Kafka, enabling parallel processing and fault tolerance. This example demonstrates how multiple consumers can work together within a group to process messages from a topic.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> kafka <span class="keyword">import</span> KafkaConsumer</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">consume_messages</span>(<span class="params">consumer_id, topic_name, group_id, bootstrap_servers</span>):</span><br><span class="line">    consumer = KafkaConsumer(</span><br><span class="line">        topic_name,</span><br><span class="line">        group_id=group_id,</span><br><span class="line">        bootstrap_servers=bootstrap_servers,</span><br><span class="line">        auto_offset_reset=<span class="string">&quot;earliest&quot;</span>, <span class="comment"># Start consuming from the beginning of the topic if no committed offset</span></span><br><span class="line">        enable_auto_commit=<span class="literal">True</span>, <span class="comment"># Auto-commit offsets periodically</span></span><br><span class="line">        auto_commit_interval_ms=<span class="number">1000</span> <span class="comment"># Commit every 1 second</span></span><br><span class="line">    )</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Consumer <span class="subst">&#123;consumer_id&#125;</span> in group <span class="subst">&#123;group_id&#125;</span> started.&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">for</span> message <span class="keyword">in</span> consumer:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Consumer <span class="subst">&#123;consumer_id&#125;</span> received: Partition=<span class="subst">&#123;message.partition&#125;</span>, Offset=<span class="subst">&#123;message.offset&#125;</span>, Value=<span class="subst">&#123;message.value.decode(<span class="string">&quot;utf-8&quot;</span>)&#125;</span>&quot;</span>)</span><br><span class="line">            time.sleep(<span class="number">0.1</span>) <span class="comment"># Simulate message processing time</span></span><br><span class="line">    <span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Consumer <span class="subst">&#123;consumer_id&#125;</span> stopping.&quot;</span>)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        consumer.close()</span><br><span class="line"></span><br><span class="line">bootstrap_servers = [<span class="string">&quot;localhost:9092&quot;</span>]</span><br><span class="line">topic_name = <span class="string">&quot;my_group_topic&quot;</span></span><br><span class="line">group_id = <span class="string">&quot;my_test_group&quot;</span></span><br><span class="line">num_consumers = <span class="number">3</span></span><br><span class="line"></span><br><span class="line">threads = []</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_consumers):</span><br><span class="line">    thread = threading.Thread(target=consume_messages, args=(i, topic_name, group_id, bootstrap_servers))</span><br><span class="line">    threads.append(thread)</span><br><span class="line">    thread.start()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Keep the main thread alive to allow consumers to run</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        time.sleep(<span class="number">1</span>)</span><br><span class="line"><span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Main thread stopping.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">    thread.join()</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;All consumers stopped.&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Explanation:</strong></p>
+<ul>
+<li>Each consumer instance is initialized with the same <code>group_id</code>. This common <code>group_id</code> is what makes them part of the same consumer group, enabling Kafka to coordinate their consumption.</li>
+<li><code>consumer.subscribe(topic_name)</code> is used to subscribe to the topic. Kafka automatically handles partition assignment and rebalancing within the group, abstracting away the complexities of partition management.</li>
+<li><code>enable_auto_commit=True</code> and <code>auto_commit_interval_ms</code> are set to allow Kafka to automatically commit offsets periodically. This simplifies offset management for many common use cases, though manual commit offers more control.</li>
+<li>Multiple consumer instances (simulated by threads in this example for demonstration) can run concurrently, with Kafka distributing partitions among them to achieve parallel processing.</li>
+</ul>
+<h3 id="Consumer-Group-Rebalancing-Flowchart"><a href="#Consumer-Group-Rebalancing-Flowchart" class="headerlink" title="Consumer Group Rebalancing Flowchart"></a>Consumer Group Rebalancing Flowchart</h3><p>This flowchart visually represents the typical process of consumer group rebalancing in Kafka. It highlights the interactions between consumers and the Group Coordinator during this dynamic process.</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+subgraph Consumer Group
+    C1[Consumer 1] -- Heartbeat --&gt; GC(Group Coordinator)
+    C2[Consumer 2] -- Heartbeat --&gt; GC
+    C3[Consumer 3] -- Heartbeat --&gt; GC
+end
+
+GC -- Assigns Partitions --&gt; C1
+GC -- Assigns Partitions --&gt; C2
+GC -- Assigns Partitions --&gt; C3
+
+%% Events that trigger rebalance
+subgraph Triggers
+    A[New Consumer Joins] --&gt; Rebalance(Rebalance Triggered)
+    B[Consumer Leaves&#x2F;Crashes] --&gt; Rebalance
+    D[Session Timeout] --&gt; Rebalance
+    E[Topic Metadata Change] --&gt; Rebalance
+end
+
+Rebalance --&gt; StopConsumption[Consumers Stop Consumption]
+StopConsumption --&gt; RevokeAssignments[Revoke Current Assignments]
+RevokeAssignments --&gt; JoinGroup[Consumers Send JoinGroup Request]
+JoinGroup --&gt; ElectLeader[Group Coordinator Elects Leader]
+ElectLeader --&gt; LeaderAssigns[Leader Proposes Partition Assignments]
+LeaderAssigns --&gt; SyncGroup[Leader Sends SyncGroup Request]
+SyncGroup --&gt; DistributeAssignments[GC Distributes Assignments]
+DistributeAssignments --&gt; StartConsumption[Consumers Start Consumption]
+
+style C1 fill:#f9f,stroke:#333,stroke-width:2px
+style C2 fill:#f9f,stroke:#333,stroke-width:2px
+style C3 fill:#f9f,stroke:#333,stroke-width:2px
+style GC fill:#ccf,stroke:#333,stroke-width:2px
+style Rebalance fill:#afa,stroke:#333,stroke-width:2px
+style StopConsumption fill:#faa,stroke:#333,stroke-width:2px
+style RevokeAssignments fill:#faa,stroke:#333,stroke-width:2px
+style JoinGroup fill:#bbf,stroke:#333,stroke-width:2px
+style ElectLeader fill:#bbf,stroke:#333,stroke-width:2px
+style LeaderAssigns fill:#bbf,stroke:#333,stroke-width:2px
+style SyncGroup fill:#bbf,stroke:#333,stroke-width:2px
+style DistributeAssignments fill:#bbf,stroke:#333,stroke-width:2px
+style StartConsumption fill:#afa,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“Walk me through the steps of a Kafka consumer rebalance, explaining what happens at each stage.”</em></p>
+<p><strong>Answer:</strong> “A Kafka consumer rebalance is initiated by events like a new consumer joining, an existing consumer leaving, or a session timeout. During a rebalance, all consumers in the group temporarily stop consuming messages and revoke their current partition assignments. They then send <code>JoinGroup</code> requests to the Group Coordinator. The coordinator elects a group leader, which proposes new partition assignments. These assignments are then distributed to all consumers via <code>SyncGroup</code> requests, after which consumers can start consuming from their newly assigned partitions.”</p>
+<h3 id="Consumer-Group-Coordination"><a href="#Consumer-Group-Coordination" class="headerlink" title="Consumer Group Coordination"></a>Consumer Group Coordination</h3><p>This diagram illustrates how consumers within a group coordinate with each other and with the Kafka brokers to consume messages from a topic, emphasizing the distributed nature of consumption.</p>
+<pre>
+<code class="mermaid">
+graph TD
+subgraph Kafka Cluster
+    B1[Broker 1]
+    B2[Broker 2]
+    B3[Broker 3]
+end
+
+subgraph Topic: MyTopic
+    P1(Partition 0)
+    P2(Partition 1)
+    P3(Partition 2)
+    P4(Partition 3)
+end
+
+subgraph Consumer Group: MyGroup
+    C1[Consumer A]
+    C2[Consumer B]
+    C3[Consumer C]
+end
+
+B1 -- Hosts --&gt; P1
+B1 -- Hosts --&gt; P2
+B2 -- Hosts --&gt; P3
+B3 -- Hosts --&gt; P4
+
+C1 -- Consumes --&gt; P1
+C1 -- Consumes --&gt; P3
+C2 -- Consumes --&gt; P2
+C3 -- Consumes --&gt; P4
+
+C1 -- Commits Offsets --&gt; B1
+C2 -- Commits Offsets --&gt; B1
+C3 -- Commits Offsets --&gt; B1
+
+C1 -- Heartbeats --&gt; B1
+C2 -- Heartbeats --&gt; B1
+C3 -- Heartbeats --&gt; B1
+
+B1 -- Group Coordinator --&gt; C1
+B1 -- Group Coordinator --&gt; C2
+B1 -- Group Coordinator --&gt; C3
+
+style B1 fill:#f9f,stroke:#333,stroke-width:2px
+style B2 fill:#f9f,stroke:#333,stroke-width:2px
+style B3 fill:#f9f,stroke:#333,stroke-width:2px
+style P1 fill:#ccf,stroke:#333,stroke-width:2px
+style P2 fill:#ccf,stroke:#333,stroke-width:2px
+style P3 fill:#ccf,stroke:#333,stroke-width:2px
+style P4 fill:#ccf,stroke:#333,stroke-width:2px
+style C1 fill:#afa,stroke:#333,stroke-width:2px
+style C2 fill:#afa,stroke:#333,stroke-width:2px
+style C3 fill:#afa,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Explanation:</strong></p>
+<ul>
+<li>The Kafka Cluster is composed of multiple brokers (Broker 1, 2, 3), which are responsible for storing and serving messages.</li>
+<li>A topic, <code>MyTopic</code>, is logically divided into several partitions (Partition 0, 1, 2, 3). These partitions are distributed across the brokers.</li>
+<li>The <code>MyGroup</code> consumer group consists of multiple consumer instances (Consumer A, B, C).</li>
+<li>Kafka’s consumer group protocol ensures that each partition is assigned to exactly one consumer within the group. For instance, Consumer A consumes from Partition 0 and Partition 2, Consumer B from Partition 1, and Consumer C from Partition 3.</li>
+<li>Consumers send periodic heartbeats to the Group Coordinator (typically residing on one of the brokers, e.g., Broker 1) to signal their liveness and participation in the group.</li>
+<li>Consumers commit their processed offsets to the Group Coordinator, allowing Kafka to track their progress and enable seamless recovery in case of failures or rebalances.</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“How do consumers within a group coordinate to process messages without duplication, and what ensures message order?”</em></p>
+<p><strong>Answer:</strong> “Consumers within a group coordinate through the Group Coordinator, which assigns each partition to only one consumer at a time. This ‘one partition, one consumer’ rule within a group prevents message duplication. Message order is guaranteed only within a single partition; Kafka does not guarantee global message order across all partitions of a topic.”</p>
+<h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><p>Understanding the nuances between standalone Kafka consumers and consumer groups is fundamental for designing efficient and resilient data streaming applications. While standalone consumers offer precise control for specific use cases, consumer groups are the cornerstone of scalable and fault-tolerant message processing in Kafka, enabling parallel consumption and graceful handling of failures through the rebalancing mechanism. Adhering to best practices, especially concerning partition management, offset commitment, and rebalance handling, is crucial for maximizing the benefits of Kafka in production environments. The integrated interview insights throughout this document aim to provide a comprehensive understanding for both practical application and technical discussions.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3674,301 +3998,6 @@ style Sync2 fill:#e1f5fe
 <li><strong>Observe lock contention</strong>: Monitor <code>INFORMATION_SCHEMA.INNODB_LOCKS</code> during concurrent operations</li>
 </ol>
 <p>Understanding these mechanisms will help you design more robust database applications and troubleshoot concurrency issues effectively.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/07/MySQL-MVCC-Detailed-Guide/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/07/MySQL-MVCC-Detailed-Guide/" class="post-title-link" itemprop="url">MySQL MVCC Detailed Guide</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-06-07 20:12:50" itemprop="dateCreated datePublished" datetime="2025-06-07T20:12:50+08:00">2025-06-07</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-06-08 21:36:30" itemprop="dateModified" datetime="2025-06-08T21:36:30+08:00">2025-06-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="What-is-MVCC-Multi-Version-Concurrency-Control"><a href="#What-is-MVCC-Multi-Version-Concurrency-Control" class="headerlink" title="What is MVCC(Multi-Version Concurrency Control)?"></a>What is MVCC(Multi-Version Concurrency Control)?</h1><p>MVCC is a concurrency control method that allows multiple transactions to access the same data simultaneously without blocking each other. Instead of using locks for reads, MVCC maintains multiple versions of data and shows each transaction a consistent snapshot based on when the transaction started.</p>
-<h1 id="Why-MVCC-Matters"><a href="#Why-MVCC-Matters" class="headerlink" title="Why MVCC Matters"></a>Why MVCC Matters</h1><h2 id="Traditional-Locking-Problems"><a href="#Traditional-Locking-Problems" class="headerlink" title="Traditional Locking Problems"></a>Traditional Locking Problems</h2><p>Without MVCC, databases face the <strong>readers-writers problem</strong>:</p>
-<ul>
-<li><strong>Readers block writers</strong>: Transactions reading data prevent others from modifying it</li>
-<li><strong>Writers block readers</strong>: Transactions modifying data prevent others from reading it</li>
-<li><strong>Performance bottleneck</strong>: High contention leads to poor concurrency</li>
-</ul>
-<h2 id="MVCC-Benefits"><a href="#MVCC-Benefits" class="headerlink" title="MVCC Benefits"></a>MVCC Benefits</h2><ul>
-<li><strong>Non-blocking reads</strong>: Readers never block writers and vice versa</li>
-<li><strong>Consistent snapshots</strong>: Each transaction sees a consistent view of data</li>
-<li><strong>Higher concurrency</strong>: Multiple transactions can work simultaneously</li>
-<li><strong>ACID compliance</strong>: Maintains isolation without sacrificing performance</li>
-</ul>
-<h1 id="Core-MVCC-Components"><a href="#Core-MVCC-Components" class="headerlink" title="Core MVCC Components"></a>Core MVCC Components</h1><h2 id="Hidden-Columns-in-InnoDB"><a href="#Hidden-Columns-in-InnoDB" class="headerlink" title="Hidden Columns in InnoDB"></a>Hidden Columns in InnoDB</h2><p>Every InnoDB table row contains hidden system columns:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">| User Data | DB_TRX_ID | DB_ROLL_PTR | DB_ROW_ID |</span><br><span class="line">|-----------|-----------|-------------|-----------|</span><br><span class="line">| name, age | 12345     | 0x8A2B...   | 67890     |</span><br></pre></td></tr></table></figure>
-
-<h3 id="DB-TRX-ID-Transaction-ID"><a href="#DB-TRX-ID-Transaction-ID" class="headerlink" title="DB_TRX_ID (Transaction ID)"></a>DB_TRX_ID (Transaction ID)</h3><ul>
-<li><strong>Size</strong>: 6 bytes</li>
-<li><strong>Purpose</strong>: Identifies which transaction last modified this row</li>
-<li><strong>Behavior</strong>: Updated every time a row is inserted or updated</li>
-<li><strong>Uniqueness</strong>: Globally unique, monotonically increasing</li>
-</ul>
-<h3 id="DB-ROLL-PTR-Rollback-Pointer"><a href="#DB-ROLL-PTR-Rollback-Pointer" class="headerlink" title="DB_ROLL_PTR (Rollback Pointer)"></a>DB_ROLL_PTR (Rollback Pointer)</h3><ul>
-<li><strong>Size</strong>: 7 bytes</li>
-<li><strong>Purpose</strong>: Points to the undo log record for this row’s previous version</li>
-<li><strong>Structure</strong>: Contains undo log segment ID and offset</li>
-<li><strong>Function</strong>: Forms the backbone of the version chain</li>
-</ul>
-<h3 id="DB-ROW-ID-Row-ID"><a href="#DB-ROW-ID-Row-ID" class="headerlink" title="DB_ROW_ID (Row ID)"></a>DB_ROW_ID (Row ID)</h3><ul>
-<li><strong>Size</strong>: 6 bytes</li>
-<li><strong>Purpose</strong>: Auto-incrementing row identifier</li>
-<li><strong>When used</strong>: Only when table has no primary key or unique index</li>
-<li><strong>Note</strong>: Not directly related to MVCC, but part of InnoDB’s row format</li>
-</ul>
-<h2 id="Version-Chains-and-Undo-Log"><a href="#Version-Chains-and-Undo-Log" class="headerlink" title="Version Chains and Undo Log"></a>Version Chains and Undo Log</h2><h3 id="Version-Chain-Structure"><a href="#Version-Chain-Structure" class="headerlink" title="Version Chain Structure"></a>Version Chain Structure</h3><p>When a row is modified multiple times, MVCC creates a version chain:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Current Row (TRX_ID: 103)</span><br><span class="line">    ↓ (DB_ROLL_PTR)</span><br><span class="line">Version 2 (TRX_ID: 102) ← Undo Log Entry</span><br><span class="line">    ↓ (roll_ptr)</span><br><span class="line">Version 1 (TRX_ID: 101) ← Undo Log Entry</span><br><span class="line">    ↓ (roll_ptr)</span><br><span class="line">Original (TRX_ID: 100) ← Undo Log Entry</span><br></pre></td></tr></table></figure>
-
-<h3 id="Detailed-Example"><a href="#Detailed-Example" class="headerlink" title="Detailed Example"></a>Detailed Example</h3><p>Let’s trace a row through multiple modifications:</p>
-<h4 id="Initial-State"><a href="#Initial-State" class="headerlink" title="Initial State"></a>Initial State</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 100 inserts row</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> users (name, age) <span class="keyword">VALUES</span> (<span class="string">&#x27;Alice&#x27;</span>, <span class="number">25</span>);</span><br></pre></td></tr></table></figure>
-
-<p><strong>Row State:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| name: Alice | age: 25 | DB_TRX_ID: 100 | DB_ROLL_PTR: NULL |</span><br></pre></td></tr></table></figure>
-
-<h4 id="First-Update"><a href="#First-Update" class="headerlink" title="First Update"></a>First Update</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 101 updates age</span></span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> age <span class="operator">=</span> <span class="number">26</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>After Update:</strong></p>
-<ul>
-<li><strong>Current row</strong>: <code>| name: Alice | age: 26 | DB_TRX_ID: 101 | DB_ROLL_PTR: 0x8A2B |</code></li>
-<li><strong>Undo log entry</strong>: <code>| operation: UPDATE | old_age: 25 | roll_ptr: NULL |</code></li>
-</ul>
-<h4 id="Second-Update"><a href="#Second-Update" class="headerlink" title="Second Update"></a>Second Update</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 102 updates name</span></span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> name <span class="operator">=</span> <span class="string">&#x27;Alicia&#x27;</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>After Update:</strong></p>
-<ul>
-<li><strong>Current row</strong>: <code>| name: Alicia | age: 26 | DB_TRX_ID: 102 | DB_ROLL_PTR: 0x8C3D |</code></li>
-<li><strong>New undo entry</strong>: <code>| operation: UPDATE | old_name: Alice | roll_ptr: 0x8A2B |</code></li>
-<li><strong>Previous undo entry</strong>: <code>| operation: UPDATE | old_age: 25 | roll_ptr: NULL |</code></li>
-</ul>
-<h3 id="Undo-Log-Types"><a href="#Undo-Log-Types" class="headerlink" title="Undo Log Types"></a>Undo Log Types</h3><h4 id="INSERT-Undo-Log"><a href="#INSERT-Undo-Log" class="headerlink" title="INSERT Undo Log"></a>INSERT Undo Log</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| Type: INSERT | Table ID | Primary Key Values | Transaction ID |</span><br></pre></td></tr></table></figure>
-<ul>
-<li><strong>Purpose</strong>: Rolling back INSERT operations</li>
-<li><strong>Content</strong>: Only primary key needed (for deletion)</li>
-<li><strong>Cleanup</strong>: Purged immediately after transaction commits</li>
-</ul>
-<h4 id="UPDATE-Undo-Log"><a href="#UPDATE-Undo-Log" class="headerlink" title="UPDATE Undo Log"></a>UPDATE Undo Log</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| Type: UPDATE | Table ID | Primary Key | Changed Columns | Old Values | roll_ptr |</span><br></pre></td></tr></table></figure>
-<ul>
-<li><strong>Purpose</strong>: Rolling back UPDATE operations and MVCC reads</li>
-<li><strong>Content</strong>: Original values of modified columns</li>
-<li><strong>Cleanup</strong>: Purged when no active transaction needs this version</li>
-</ul>
-<h4 id="DELETE-Undo-Log"><a href="#DELETE-Undo-Log" class="headerlink" title="DELETE Undo Log"></a>DELETE Undo Log</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| Type: DELETE | Table ID | Complete Row Data | roll_ptr |</span><br></pre></td></tr></table></figure>
-<ul>
-<li><strong>Purpose</strong>: Rolling back DELETE operations</li>
-<li><strong>Content</strong>: Entire row data</li>
-<li><strong>Behavior</strong>: Row is marked as deleted but not physically removed</li>
-</ul>
-<h2 id="Read-View-Mechanism"><a href="#Read-View-Mechanism" class="headerlink" title="Read View Mechanism"></a>Read View Mechanism</h2><h3 id="Read-View-Structure"><a href="#Read-View-Structure" class="headerlink" title="Read View Structure"></a>Read View Structure</h3><p>A Read View is a snapshot of active transactions at a specific point in time:</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">ReadView</span> &#123;</span><br><span class="line">    <span class="type">trx_id_t</span>    m_low_limit_id;     <span class="comment">// Highest TRX_ID + 1 at creation time</span></span><br><span class="line">    <span class="type">trx_id_t</span>    m_up_limit_id;      <span class="comment">// Lowest active TRX_ID at creation time</span></span><br><span class="line">    <span class="type">trx_list_t</span>  m_ids;             <span class="comment">// List of active transaction IDs</span></span><br><span class="line">    <span class="type">trx_id_t</span>    m_creator_trx_id;   <span class="comment">// Transaction ID that created this view</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Read-View-Fields-Explained"><a href="#Read-View-Fields-Explained" class="headerlink" title="Read View Fields Explained"></a>Read View Fields Explained</h3><h4 id="m-low-limit-id-High-Water-Mark"><a href="#m-low-limit-id-High-Water-Mark" class="headerlink" title="m_low_limit_id (High Water Mark)"></a>m_low_limit_id (High Water Mark)</h4><ul>
-<li><strong>Definition</strong>: Next transaction ID to be assigned</li>
-<li><strong>Rule</strong>: Any TRX_ID ≥ m_low_limit_id is invisible (not yet started)</li>
-</ul>
-<h4 id="m-up-limit-id-Low-Water-Mark"><a href="#m-up-limit-id-Low-Water-Mark" class="headerlink" title="m_up_limit_id (Low Water Mark)"></a>m_up_limit_id (Low Water Mark)</h4><ul>
-<li><strong>Definition</strong>: Smallest active transaction ID when Read View was created</li>
-<li><strong>Rule</strong>: Any TRX_ID &lt; m_up_limit_id is visible (committed before snapshot)</li>
-</ul>
-<h4 id="m-ids-Active-Transaction-List"><a href="#m-ids-Active-Transaction-List" class="headerlink" title="m_ids (Active Transaction List)"></a>m_ids (Active Transaction List)</h4><ul>
-<li><strong>Definition</strong>: List of all active (uncommitted) transaction IDs</li>
-<li><strong>Rule</strong>: Any TRX_ID in this list is invisible (uncommitted)</li>
-</ul>
-<h4 id="m-creator-trx-id"><a href="#m-creator-trx-id" class="headerlink" title="m_creator_trx_id"></a>m_creator_trx_id</h4><ul>
-<li><strong>Definition</strong>: ID of the transaction that created this Read View</li>
-<li><strong>Rule</strong>: Changes made by this transaction are always visible to itself</li>
-</ul>
-<h3 id="Visibility-Algorithm"><a href="#Visibility-Algorithm" class="headerlink" title="Visibility Algorithm"></a>Visibility Algorithm</h3><p>For each row version, MVCC determines visibility using this logic:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">is_visible</span>(<span class="params">row_trx_id, read_view</span>):</span><br><span class="line">    <span class="comment"># Rule 1: Own changes are always visible</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id == read_view.m_creator_trx_id:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Rule 2: Future transactions are invisible</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id &gt;= read_view.m_low_limit_id:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Rule 3: Very old transactions are visible</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id &lt; read_view.m_up_limit_id:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Rule 4: Check if transaction was active</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id <span class="keyword">in</span> read_view.m_ids:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span>  <span class="comment"># Was active, so invisible</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span>   <span class="comment"># Was committed, so visible</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Detailed-Visibility-Example"><a href="#Detailed-Visibility-Example" class="headerlink" title="Detailed Visibility Example"></a>Detailed Visibility Example</h3><p><strong>Scenario Setup:</strong></p>
-<ul>
-<li>Active transactions: 100, 102, 105</li>
-<li>Next TRX_ID to assign: 106</li>
-<li>Current transaction: 103 (reading data)</li>
-</ul>
-<p><strong>Read View for Transaction 103:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">m_creator_trx_id: 103</span><br><span class="line">m_up_limit_id: 100    (lowest active)</span><br><span class="line">m_low_limit_id: 106   (next to assign)</span><br><span class="line">m_ids: [100, 102, 105] (active transactions)</span><br></pre></td></tr></table></figure>
-
-<p><strong>Visibility Tests:</strong></p>
-<ul>
-<li><strong>TRX_ID 99</strong>: Visible (&lt; m_up_limit_id, committed before snapshot)</li>
-<li><strong>TRX_ID 100</strong>: Invisible (in m_ids, still active)</li>
-<li><strong>TRX_ID 101</strong>: Visible (not in m_ids, committed)</li>
-<li><strong>TRX_ID 102</strong>: Invisible (in m_ids, still active)</li>
-<li><strong>TRX_ID 103</strong>: Visible (own transaction)</li>
-<li><strong>TRX_ID 104</strong>: Visible (not in m_ids, committed)</li>
-<li><strong>TRX_ID 105</strong>: Invisible (in m_ids, still active)</li>
-<li><strong>TRX_ID 106</strong>: Invisible (≥ m_low_limit_id, future transaction)</li>
-</ul>
-<h2 id="Isolation-Levels-and-Read-Views"><a href="#Isolation-Levels-and-Read-Views" class="headerlink" title="Isolation Levels and Read Views"></a>Isolation Levels and Read Views</h2><h3 id="READ-COMMITTED"><a href="#READ-COMMITTED" class="headerlink" title="READ COMMITTED"></a>READ COMMITTED</h3><ul>
-<li><strong>Read View Creation</strong>: New Read View for <strong>every</strong> SELECT statement</li>
-<li><strong>Behavior</strong>: Sees all changes committed before each individual statement</li>
-<li><strong>Result</strong>: Can see different data within the same transaction (non-repeatable reads)</li>
-</ul>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction A</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Returns 25</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction B commits: UPDATE users SET age = 26 WHERE name = &#x27;Alice&#x27;;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Returns 26 (different result!)</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="REPEATABLE-READ"><a href="#REPEATABLE-READ" class="headerlink" title="REPEATABLE READ"></a>REPEATABLE READ</h3><ul>
-<li><strong>Read View Creation</strong>: Single Read View at <strong>first</strong> SELECT statement</li>
-<li><strong>Behavior</strong>: Consistent snapshot throughout the entire transaction</li>
-<li><strong>Result</strong>: Same data for all reads within the transaction</li>
-</ul>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction A</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Returns 25, creates Read View</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction B commits: UPDATE users SET age = 26 WHERE name = &#x27;Alice&#x27;;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Still returns 25 (consistent!)</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<h2 id="MVCC-Read-Process-Step-by-Step"><a href="#MVCC-Read-Process-Step-by-Step" class="headerlink" title="MVCC Read Process (Step by Step)"></a>MVCC Read Process (Step by Step)</h2><h3 id="When-a-SELECT-Statement-Executes"><a href="#When-a-SELECT-Statement-Executes" class="headerlink" title="When a SELECT Statement Executes:"></a>When a SELECT Statement Executes:</h3><h4 id="Step-1-Create-or-Reuse-Read-View"><a href="#Step-1-Create-or-Reuse-Read-View" class="headerlink" title="Step 1: Create or Reuse Read View"></a>Step 1: Create or Reuse Read View</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> name, age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> user_id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-<ul>
-<li><strong>READ COMMITTED</strong>: Create new Read View</li>
-<li><strong>REPEATABLE READ</strong>: Use existing Read View or create if first read</li>
-</ul>
-<h4 id="Step-2-Locate-Current-Row-Version"><a href="#Step-2-Locate-Current-Row-Version" class="headerlink" title="Step 2: Locate Current Row Version"></a>Step 2: Locate Current Row Version</h4><ul>
-<li>Use index or table scan to find the row</li>
-<li>Current row has latest TRX_ID and ROLL_PTR</li>
-</ul>
-<h4 id="Step-3-Apply-Visibility-Rules"><a href="#Step-3-Apply-Visibility-Rules" class="headerlink" title="Step 3: Apply Visibility Rules"></a>Step 3: Apply Visibility Rules</h4><ul>
-<li>Check if current version is visible using Read View</li>
-<li>If visible, return this version</li>
-<li>If not visible, follow the version chain</li>
-</ul>
-<h4 id="Step-4-Traverse-Version-Chain"><a href="#Step-4-Traverse-Version-Chain" class="headerlink" title="Step 4: Traverse Version Chain"></a>Step 4: Traverse Version Chain</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Current Row (TRX_ID: 105) → Not visible</span><br><span class="line">    ↓ (follow ROLL_PTR)</span><br><span class="line">Version in Undo (TRX_ID: 103) → Not visible</span><br><span class="line">    ↓ (follow roll_ptr)</span><br><span class="line">Version in Undo (TRX_ID: 101) → Visible! Return this version</span><br></pre></td></tr></table></figure>
-
-<h4 id="Step-5-Return-Appropriate-Version"><a href="#Step-5-Return-Appropriate-Version" class="headerlink" title="Step 5: Return Appropriate Version"></a>Step 5: Return Appropriate Version</h4><ul>
-<li>Return the first visible version found</li>
-<li>If no visible version exists, row doesn’t exist for this transaction</li>
-</ul>
-<h2 id="MVCC-Write-Operations"><a href="#MVCC-Write-Operations" class="headerlink" title="MVCC Write Operations"></a>MVCC Write Operations</h2><h3 id="INSERT-Operations"><a href="#INSERT-Operations" class="headerlink" title="INSERT Operations"></a>INSERT Operations</h3><ol>
-<li><strong>Create new row</strong> with current transaction’s TRX_ID</li>
-<li><strong>No undo log needed</strong> for MVCC (only for rollback)</li>
-<li><strong>Row immediately visible</strong> to the inserting transaction</li>
-<li><strong>Invisible to others</strong> until transaction commits</li>
-</ol>
-<h3 id="UPDATE-Operations"><a href="#UPDATE-Operations" class="headerlink" title="UPDATE Operations"></a>UPDATE Operations</h3><ol>
-<li><strong>Create undo log entry</strong> with original values</li>
-<li><strong>Update current row</strong> with new values and TRX_ID</li>
-<li><strong>Link to previous version</strong> via ROLL_PTR</li>
-<li><strong>Original version remains</strong> accessible via undo log</li>
-</ol>
-<h3 id="DELETE-Operations"><a href="#DELETE-Operations" class="headerlink" title="DELETE Operations"></a>DELETE Operations</h3><ol>
-<li><strong>Mark row as deleted</strong> (set delete flag)</li>
-<li><strong>Create undo log entry</strong> with complete row data</li>
-<li><strong>Row remains physically present</strong> but marked deleted</li>
-<li><strong>Appears deleted to new transactions</strong> but still visible to older ones</li>
-</ol>
-<h2 id="Purge-Process"><a href="#Purge-Process" class="headerlink" title="Purge Process"></a>Purge Process</h2><h3 id="Why-Purge-is-Needed"><a href="#Why-Purge-is-Needed" class="headerlink" title="Why Purge is Needed"></a>Why Purge is Needed</h3><ul>
-<li>Undo logs grow indefinitely without cleanup</li>
-<li>Old versions become unnecessary when no transaction needs them</li>
-<li>Storage space must be reclaimed</li>
-</ul>
-<h3 id="Purge-Thread-Operation"><a href="#Purge-Thread-Operation" class="headerlink" title="Purge Thread Operation"></a>Purge Thread Operation</h3><ol>
-<li><strong>Identify purgeable versions</strong>: No active transaction needs them</li>
-<li><strong>Remove undo log entries</strong>: Free up undo tablespace</li>
-<li><strong>Physical row deletion</strong>: Remove rows marked for deletion</li>
-<li><strong>Index cleanup</strong>: Remove deleted entries from secondary indexes</li>
-</ol>
-<h3 id="Purge-Lag-Issues"><a href="#Purge-Lag-Issues" class="headerlink" title="Purge Lag Issues"></a>Purge Lag Issues</h3><p>When purge falls behind:</p>
-<ul>
-<li><strong>Undo tablespace growth</strong>: Disk space consumption increases</li>
-<li><strong>Version chain length</strong>: Longer chains slow down reads</li>
-<li><strong>Memory pressure</strong>: More versions kept in buffer pool</li>
-</ul>
-<h2 id="Performance-Implications"><a href="#Performance-Implications" class="headerlink" title="Performance Implications"></a>Performance Implications</h2><h3 id="MVCC-Benefits-1"><a href="#MVCC-Benefits-1" class="headerlink" title="MVCC Benefits"></a>MVCC Benefits</h3><ul>
-<li><strong>High concurrency</strong>: No read-write blocking</li>
-<li><strong>Consistent reads</strong>: Snapshot isolation without locks</li>
-<li><strong>Predictable performance</strong>: No lock contention delays</li>
-</ul>
-<h3 id="MVCC-Costs"><a href="#MVCC-Costs" class="headerlink" title="MVCC Costs"></a>MVCC Costs</h3><ul>
-<li><strong>Storage overhead</strong>: Multiple versions consume space</li>
-<li><strong>Version traversal</strong>: Long chains increase read latency</li>
-<li><strong>Purge overhead</strong>: Background cleanup uses resources</li>
-<li><strong>Undo log I&#x2F;O</strong>: Additional disk operations for version chains</li>
-</ul>
-<h3 id="Optimization-Strategies"><a href="#Optimization-Strategies" class="headerlink" title="Optimization Strategies"></a>Optimization Strategies</h3><ol>
-<li><strong>Monitor purge lag</strong>: Ensure purge keeps up with modifications</li>
-<li><strong>Tune undo tablespace</strong>: Size appropriately for workload</li>
-<li><strong>Minimize long transactions</strong>: Reduce version chain lengths</li>
-<li><strong>Index optimization</strong>: Reduce version traversal overhead</li>
-</ol>
-<h2 id="Common-MVCC-Scenarios"><a href="#Common-MVCC-Scenarios" class="headerlink" title="Common MVCC Scenarios"></a>Common MVCC Scenarios</h2><h3 id="Phantom-Reads-Prevention"><a href="#Phantom-Reads-Prevention" class="headerlink" title="Phantom Reads Prevention"></a>Phantom Reads Prevention</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 1 (REPEATABLE READ)</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> amount <span class="operator">&gt;</span> <span class="number">1000</span>; <span class="comment">-- Returns 5</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction 2 inserts new row</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> orders (amount) <span class="keyword">VALUES</span> (<span class="number">1500</span>);</span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction 1 continues</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> amount <span class="operator">&gt;</span> <span class="number">1000</span>; <span class="comment">-- Still returns 5</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Consistent-Backup"><a href="#Consistent-Backup" class="headerlink" title="Consistent Backup"></a>Consistent Backup</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Long-running backup transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION <span class="keyword">WITH</span> CONSISTENT SNAPSHOT;</span><br><span class="line"><span class="comment">-- Takes hours to complete, but sees consistent point-in-time data</span></span><br><span class="line">mysqldump <span class="comment">--single-transaction ...</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Read-Write-Workload"><a href="#Read-Write-Workload" class="headerlink" title="Read-Write Workload"></a>Read-Write Workload</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Reader transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> accounts <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Non-blocking read</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Writer transaction (concurrent)</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Non-blocking write</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Reader continues with original snapshot</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> accounts <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Still sees original balance</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<p>This comprehensive understanding of MVCC explains how MySQL achieves high concurrency while maintaining data consistency, making it essential knowledge for database administrators and developers working with high-performance applications.</p>
 
       
     </div>

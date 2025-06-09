@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Introduction to Kafka ConsumersKafka consumers are applications designed to read and process data from Kafka topics. They are the receiving end of the Kafka ecosystem, complementing Kafka producers wh">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka Consumers: Consumer Groups vs. Standalone Consumers">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Introduction to Kafka ConsumersKafka consumers are applications designed to read and process data from Kafka topics. They are the receiving end of the Kafka ecosystem, complementing Kafka producers wh">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-09T10:42:43.000Z">
+<meta property="article:modified_time" content="2025-06-09T10:47:57.518Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/","path":"2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/","title":"Kafka Consumers: Consumer Groups vs. Standalone Consumers"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kafka Consumers: Consumer Groups vs. Standalone Consumers | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction-to-Kafka-Consumers"><span class="nav-number">1.</span> <span class="nav-text">Introduction to Kafka Consumers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Standalone-Consumers"><span class="nav-number">2.</span> <span class="nav-text">Standalone Consumers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consumer-Groups"><span class="nav-number">3.</span> <span class="nav-text">Consumer Groups</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deep-Dive-into-Consumer-Rebalancing"><span class="nav-number">4.</span> <span class="nav-text">Deep Dive into Consumer Rebalancing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-for-Kafka-Consumer-Groups"><span class="nav-number">5.</span> <span class="nav-text">Best Practices for Kafka Consumer Groups</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Code-Showcase-Practical-Examples"><span class="nav-number">6.</span> <span class="nav-text">Code Showcase: Practical Examples</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Standalone-Consumer-Example-Python"><span class="nav-number">6.1.</span> <span class="nav-text">Standalone Consumer Example (Python)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Consumer-Group-Example-Python"><span class="nav-number">6.2.</span> <span class="nav-text">Consumer Group Example (Python)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consumer-Group-Rebalancing-Flowchart"><span class="nav-number">7.</span> <span class="nav-text">Consumer Group Rebalancing Flowchart</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consumer-Group-Coordination"><span class="nav-number">8.</span> <span class="nav-text">Consumer Group Coordination</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Conclusion"><span class="nav-number">9.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Kafka-Consumers-Consumer-Groups-vs-Standalone-Consumers/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kafka Consumers: Consumer Groups vs. Standalone Consumers | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kafka Consumers: Consumer Groups vs. Standalone Consumers
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 18:42:43 / Modified: 18:47:57" itemprop="dateCreated datePublished" datetime="2025-06-09T18:42:43+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Introduction-to-Kafka-Consumers"><a href="#Introduction-to-Kafka-Consumers" class="headerlink" title="Introduction to Kafka Consumers"></a>Introduction to Kafka Consumers</h3><p>Kafka consumers are applications designed to read and process data from Kafka topics. They are the receiving end of the Kafka ecosystem, complementing Kafka producers which send messages to topics.</p>
+<h3 id="Standalone-Consumers"><a href="#Standalone-Consumers" class="headerlink" title="Standalone Consumers"></a>Standalone Consumers</h3><p>A standalone consumer operates independently, without coordinating with other consumers. This means there is no concept of a consumer group, and it directly subscribes to specific partitions of a topic. Each standalone consumer is responsible for maintaining its own offset, which tracks the last message successfully processed from a given partition.</p>
+<p><strong>Use Cases and Interview Insight:</strong></p>
+<p>Standalone consumers are typically used in scenarios requiring fine-grained control over partition assignments or when a single consumer needs to process all messages from a specific topic without group coordination. Common applications include:</p>
+<ul>
+<li><strong>Debugging and Auditing:</strong> Quickly inspecting messages from a particular partition for troubleshooting or compliance checks.</li>
+<li><strong>Administrative Tasks:</strong> Performing one-off operations on a specific subset of data.</li>
+<li><strong>Specialized Data Processing:</strong> When a dedicated process needs to consume a fixed set of partitions and does not benefit from dynamic rebalancing.</li>
+</ul>
+<p><strong>Interview Question:</strong> <em>“When would you choose to use a standalone Kafka consumer over a consumer group?”</em></p>
+<p><strong>Answer:</strong> “A standalone consumer is ideal for simple applications where a single consumer needs to read all messages from a topic, or for administrative tasks like reading from a specific partition for debugging. It offers precise control over partition assignment and avoids the overhead of consumer group coordination and rebalancing.”</p>
+<h3 id="Consumer-Groups"><a href="#Consumer-Groups" class="headerlink" title="Consumer Groups"></a>Consumer Groups</h3><p>A consumer group is a fundamental concept in Kafka that enables scalable and fault-tolerant consumption of messages. It is a collection of consumers that cooperate to consume data from one or more topics. When multiple consumers subscribe to the same topic and belong to the same consumer group, Kafka ensures that each partition of that topic is consumed by exactly one consumer within that group at any given time. This design allows for parallel processing of messages and provides robust fault tolerance.</p>
+<p><strong>Key Characteristics of Consumer Groups:</strong></p>
+<ul>
+<li><p><strong>Parallelism:</strong> Consumer groups facilitate parallel message processing. By distributing partitions among multiple consumers, messages from different partitions can be processed concurrently, significantly increasing throughput.</p>
+</li>
+<li><p><strong>Fault Tolerance:</strong> If a consumer within a group fails or crashes, Kafka automatically detects this. The partitions previously assigned to the failed consumer are then redistributed among the remaining active consumers in the same group. This process, known as rebalancing, ensures continuous message consumption and high availability.</p>
+</li>
+<li><p><strong>Offset Management:</strong> Kafka meticulously tracks the offset (the position of the last consumed message) for each consumer group per partition. This mechanism is crucial for ensuring that messages are not reprocessed unnecessarily and allows consumers to resume consumption from where they left off after a restart or rebalance.</p>
+</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“Explain the concept of a consumer group in Kafka and elaborate on its importance.”</em></p>
+<p><strong>Answer:</strong> “A consumer group in Kafka is a logical grouping of consumers that collectively consume messages from one or more topics. Its importance lies in enabling scalable and fault-tolerant message consumption. By distributing partitions among multiple consumers, it allows for parallel processing, and through rebalancing, it gracefully handles consumer failures, ensuring continuous data flow.”</p>
+<h3 id="Deep-Dive-into-Consumer-Rebalancing"><a href="#Deep-Dive-into-Consumer-Rebalancing" class="headerlink" title="Deep Dive into Consumer Rebalancing"></a>Deep Dive into Consumer Rebalancing</h3><p>Consumer rebalancing is a crucial and often misunderstood mechanism in Kafka that underpins the high availability and fault tolerance of consumer groups. It is the dynamic process by which Kafka reassigns partitions among the active consumers within a group whenever there are changes in the group’s membership or the subscribed topics’ metadata.</p>
+<p><strong>Triggers for Rebalancing:</strong></p>
+<p>Rebalancing is not a constant process; it is triggered by specific events that necessitate a redistribution of partitions. These triggers include:</p>
+<ul>
+<li><p><strong>New Consumer Joins the Group:</strong> When a new consumer instance starts and attempts to join an existing consumer group, Kafka initiates a rebalance to allocate some partitions to the new member.</p>
+</li>
+<li><p><strong>Existing Consumer Leaves the Group (Graceful or Abrupt):</strong> If a consumer gracefully shuts down (e.g., application exit) or crashes unexpectedly, its assigned partitions must be reassigned to other active consumers in the group to maintain full consumption.</p>
+</li>
+<li><p><strong>Consumer Session Timeout:</strong> Consumers send periodic heartbeats to the Kafka broker acting as the Group Coordinator. If a consumer fails to send a heartbeat within a configured <code>session.timeout.ms</code> period, the broker considers it dead, and a rebalance is triggered to reassign its partitions.</p>
+</li>
+<li><p><strong>Topic Metadata Changes:</strong> Actions such as adding new partitions to a topic or, less commonly, deleting a topic, can also necessitate a rebalance to adjust partition assignments across the consumer group.</p>
+</li>
+</ul>
+<p><strong>The Rebalancing Process:</strong></p>
+<p>Understanding the steps involved in a rebalance is key to appreciating its complexity and impact:</p>
+<ol>
+<li><p><strong>Group Coordinator:</strong> Each consumer group is managed by a designated Kafka broker, known as the Group Coordinator. This coordinator is responsible for overseeing the group’s state, tracking active members, and orchestrating the rebalancing process.</p>
+</li>
+<li><p><strong>JoinGroup Request:</strong> When a consumer wants to join a group, it sends a <code>JoinGroup</code> request to its assigned Group Coordinator. The coordinator then collects <code>JoinGroup</code> requests from all members and, from these, elects one consumer to act as the <em>group leader</em> for the rebalance.</p>
+</li>
+<li><p><strong>SyncGroup Request:</strong> The elected group leader is responsible for determining the partition assignments for all consumers in the group. It gathers metadata about all members and their subscriptions, then proposes a partition assignment strategy. This proposed assignment is sent back to the Group Coordinator via a <code>SyncGroup</code> request.</p>
+</li>
+<li><p><strong>Partition Assignment Distribution:</strong> The Group Coordinator receives the leader’s proposed assignments and then distributes these assignments to all individual consumers within the group. Each consumer receives its specific set of assigned partitions and begins fetching messages from them.</p>
+</li>
+</ol>
+<p><strong>Impact of Rebalancing:</strong></p>
+<p>While essential for fault tolerance and scalability, rebalancing can have noticeable impacts on consumer applications:</p>
+<ul>
+<li><p><strong>Temporary Unavailability:</strong> During a rebalance, consumers temporarily stop processing messages. This pause in consumption lasts until the rebalance is complete and new partition assignments are finalized. For latency-sensitive applications, this temporary halt can be a concern.</p>
+</li>
+<li><p><strong>Increased Latency:</strong> The rebalancing process itself introduces latency. In large consumer groups or environments with frequent consumer churn, the cumulative latency from rebalances can become significant.</p>
+</li>
+<li><p><strong>Potential Message Reprocessing:</strong> If offsets are not committed correctly and promptly before a rebalance occurs, there is a risk that messages already processed by a consumer might be reprocessed by another consumer after the rebalance. This highlights the importance of robust offset management.</p>
+</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“How can you minimize the impact of consumer rebalancing on your Kafka applications?”</em></p>
+<p><strong>Answer:</strong> “To minimize rebalancing impact, it’s crucial to set appropriate <code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code> values to ensure timely detection of dead consumers without premature rebalances. Implementing graceful consumer shutdowns is also vital, allowing consumers to commit offsets and leave the group cleanly. Additionally, for certain use cases, Kafka’s static membership feature can be leveraged to reduce rebalances for known consumer instances.”</p>
+<p><strong>Interview Question:</strong> <em>“What is the role of the Group Coordinator in Kafka’s consumer group management?”</em></p>
+<p><strong>Answer:</strong> “The Group Coordinator is a critical Kafka broker responsible for managing the state of a consumer group. It tracks active members, handles consumer joins and leaves, and orchestrates the entire rebalancing process, ensuring partitions are correctly assigned and re-assigned among consumers.”</p>
+<h3 id="Best-Practices-for-Kafka-Consumer-Groups"><a href="#Best-Practices-for-Kafka-Consumer-Groups" class="headerlink" title="Best Practices for Kafka Consumer Groups"></a>Best Practices for Kafka Consumer Groups</h3><p>Adhering to best practices is essential for building robust, scalable, and efficient Kafka consumer applications. These practices help optimize performance, ensure data integrity, and minimize operational overhead.</p>
+<ol>
+<li><p><strong>Optimize Partition Count:</strong><br>The number of partitions in a topic directly influences the maximum parallelism achievable within a consumer group. A good rule of thumb is to have at least as many partitions as your maximum expected number of consumers in a group. However, having too many partitions can lead to increased overhead during rebalancing and higher resource consumption on brokers.</p>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“How does the number of partitions in a Kafka topic affect consumer group performance and scalability?”</em></p>
+<p><strong>Answer:</strong> “More partitions allow for greater parallelism, as each partition can be consumed independently by a consumer within the group. This enhances scalability. However, an excessive number of partitions can increase rebalancing overhead and resource utilization on brokers. The optimal number often aligns with the number of consumers, ideally with partitions being a multiple of consumers for even distribution.”</p>
+</li>
+<li><p><strong>Maintain Consumer Count Consistency:</strong><br>For optimal resource utilization and to avoid idle consumers, the number of active consumers in a group should ideally be less than or equal to the number of partitions. If there are more consumers than partitions, some consumers will remain idle, wasting resources.</p>
+</li>
+<li><p><strong>Use Unique <code>group.id</code> for Logical Applications:</strong><br>Always assign a unique <code>group.id</code> to each distinct logical application that consumes from a Kafka topic. This ensures that different applications can process the same topic’s messages independently without interfering with each other’s consumption progress or rebalancing cycles.</p>
+</li>
+<li><p><strong>Implement Robust Offset Commitment Strategies:</strong><br>Committing offsets correctly and regularly is paramount to prevent message loss or duplication. While auto-commit (<code>enable.auto.commit=true</code>) offers convenience, it might not be suitable for all scenarios as it commits offsets based on time intervals, not necessarily after successful message processing. Manual commit (<code>enable.auto.commit=false</code>) provides more control and guarantees.</p>
+<ul>
+<li><strong>Synchronous Commit:</strong> <code>consumer.commitSync()</code> ensures that the commit operation completes before the consumer proceeds. This provides strong guarantees but can block the consumer, impacting throughput.</li>
+<li><strong>Asynchronous Commit:</strong> <code>consumer.commitAsync()</code> allows the consumer to continue processing messages while the commit operation happens in the background. This offers higher throughput but requires careful handling of commit failures.</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“Discuss different offset commit strategies in Kafka and their implications regarding message delivery guarantees.”</em></p>
+<p><strong>Answer:</strong> “Kafka offers auto-commit and manual commit strategies. Auto-commit is simpler but can lead to message loss (if the consumer crashes before the auto-commit interval) or duplication (if messages are processed but not committed before a crash). Manual commit, either synchronous or asynchronous, provides more control. Synchronous commit offers stronger guarantees against data loss but can reduce throughput, while asynchronous commit improves throughput but requires custom error handling for commit failures to prevent potential message duplication.”</p>
+</li>
+<li><p><strong>Graceful Handling of Consumer Rebalancing:</strong><br>Design your consumers to gracefully handle rebalancing events. This includes:</p>
+<ul>
+<li><strong>Pre-Rebalance Hook:</strong> Implement a <code>ConsumerRebalanceListener</code> to commit offsets before partitions are revoked during a rebalance. This prevents reprocessing messages that were already processed but not yet committed.</li>
+<li><strong>Post-Rebalance Hook:</strong> Use the <code>ConsumerRebalanceListener</code> to react to new partition assignments, for example, by seeking to the last committed offset for the newly assigned partitions.</li>
+</ul>
+<p>Proper handling minimizes data loss and ensures a smooth transition during rebalances.</p>
+</li>
+<li><p><strong>Efficient Message Processing:</strong><br>Consumers should be designed to process messages as efficiently as possible. If message processing is slow, consumers may fall behind, leading to increased consumer lag. Strategies include:</p>
+<ul>
+<li><strong>Batch Processing:</strong> Process messages in batches rather than individually to reduce overhead.</li>
+<li><strong>Asynchronous Processing:</strong> Delegate message processing to a separate thread pool to avoid blocking the main consumer thread.</li>
+<li><strong>Optimizing Business Logic:</strong> Profile and optimize the actual business logic that processes the Kafka messages.</li>
+</ul>
+</li>
+<li><p><strong>Monitor Consumer Lag:</strong><br>Regularly monitoring consumer lag is critical for identifying performance bottlenecks and ensuring timely message processing. Consumer lag represents the difference between the latest message produced to a partition and the last message consumed by the consumer group from that partition. High or increasing lag indicates that consumers are not keeping up with the message production rate.</p>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“What is consumer lag in Kafka, and how do you monitor it? What does high consumer lag indicate?”</em></p>
+<p><strong>Answer:</strong> “Consumer lag is the difference between the latest offset written to a partition and the last offset committed by a consumer group for that partition. It indicates how far behind a consumer group is in processing messages. It can be monitored using Kafka’s built-in tools (like <code>kafka-consumer-groups.sh</code>), JMX metrics, or external monitoring systems. High consumer lag typically indicates that consumers are not processing messages fast enough, possibly due to slow processing logic, insufficient consumer instances, or network issues.”</p>
+</li>
+</ol>
+<h3 id="Code-Showcase-Practical-Examples"><a href="#Code-Showcase-Practical-Examples" class="headerlink" title="Code Showcase: Practical Examples"></a>Code Showcase: Practical Examples</h3><p>This section provides conceptual code examples to illustrate the differences between standalone consumers and consumers within a group. These examples are simplified for clarity and assume a basic Kafka setup. For production environments, consider using robust Kafka client libraries and error handling.</p>
+<h4 id="Standalone-Consumer-Example-Python"><a href="#Standalone-Consumer-Example-Python" class="headerlink" title="Standalone Consumer Example (Python)"></a>Standalone Consumer Example (Python)</h4><p>A standalone consumer is useful when you need precise control over partition assignments, or when you want a single consumer to process all messages from a specific topic without coordination with other consumers. This is often seen in administrative tools or specialized data processing pipelines.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> kafka <span class="keyword">import</span> KafkaConsumer</span><br><span class="line"><span class="keyword">from</span> kafka.structs <span class="keyword">import</span> TopicPartition</span><br><span class="line"></span><br><span class="line"><span class="comment"># Configuration for the standalone consumer</span></span><br><span class="line">bootstrap_servers = [<span class="string">&quot;localhost:9092&quot;</span>]</span><br><span class="line">topic_name = <span class="string">&quot;my_standalone_topic&quot;</span></span><br><span class="line">partition_to_consume = <span class="number">0</span> <span class="comment"># Consuming from a specific partition</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Create a KafkaConsumer instance</span></span><br><span class="line"><span class="comment"># Note: No group_id is specified for a standalone consumer</span></span><br><span class="line">consumer = KafkaConsumer(</span><br><span class="line">    bootstrap_servers=bootstrap_servers,</span><br><span class="line">    auto_offset_reset=<span class="string">&quot;earliest&quot;</span>, <span class="comment"># Start consuming from the beginning of the partition</span></span><br><span class="line">    enable_auto_commit=<span class="literal">False</span> <span class="comment"># Manual offset management</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Assign the consumer to a specific partition</span></span><br><span class="line">partition = TopicPartition(topic_name, partition_to_consume)</span><br><span class="line">consumer.assign([partition])</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Standalone consumer assigned to topic: <span class="subst">&#123;topic_name&#125;</span>, partition: <span class="subst">&#123;partition_to_consume&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">for</span> message <span class="keyword">in</span> consumer:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Received message: Partition=<span class="subst">&#123;message.partition&#125;</span>, Offset=<span class="subst">&#123;message.offset&#125;</span>, Value=<span class="subst">&#123;message.value.decode(<span class="string">&quot;utf-8&quot;</span>)&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="comment"># Manually commit the offset after processing</span></span><br><span class="line">        consumer.commit()</span><br><span class="line"><span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Stopping standalone consumer.&quot;</span>)</span><br><span class="line"><span class="keyword">finally</span>:</span><br><span class="line">    consumer.close()</span><br></pre></td></tr></table></figure>
+
+<p><strong>Explanation:</strong></p>
+<ul>
+<li>We explicitly do <em>not</em> provide a <code>group_id</code> to the <code>KafkaConsumer</code> constructor, which is the key differentiator for a standalone consumer.</li>
+<li>Instead of subscribing to a topic, we use <code>consumer.assign([partition])</code> to explicitly assign the consumer to a specific <code>TopicPartition</code>. This gives direct control over which partition the consumer reads from.</li>
+<li><code>enable_auto_commit=False</code> is set to allow for manual offset management. This is often preferred for standalone consumers to ensure exactly-once processing semantics or fine-grained control over commit points.</li>
+<li>The consumer commits its offset manually after processing each message, providing explicit control over consumption progress.</li>
+</ul>
+<h4 id="Consumer-Group-Example-Python"><a href="#Consumer-Group-Example-Python" class="headerlink" title="Consumer Group Example (Python)"></a>Consumer Group Example (Python)</h4><p>Consumer groups are the most common and recommended way to consume messages from Kafka, enabling parallel processing and fault tolerance. This example demonstrates how multiple consumers can work together within a group to process messages from a topic.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> kafka <span class="keyword">import</span> KafkaConsumer</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">consume_messages</span>(<span class="params">consumer_id, topic_name, group_id, bootstrap_servers</span>):</span><br><span class="line">    consumer = KafkaConsumer(</span><br><span class="line">        topic_name,</span><br><span class="line">        group_id=group_id,</span><br><span class="line">        bootstrap_servers=bootstrap_servers,</span><br><span class="line">        auto_offset_reset=<span class="string">&quot;earliest&quot;</span>, <span class="comment"># Start consuming from the beginning of the topic if no committed offset</span></span><br><span class="line">        enable_auto_commit=<span class="literal">True</span>, <span class="comment"># Auto-commit offsets periodically</span></span><br><span class="line">        auto_commit_interval_ms=<span class="number">1000</span> <span class="comment"># Commit every 1 second</span></span><br><span class="line">    )</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Consumer <span class="subst">&#123;consumer_id&#125;</span> in group <span class="subst">&#123;group_id&#125;</span> started.&quot;</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">for</span> message <span class="keyword">in</span> consumer:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Consumer <span class="subst">&#123;consumer_id&#125;</span> received: Partition=<span class="subst">&#123;message.partition&#125;</span>, Offset=<span class="subst">&#123;message.offset&#125;</span>, Value=<span class="subst">&#123;message.value.decode(<span class="string">&quot;utf-8&quot;</span>)&#125;</span>&quot;</span>)</span><br><span class="line">            time.sleep(<span class="number">0.1</span>) <span class="comment"># Simulate message processing time</span></span><br><span class="line">    <span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Consumer <span class="subst">&#123;consumer_id&#125;</span> stopping.&quot;</span>)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        consumer.close()</span><br><span class="line"></span><br><span class="line">bootstrap_servers = [<span class="string">&quot;localhost:9092&quot;</span>]</span><br><span class="line">topic_name = <span class="string">&quot;my_group_topic&quot;</span></span><br><span class="line">group_id = <span class="string">&quot;my_test_group&quot;</span></span><br><span class="line">num_consumers = <span class="number">3</span></span><br><span class="line"></span><br><span class="line">threads = []</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_consumers):</span><br><span class="line">    thread = threading.Thread(target=consume_messages, args=(i, topic_name, group_id, bootstrap_servers))</span><br><span class="line">    threads.append(thread)</span><br><span class="line">    thread.start()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Keep the main thread alive to allow consumers to run</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        time.sleep(<span class="number">1</span>)</span><br><span class="line"><span class="keyword">except</span> KeyboardInterrupt:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Main thread stopping.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> thread <span class="keyword">in</span> threads:</span><br><span class="line">    thread.join()</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;All consumers stopped.&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Explanation:</strong></p>
+<ul>
+<li>Each consumer instance is initialized with the same <code>group_id</code>. This common <code>group_id</code> is what makes them part of the same consumer group, enabling Kafka to coordinate their consumption.</li>
+<li><code>consumer.subscribe(topic_name)</code> is used to subscribe to the topic. Kafka automatically handles partition assignment and rebalancing within the group, abstracting away the complexities of partition management.</li>
+<li><code>enable_auto_commit=True</code> and <code>auto_commit_interval_ms</code> are set to allow Kafka to automatically commit offsets periodically. This simplifies offset management for many common use cases, though manual commit offers more control.</li>
+<li>Multiple consumer instances (simulated by threads in this example for demonstration) can run concurrently, with Kafka distributing partitions among them to achieve parallel processing.</li>
+</ul>
+<h3 id="Consumer-Group-Rebalancing-Flowchart"><a href="#Consumer-Group-Rebalancing-Flowchart" class="headerlink" title="Consumer Group Rebalancing Flowchart"></a>Consumer Group Rebalancing Flowchart</h3><p>This flowchart visually represents the typical process of consumer group rebalancing in Kafka. It highlights the interactions between consumers and the Group Coordinator during this dynamic process.</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+subgraph Consumer Group
+    C1[Consumer 1] -- Heartbeat --&gt; GC(Group Coordinator)
+    C2[Consumer 2] -- Heartbeat --&gt; GC
+    C3[Consumer 3] -- Heartbeat --&gt; GC
+end
+
+GC -- Assigns Partitions --&gt; C1
+GC -- Assigns Partitions --&gt; C2
+GC -- Assigns Partitions --&gt; C3
+
+%% Events that trigger rebalance
+subgraph Triggers
+    A[New Consumer Joins] --&gt; Rebalance(Rebalance Triggered)
+    B[Consumer Leaves&#x2F;Crashes] --&gt; Rebalance
+    D[Session Timeout] --&gt; Rebalance
+    E[Topic Metadata Change] --&gt; Rebalance
+end
+
+Rebalance --&gt; StopConsumption[Consumers Stop Consumption]
+StopConsumption --&gt; RevokeAssignments[Revoke Current Assignments]
+RevokeAssignments --&gt; JoinGroup[Consumers Send JoinGroup Request]
+JoinGroup --&gt; ElectLeader[Group Coordinator Elects Leader]
+ElectLeader --&gt; LeaderAssigns[Leader Proposes Partition Assignments]
+LeaderAssigns --&gt; SyncGroup[Leader Sends SyncGroup Request]
+SyncGroup --&gt; DistributeAssignments[GC Distributes Assignments]
+DistributeAssignments --&gt; StartConsumption[Consumers Start Consumption]
+
+style C1 fill:#f9f,stroke:#333,stroke-width:2px
+style C2 fill:#f9f,stroke:#333,stroke-width:2px
+style C3 fill:#f9f,stroke:#333,stroke-width:2px
+style GC fill:#ccf,stroke:#333,stroke-width:2px
+style Rebalance fill:#afa,stroke:#333,stroke-width:2px
+style StopConsumption fill:#faa,stroke:#333,stroke-width:2px
+style RevokeAssignments fill:#faa,stroke:#333,stroke-width:2px
+style JoinGroup fill:#bbf,stroke:#333,stroke-width:2px
+style ElectLeader fill:#bbf,stroke:#333,stroke-width:2px
+style LeaderAssigns fill:#bbf,stroke:#333,stroke-width:2px
+style SyncGroup fill:#bbf,stroke:#333,stroke-width:2px
+style DistributeAssignments fill:#bbf,stroke:#333,stroke-width:2px
+style StartConsumption fill:#afa,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“Walk me through the steps of a Kafka consumer rebalance, explaining what happens at each stage.”</em></p>
+<p><strong>Answer:</strong> “A Kafka consumer rebalance is initiated by events like a new consumer joining, an existing consumer leaving, or a session timeout. During a rebalance, all consumers in the group temporarily stop consuming messages and revoke their current partition assignments. They then send <code>JoinGroup</code> requests to the Group Coordinator. The coordinator elects a group leader, which proposes new partition assignments. These assignments are then distributed to all consumers via <code>SyncGroup</code> requests, after which consumers can start consuming from their newly assigned partitions.”</p>
+<h3 id="Consumer-Group-Coordination"><a href="#Consumer-Group-Coordination" class="headerlink" title="Consumer Group Coordination"></a>Consumer Group Coordination</h3><p>This diagram illustrates how consumers within a group coordinate with each other and with the Kafka brokers to consume messages from a topic, emphasizing the distributed nature of consumption.</p>
+<pre>
+<code class="mermaid">
+graph TD
+subgraph Kafka Cluster
+    B1[Broker 1]
+    B2[Broker 2]
+    B3[Broker 3]
+end
+
+subgraph Topic: MyTopic
+    P1(Partition 0)
+    P2(Partition 1)
+    P3(Partition 2)
+    P4(Partition 3)
+end
+
+subgraph Consumer Group: MyGroup
+    C1[Consumer A]
+    C2[Consumer B]
+    C3[Consumer C]
+end
+
+B1 -- Hosts --&gt; P1
+B1 -- Hosts --&gt; P2
+B2 -- Hosts --&gt; P3
+B3 -- Hosts --&gt; P4
+
+C1 -- Consumes --&gt; P1
+C1 -- Consumes --&gt; P3
+C2 -- Consumes --&gt; P2
+C3 -- Consumes --&gt; P4
+
+C1 -- Commits Offsets --&gt; B1
+C2 -- Commits Offsets --&gt; B1
+C3 -- Commits Offsets --&gt; B1
+
+C1 -- Heartbeats --&gt; B1
+C2 -- Heartbeats --&gt; B1
+C3 -- Heartbeats --&gt; B1
+
+B1 -- Group Coordinator --&gt; C1
+B1 -- Group Coordinator --&gt; C2
+B1 -- Group Coordinator --&gt; C3
+
+style B1 fill:#f9f,stroke:#333,stroke-width:2px
+style B2 fill:#f9f,stroke:#333,stroke-width:2px
+style B3 fill:#f9f,stroke:#333,stroke-width:2px
+style P1 fill:#ccf,stroke:#333,stroke-width:2px
+style P2 fill:#ccf,stroke:#333,stroke-width:2px
+style P3 fill:#ccf,stroke:#333,stroke-width:2px
+style P4 fill:#ccf,stroke:#333,stroke-width:2px
+style C1 fill:#afa,stroke:#333,stroke-width:2px
+style C2 fill:#afa,stroke:#333,stroke-width:2px
+style C3 fill:#afa,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Explanation:</strong></p>
+<ul>
+<li>The Kafka Cluster is composed of multiple brokers (Broker 1, 2, 3), which are responsible for storing and serving messages.</li>
+<li>A topic, <code>MyTopic</code>, is logically divided into several partitions (Partition 0, 1, 2, 3). These partitions are distributed across the brokers.</li>
+<li>The <code>MyGroup</code> consumer group consists of multiple consumer instances (Consumer A, B, C).</li>
+<li>Kafka’s consumer group protocol ensures that each partition is assigned to exactly one consumer within the group. For instance, Consumer A consumes from Partition 0 and Partition 2, Consumer B from Partition 1, and Consumer C from Partition 3.</li>
+<li>Consumers send periodic heartbeats to the Group Coordinator (typically residing on one of the brokers, e.g., Broker 1) to signal their liveness and participation in the group.</li>
+<li>Consumers commit their processed offsets to the Group Coordinator, allowing Kafka to track their progress and enable seamless recovery in case of failures or rebalances.</li>
+</ul>
+<p><strong>Interview Insight:</strong></p>
+<p><strong>Interview Question:</strong> <em>“How do consumers within a group coordinate to process messages without duplication, and what ensures message order?”</em></p>
+<p><strong>Answer:</strong> “Consumers within a group coordinate through the Group Coordinator, which assigns each partition to only one consumer at a time. This ‘one partition, one consumer’ rule within a group prevents message duplication. Message order is guaranteed only within a single partition; Kafka does not guarantee global message order across all partitions of a topic.”</p>
+<h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><p>Understanding the nuances between standalone Kafka consumers and consumer groups is fundamental for designing efficient and resilient data streaming applications. While standalone consumers offer precise control for specific use cases, consumer groups are the cornerstone of scalable and fault-tolerant message processing in Kafka, enabling parallel consumption and graceful handling of failures through the rebalancing mechanism. Adhering to best practices, especially concerning partition management, offset commitment, and rebalance handling, is crucial for maximizing the benefits of Kafka in production environments. The integrated interview insights throughout this document aim to provide a comprehensive understanding for both practical application and technical discussions.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/kafka/" rel="tag"># kafka</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/" rel="prev" title="Kafka ISR, High Watermark &amp; Leader Epoch - Deep Dive Guide">
+                  <i class="fa fa-angle-left"></i> Kafka ISR, High Watermark & Leader Epoch - Deep Dive Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
