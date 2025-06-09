@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,349 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/08/MySQL-Buffer-Pool-Complete-Theory-and-Best-Practices-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/08/MySQL-Buffer-Pool-Complete-Theory-and-Best-Practices-Guide/" class="post-title-link" itemprop="url">MySQL Buffer Pool: Complete Theory and Best Practices Guide</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-08 16:00:45 / Modified: 16:02:21" itemprop="dateCreated datePublished" datetime="2025-06-08T16:00:45+08:00">2025-06-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Theoretical-Foundation"><a href="#Theoretical-Foundation" class="headerlink" title="Theoretical Foundation"></a>Theoretical Foundation</h2><h3 id="What-is-the-Buffer-Pool"><a href="#What-is-the-Buffer-Pool" class="headerlink" title="What is the Buffer Pool?"></a>What is the Buffer Pool?</h3><p>The MySQL buffer pool is InnoDB’s main memory cache that stores data and index pages in RAM. It acts as a crucial buffer between your application and the slower disk storage, dramatically reducing I&#x2F;O operations and improving query performance.</p>
+<p><strong>Core Concepts:</strong></p>
+<ul>
+<li><strong>Pages</strong>: InnoDB stores data in 16KB pages (by default). The buffer pool manages these pages in memory</li>
+<li><strong>Cache Layer</strong>: Acts as a write-through cache for reads and a write-back cache for modifications</li>
+<li><strong>Memory Management</strong>: Uses sophisticated algorithms to decide which pages to keep in memory</li>
+<li><strong>Concurrency</strong>: Supports multiple buffer pool instances for better multi-threaded performance</li>
+</ul>
+<h3 id="Why-Buffer-Pool-Matters"><a href="#Why-Buffer-Pool-Matters" class="headerlink" title="Why Buffer Pool Matters"></a>Why Buffer Pool Matters</h3><p><strong>Performance Impact:</strong></p>
+<ul>
+<li>Memory access is ~1000x faster than disk access</li>
+<li>Reduces physical I&#x2F;O operations significantly</li>
+<li>Enables efficient handling of hot data</li>
+<li>Critical for OLTP workloads with high concurrency</li>
+</ul>
+<p><strong>Business Impact:</strong></p>
+<ul>
+<li>Lower response times for user queries</li>
+<li>Higher throughput and concurrent user capacity</li>
+<li>Reduced hardware requirements for I&#x2F;O subsystem</li>
+<li>Better resource utilization and cost efficiency</li>
+</ul>
+<h2 id="LRU-Structure-Deep-Dive"><a href="#LRU-Structure-Deep-Dive" class="headerlink" title="LRU Structure Deep Dive"></a>LRU Structure Deep Dive</h2><h3 id="Traditional-LRU-Limitations"><a href="#Traditional-LRU-Limitations" class="headerlink" title="Traditional LRU Limitations"></a>Traditional LRU Limitations</h3><p>A simple LRU (Least Recently Used) algorithm has a critical flaw for database workloads: large sequential scans can flush out frequently accessed data. If you scan a large table once, all those pages would be marked as “recently used” and push out your hot data.</p>
+<h3 id="MySQL’s-Two-Segment-LRU-Solution"><a href="#MySQL’s-Two-Segment-LRU-Solution" class="headerlink" title="MySQL’s Two-Segment LRU Solution"></a>MySQL’s Two-Segment LRU Solution</h3><p>MySQL implements a sophisticated <strong>midpoint insertion strategy</strong> with two sublists:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Buffer Pool LRU List Structure:</span><br><span class="line"></span><br><span class="line">NEW SUBLIST (Hot/Young Pages - ~63%)</span><br><span class="line">├── Most recently accessed hot pages</span><br><span class="line">├── Frequently accessed data</span><br><span class="line">└── Pages promoted from old sublist</span><br><span class="line"></span><br><span class="line">───────── MIDPOINT ─────────</span><br><span class="line"></span><br><span class="line">OLD SUBLIST (Cold/Old Pages - ~37%)  </span><br><span class="line">├── Newly read pages (insertion point)</span><br><span class="line">├── Infrequently accessed pages</span><br><span class="line">└── Pages waiting for promotion</span><br></pre></td></tr></table></figure>
+
+<h3 id="Page-Lifecycle-in-LRU"><a href="#Page-Lifecycle-in-LRU" class="headerlink" title="Page Lifecycle in LRU"></a>Page Lifecycle in LRU</h3><ol>
+<li><strong>Initial Read</strong>: New pages inserted at head of OLD sublist (not NEW)</li>
+<li><strong>Promotion Criteria</strong>: Pages moved to NEW sublist only if:<ul>
+<li>Accessed again after initial read</li>
+<li>Minimum time threshold passed (<code>innodb_old_blocks_time</code>)</li>
+</ul>
+</li>
+<li><strong>Young Page Optimization</strong>: Pages in NEW sublist only move to head if in bottom 25%</li>
+<li><strong>Eviction</strong>: Pages removed from tail of OLD sublist when space needed</li>
+</ol>
+<h3 id="Protection-Mechanisms"><a href="#Protection-Mechanisms" class="headerlink" title="Protection Mechanisms"></a>Protection Mechanisms</h3><p><strong>Sequential Scan Protection:</strong></p>
+<ul>
+<li>New pages start in OLD sublist</li>
+<li>Single-access pages never pollute NEW sublist</li>
+<li>Time-based promotion prevents rapid sequential access from corrupting cache</li>
+</ul>
+<p><strong>Read-Ahead Protection:</strong></p>
+<ul>
+<li>Prefetched pages placed in OLD sublist</li>
+<li>Only promoted if actually accessed</li>
+<li>Prevents speculative reads from evicting hot data</li>
+</ul>
+<h2 id="Configuration-and-Sizing"><a href="#Configuration-and-Sizing" class="headerlink" title="Configuration and Sizing"></a>Configuration and Sizing</h2><h3 id="Essential-Parameters"><a href="#Essential-Parameters" class="headerlink" title="Essential Parameters"></a>Essential Parameters</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Core buffer pool settings</span></span><br><span class="line"><span class="keyword">SHOW</span> VARIABLES <span class="keyword">LIKE</span> <span class="string">&#x27;innodb_buffer_pool%&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Key parameters explained:</span></span><br><span class="line">innodb_buffer_pool_size         <span class="comment">-- Total memory allocated</span></span><br><span class="line">innodb_buffer_pool_instances    <span class="comment">-- Number of separate buffer pools  </span></span><br><span class="line">innodb_old_blocks_pct          <span class="comment">-- Percentage for old sublist (default: 37%)</span></span><br><span class="line">innodb_old_blocks_time         <span class="comment">-- Promotion delay in milliseconds (default: 1000)</span></span><br><span class="line">innodb_lru_scan_depth          <span class="comment">-- Pages scanned for cleanup (default: 1024)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Sizing-Best-Practices"><a href="#Sizing-Best-Practices" class="headerlink" title="Sizing Best Practices"></a>Sizing Best Practices</h3><p><strong>General Rules:</strong></p>
+<ul>
+<li><strong>Dedicated servers</strong>: 70-80% of total RAM</li>
+<li><strong>Shared servers</strong>: 50-60% of total RAM  </li>
+<li><strong>Minimum</strong>: At least 128MB for any production use</li>
+<li><strong>Working set</strong>: Should ideally fit entire hot dataset</li>
+</ul>
+<p><strong>Sizing Formula:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Buffer Pool Size = (Hot Data Size + Hot Index Size + Growth Buffer) × Safety Factor</span><br><span class="line"></span><br><span class="line">Where:</span><br><span class="line">- Hot Data Size: Frequently accessed table data</span><br><span class="line">- Hot Index Size: Primary and secondary indexes in use</span><br><span class="line">- Growth Buffer: 20-30% for data growth</span><br><span class="line">- Safety Factor: 1.2-1.5 for overhead and fragmentation</span><br></pre></td></tr></table></figure>
+
+<p><strong>Practical Sizing Example:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Calculate current data + index size</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    ROUND(<span class="built_in">SUM</span>(data_length <span class="operator">+</span> index_length) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> total_gb,</span><br><span class="line">    ROUND(<span class="built_in">SUM</span>(data_length) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> data_gb,</span><br><span class="line">    ROUND(<span class="built_in">SUM</span>(index_length) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> index_gb</span><br><span class="line"><span class="keyword">FROM</span> information_schema.tables </span><br><span class="line"><span class="keyword">WHERE</span> engine <span class="operator">=</span> <span class="string">&#x27;InnoDB&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check current buffer pool utilization</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    ROUND(@<span class="variable">@innodb_buffer_pool_size</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> bp_size_gb,</span><br><span class="line">    ROUND((DATABASE_PAGES <span class="operator">*</span> <span class="number">16384</span>) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> used_gb,</span><br><span class="line">    ROUND(((DATABASE_PAGES <span class="operator">*</span> <span class="number">16384</span>) <span class="operator">/</span> @<span class="variable">@innodb_buffer_pool_size</span>) <span class="operator">*</span> <span class="number">100</span>, <span class="number">2</span>) <span class="keyword">as</span> utilization_pct</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Multiple-Buffer-Pool-Instances"><a href="#Multiple-Buffer-Pool-Instances" class="headerlink" title="Multiple Buffer Pool Instances"></a>Multiple Buffer Pool Instances</h3><p><strong>When to Use:</strong></p>
+<ul>
+<li>Servers with 8+ CPU cores</li>
+<li>Buffer pool size &gt; 1GB</li>
+<li>High concurrency workloads</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># my.cnf configuration</span></span><br><span class="line"><span class="section">[mysqld]</span></span><br><span class="line"><span class="attr">innodb_buffer_pool_size</span> = <span class="number">8</span>G</span><br><span class="line"><span class="attr">innodb_buffer_pool_instances</span> = <span class="number">8</span>    <span class="comment"># 1GB per instance</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Benefits:</strong></p>
+<ul>
+<li>Reduces mutex contention</li>
+<li>Better multi-threaded performance</li>
+<li>Parallel LRU maintenance</li>
+<li>Improved scalability</li>
+</ul>
+<h2 id="Monitoring-and-Diagnostics"><a href="#Monitoring-and-Diagnostics" class="headerlink" title="Monitoring and Diagnostics"></a>Monitoring and Diagnostics</h2><h3 id="Essential-Monitoring-Queries"><a href="#Essential-Monitoring-Queries" class="headerlink" title="Essential Monitoring Queries"></a>Essential Monitoring Queries</h3><p><strong>Buffer Pool Health Check:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Quick health overview</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Buffer Pool Hit Rate&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    CONCAT(ROUND(HIT_RATE <span class="operator">*</span> <span class="number">100</span> <span class="operator">/</span> <span class="number">1000</span>, <span class="number">2</span>), <span class="string">&#x27;%&#x27;</span>) <span class="keyword">as</span> <span class="keyword">value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> HIT_RATE <span class="operator">&gt;</span> <span class="number">990</span> <span class="keyword">THEN</span> <span class="string">&#x27;EXCELLENT&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> HIT_RATE <span class="operator">&gt;</span> <span class="number">950</span> <span class="keyword">THEN</span> <span class="string">&#x27;GOOD&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> HIT_RATE <span class="operator">&gt;</span> <span class="number">900</span> <span class="keyword">THEN</span> <span class="string">&#x27;FAIR&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;POOR - NEEDS ATTENTION&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Old Sublist Ratio&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    CONCAT(ROUND((OLD_DATABASE_PAGES <span class="operator">/</span> DATABASE_PAGES) <span class="operator">*</span> <span class="number">100</span>, <span class="number">2</span>), <span class="string">&#x27;%&#x27;</span>) <span class="keyword">as</span> <span class="keyword">value</span>,</span><br><span class="line">    <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> (OLD_DATABASE_PAGES <span class="operator">/</span> DATABASE_PAGES) <span class="keyword">BETWEEN</span> <span class="number">0.30</span> <span class="keyword">AND</span> <span class="number">0.45</span> <span class="keyword">THEN</span> <span class="string">&#x27;NORMAL&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;CHECK CONFIGURATION&#x27;</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">as</span> status</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Detailed Performance Metrics:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Comprehensive buffer pool analysis</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    POOL_ID,</span><br><span class="line">    POOL_SIZE,</span><br><span class="line">    FREE_BUFFERS,</span><br><span class="line">    DATABASE_PAGES,</span><br><span class="line">    OLD_DATABASE_PAGES,</span><br><span class="line">    MODIFIED_DATABASE_PAGES,</span><br><span class="line">    ROUND(HIT_RATE <span class="operator">*</span> <span class="number">100</span> <span class="operator">/</span> <span class="number">1000</span>, <span class="number">2</span>) <span class="keyword">as</span> hit_rate_pct,</span><br><span class="line">    PAGES_MADE_YOUNG,</span><br><span class="line">    PAGES_NOT_MADE_YOUNG,</span><br><span class="line">    YOUNG_MAKE_PER_THOUSAND_GETS,</span><br><span class="line">    NOT_YOUNG_MAKE_PER_THOUSAND_GETS,</span><br><span class="line">    PAGES_READ_RATE,</span><br><span class="line">    PAGES_CREATE_RATE,</span><br><span class="line">    PAGES_WRITTEN_RATE</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Buffer Pool Status Deep Dive:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Extract key metrics from SHOW ENGINE INNODB STATUS</span></span><br><span class="line"><span class="keyword">SHOW</span> ENGINE INNODB STATUS\G</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Key sections to analyze:</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">BUFFER POOL AND MEMORY section shows:</span></span><br><span class="line"><span class="comment">- Total memory allocated</span></span><br><span class="line"><span class="comment">- Buffer pool size (in pages)</span></span><br><span class="line"><span class="comment">- Free buffers available</span></span><br><span class="line"><span class="comment">- Database pages (pages with data)</span></span><br><span class="line"><span class="comment">- Old database pages (pages in old sublist)</span></span><br><span class="line"><span class="comment">- Modified db pages (dirty pages)</span></span><br><span class="line"><span class="comment">- Pages made young/not young (LRU promotions)</span></span><br><span class="line"><span class="comment">- Buffer pool hit rate</span></span><br><span class="line"><span class="comment">- Read/write rates</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Real-Time-Monitoring-Script"><a href="#Real-Time-Monitoring-Script" class="headerlink" title="Real-Time Monitoring Script"></a>Real-Time Monitoring Script</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Buffer pool monitoring script</span></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span>; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;=== <span class="subst">$(date)</span> ===&quot;</span></span><br><span class="line">    mysql -e <span class="string">&quot;</span></span><br><span class="line"><span class="string">    SELECT </span></span><br><span class="line"><span class="string">        CONCAT(&#x27;Hit Rate: &#x27;, ROUND(HIT_RATE * 100 / 1000, 2), &#x27;%&#x27;) as metric1,</span></span><br><span class="line"><span class="string">        CONCAT(&#x27;Pages Read/s: &#x27;, PAGES_READ_RATE) as metric2,</span></span><br><span class="line"><span class="string">        CONCAT(&#x27;Young Rate: &#x27;, YOUNG_MAKE_PER_THOUSAND_GETS, &#x27;/1000&#x27;) as metric3</span></span><br><span class="line"><span class="string">    FROM INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;&quot;</span> -N</span><br><span class="line">    <span class="built_in">sleep</span> 5</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Optimization"><a href="#Performance-Optimization" class="headerlink" title="Performance Optimization"></a>Performance Optimization</h2><h3 id="Buffer-Pool-Tuning-Strategy"><a href="#Buffer-Pool-Tuning-Strategy" class="headerlink" title="Buffer Pool Tuning Strategy"></a>Buffer Pool Tuning Strategy</h3><p><strong>Step 1: Establish Baseline</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Document current performance</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Baseline Metrics&#x27;</span> <span class="keyword">as</span> phase,</span><br><span class="line">    NOW() <span class="keyword">as</span> <span class="type">timestamp</span>,</span><br><span class="line">    ROUND(HIT_RATE <span class="operator">*</span> <span class="number">100</span> <span class="operator">/</span> <span class="number">1000</span>, <span class="number">2</span>) <span class="keyword">as</span> hit_rate_pct,</span><br><span class="line">    PAGES_READ_RATE,</span><br><span class="line">    PAGES_WRITTEN_RATE,</span><br><span class="line">    YOUNG_MAKE_PER_THOUSAND_GETS</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Step 2: Analyze Workload Patterns</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Identify access patterns</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    table_schema,</span><br><span class="line">    table_name,</span><br><span class="line">    ROUND((data_length <span class="operator">+</span> index_length) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> size_mb,</span><br><span class="line">    table_rows,</span><br><span class="line">    ROUND((data_length <span class="operator">+</span> index_length) <span class="operator">/</span> table_rows, <span class="number">2</span>) <span class="keyword">as</span> avg_row_size</span><br><span class="line"><span class="keyword">FROM</span> information_schema.tables </span><br><span class="line"><span class="keyword">WHERE</span> engine <span class="operator">=</span> <span class="string">&#x27;InnoDB&#x27;</span> <span class="keyword">AND</span> table_rows <span class="operator">&gt;</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> (data_length <span class="operator">+</span> index_length) <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">20</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Step 3: Optimize Configuration</strong></p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Optimized buffer pool configuration</span></span><br><span class="line"><span class="section">[mysqld]</span></span><br><span class="line"><span class="comment"># Size based on working set analysis</span></span><br><span class="line"><span class="attr">innodb_buffer_pool_size</span> = <span class="number">12</span>G</span><br><span class="line"></span><br><span class="line"><span class="comment"># Multiple instances for concurrency  </span></span><br><span class="line"><span class="attr">innodb_buffer_pool_instances</span> = <span class="number">8</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Tuned for workload characteristics</span></span><br><span class="line"><span class="attr">innodb_old_blocks_pct</span> = <span class="number">37</span>          <span class="comment"># Default usually optimal</span></span><br><span class="line"><span class="attr">innodb_old_blocks_time</span> = <span class="number">1000</span>       <span class="comment"># Increase for scan-heavy workloads</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Enhanced cleanup for write-heavy workloads</span></span><br><span class="line"><span class="attr">innodb_lru_scan_depth</span> = <span class="number">2048</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Advanced-Optimization-Techniques"><a href="#Advanced-Optimization-Techniques" class="headerlink" title="Advanced Optimization Techniques"></a>Advanced Optimization Techniques</h3><p><strong>Buffer Pool Warmup:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Enable automatic dump/restore</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_buffer_pool_dump_at_shutdown <span class="operator">=</span> <span class="keyword">ON</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_buffer_pool_load_at_startup <span class="operator">=</span> <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Manual warmup for critical tables</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> critical_table FORCE INDEX (<span class="keyword">PRIMARY</span>);</span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> user_sessions FORCE INDEX (idx_user_id);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Monitor warmup progress</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    VARIABLE_NAME, </span><br><span class="line">    VARIABLE_VALUE </span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.GLOBAL_STATUS </span><br><span class="line"><span class="keyword">WHERE</span> VARIABLE_NAME <span class="keyword">LIKE</span> <span class="string">&#x27;Innodb_buffer_pool_load%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Dynamic Resizing (MySQL 5.7+):</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check current size and chunk configuration</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    @<span class="variable">@innodb_buffer_pool_size</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="keyword">as</span> current_size_gb,</span><br><span class="line">    @<span class="variable">@innodb_buffer_pool_chunk_size</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="keyword">as</span> chunk_size_mb;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Resize online (size must be multiple of chunk_size * instances)</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_buffer_pool_size <span class="operator">=</span> <span class="number">16106127360</span>; <span class="comment">-- 15GB</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Monitor resize progress</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    VARIABLE_NAME, </span><br><span class="line">    VARIABLE_VALUE </span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.GLOBAL_STATUS </span><br><span class="line"><span class="keyword">WHERE</span> VARIABLE_NAME <span class="keyword">LIKE</span> <span class="string">&#x27;Innodb_buffer_pool_resize%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Real-World-Scenarios"><a href="#Real-World-Scenarios" class="headerlink" title="Real-World Scenarios"></a>Real-World Scenarios</h2><h3 id="Scenario-1-E-commerce-Platform"><a href="#Scenario-1-E-commerce-Platform" class="headerlink" title="Scenario 1: E-commerce Platform"></a>Scenario 1: E-commerce Platform</h3><p><strong>Characteristics:</strong></p>
+<ul>
+<li>High read&#x2F;write ratio (80:20)</li>
+<li>Hot product catalog data</li>
+<li>Seasonal traffic spikes</li>
+<li>Mixed query patterns</li>
+</ul>
+<p><strong>Buffer Pool Strategy:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Configuration for e-commerce workload</span></span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">24</span>G        # <span class="keyword">Large</span> buffer <span class="keyword">for</span> product catalog</span><br><span class="line">innodb_buffer_pool_instances <span class="operator">=</span> <span class="number">12</span>    # High concurrency support</span><br><span class="line">innodb_old_blocks_time <span class="operator">=</span> <span class="number">500</span>         # Faster promotion <span class="keyword">for</span> product searches</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Monitor hot tables</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    table_name,</span><br><span class="line">    ROUND((data_length <span class="operator">+</span> index_length) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> size_mb</span><br><span class="line"><span class="keyword">FROM</span> information_schema.tables </span><br><span class="line"><span class="keyword">WHERE</span> table_schema <span class="operator">=</span> <span class="string">&#x27;ecommerce&#x27;</span> </span><br><span class="line">    <span class="keyword">AND</span> table_name <span class="keyword">IN</span> (<span class="string">&#x27;products&#x27;</span>, <span class="string">&#x27;categories&#x27;</span>, <span class="string">&#x27;inventory&#x27;</span>, <span class="string">&#x27;users&#x27;</span>)</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> (data_length <span class="operator">+</span> index_length) <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Scenario-2-Analytics-Workload"><a href="#Scenario-2-Analytics-Workload" class="headerlink" title="Scenario 2: Analytics Workload"></a>Scenario 2: Analytics Workload</h3><p><strong>Characteristics:</strong></p>
+<ul>
+<li>Large table scans</li>
+<li>Reporting queries</li>
+<li>Batch processing</li>
+<li>Sequential access patterns</li>
+</ul>
+<p><strong>Buffer Pool Strategy:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Configuration for analytics workload</span></span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">32</span>G        # <span class="keyword">Large</span> buffer <span class="keyword">for</span> working sets</span><br><span class="line">innodb_old_blocks_pct <span class="operator">=</span> <span class="number">25</span>           # Smaller <span class="keyword">old</span> sublist</span><br><span class="line">innodb_old_blocks_time <span class="operator">=</span> <span class="number">2000</span>        # Longer promotion delay</span><br><span class="line">innodb_lru_scan_depth <span class="operator">=</span> <span class="number">4096</span>         # More aggressive cleanup</span><br></pre></td></tr></table></figure>
+
+<h3 id="Scenario-3-OLTP-High-Concurrency"><a href="#Scenario-3-OLTP-High-Concurrency" class="headerlink" title="Scenario 3: OLTP High-Concurrency"></a>Scenario 3: OLTP High-Concurrency</h3><p><strong>Characteristics:</strong></p>
+<ul>
+<li>Short transactions</li>
+<li>Point queries</li>
+<li>High concurrency</li>
+<li>Hot row contention</li>
+</ul>
+<p><strong>Buffer Pool Strategy:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Configuration for OLTP workload</span></span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">16</span>G        # Sized <span class="keyword">for</span> working <span class="keyword">set</span></span><br><span class="line">innodb_buffer_pool_instances <span class="operator">=</span> <span class="number">16</span>    # Maximum concurrency</span><br><span class="line">innodb_old_blocks_time <span class="operator">=</span> <span class="number">100</span>         # Quick promotion <span class="keyword">for</span> hot data</span><br></pre></td></tr></table></figure>
+
+<h2 id="Troubleshooting-Guide"><a href="#Troubleshooting-Guide" class="headerlink" title="Troubleshooting Guide"></a>Troubleshooting Guide</h2><h3 id="Problem-1-Low-Buffer-Pool-Hit-Rate"><a href="#Problem-1-Low-Buffer-Pool-Hit-Rate" class="headerlink" title="Problem 1: Low Buffer Pool Hit Rate (&lt;95%)"></a>Problem 1: Low Buffer Pool Hit Rate (&lt;95%)</h3><p><strong>Diagnostic Steps:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check hit rate trend</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Current Hit Rate&#x27;</span> <span class="keyword">as</span> metric,</span><br><span class="line">    CONCAT(ROUND(HIT_RATE <span class="operator">*</span> <span class="number">100</span> <span class="operator">/</span> <span class="number">1000</span>, <span class="number">2</span>), <span class="string">&#x27;%&#x27;</span>) <span class="keyword">as</span> <span class="keyword">value</span></span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Compare buffer pool size to data size</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Buffer Pool&#x27;</span> <span class="keyword">as</span> component,</span><br><span class="line">    ROUND(@<span class="variable">@innodb_buffer_pool_size</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> size_gb</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    <span class="string">&#x27;Total Data+Index&#x27;</span> <span class="keyword">as</span> component,</span><br><span class="line">    ROUND(<span class="built_in">SUM</span>(data_length <span class="operator">+</span> index_length) <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> size_gb</span><br><span class="line"><span class="keyword">FROM</span> information_schema.tables </span><br><span class="line"><span class="keyword">WHERE</span> engine <span class="operator">=</span> <span class="string">&#x27;InnoDB&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Increase buffer pool size</strong> if data doesn’t fit</li>
+<li><strong>Optimize queries</strong> to reduce unnecessary data access</li>
+<li><strong>Partition large tables</strong> to improve locality</li>
+<li><strong>Review indexing strategy</strong> to reduce page reads</li>
+</ol>
+<h3 id="Problem-2-Excessive-LRU-Flushing"><a href="#Problem-2-Excessive-LRU-Flushing" class="headerlink" title="Problem 2: Excessive LRU Flushing"></a>Problem 2: Excessive LRU Flushing</h3><p><strong>Symptoms:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check for LRU pressure</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    POOL_ID,</span><br><span class="line">    PENDING_FLUSH_LRU,</span><br><span class="line">    PAGES_MADE_YOUNG_RATE,</span><br><span class="line">    PAGES_READ_RATE</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS</span><br><span class="line"><span class="keyword">WHERE</span> PENDING_FLUSH_LRU <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Root Causes:</strong></p>
+<ul>
+<li>Large sequential scans</li>
+<li>Insufficient buffer pool size</li>
+<li>Write-heavy workload</li>
+<li>Poor query optimization</li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><strong>Increase <code>innodb_lru_scan_depth</code></strong> for better cleanup</li>
+<li><strong>Optimize scan queries</strong> with better indexes</li>
+<li><strong>Increase buffer pool size</strong> if possible</li>
+<li><strong>Tune <code>innodb_old_blocks_time</code></strong> for workload</li>
+</ol>
+<h3 id="Problem-3-Poor-Young-Old-Ratio"><a href="#Problem-3-Poor-Young-Old-Ratio" class="headerlink" title="Problem 3: Poor Young&#x2F;Old Ratio"></a>Problem 3: Poor Young&#x2F;Old Ratio</h3><p><strong>Diagnostic:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check promotion patterns</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    POOL_ID,</span><br><span class="line">    YOUNG_MAKE_PER_THOUSAND_GETS,</span><br><span class="line">    NOT_YOUNG_MAKE_PER_THOUSAND_GETS,</span><br><span class="line">    ROUND((OLD_DATABASE_PAGES <span class="operator">/</span> DATABASE_PAGES) <span class="operator">*</span> <span class="number">100</span>, <span class="number">2</span>) <span class="keyword">as</span> old_pct</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_BUFFER_POOL_STATS;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Tuning:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Adjust old blocks percentage</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_old_blocks_pct <span class="operator">=</span> <span class="number">30</span>;  <span class="comment">-- Reduce if too much promotion</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_old_blocks_pct <span class="operator">=</span> <span class="number">40</span>;  <span class="comment">-- Increase if too little promotion</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Adjust promotion timing</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_old_blocks_time <span class="operator">=</span> <span class="number">2000</span>;  <span class="comment">-- Slower promotion</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> innodb_old_blocks_time <span class="operator">=</span> <span class="number">500</span>;   <span class="comment">-- Faster promotion</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Best-Practices-Summary"><a href="#Best-Practices-Summary" class="headerlink" title="Best Practices Summary"></a>Best Practices Summary</h2><h3 id="Configuration-Best-Practices"><a href="#Configuration-Best-Practices" class="headerlink" title="Configuration Best Practices"></a>Configuration Best Practices</h3><ol>
+<li><p><strong>Size Appropriately</strong></p>
+<ul>
+<li>Dedicated DB server: 70-80% of RAM</li>
+<li>Shared server: 50-60% of RAM</li>
+<li>Must accommodate working set</li>
+</ul>
+</li>
+<li><p><strong>Use Multiple Instances</strong></p>
+<ul>
+<li>1 instance per GB on multi-core systems</li>
+<li>Maximum benefit at 8-16 instances</li>
+<li>Reduces contention significantly</li>
+</ul>
+</li>
+<li><p><strong>Tune for Workload</strong></p>
+<ul>
+<li>OLTP: Faster promotion, more instances</li>
+<li>Analytics: Slower promotion, larger old sublist</li>
+<li>Mixed: Default settings usually optimal</li>
+</ul>
+</li>
+</ol>
+<h3 id="Monitoring-Best-Practices"><a href="#Monitoring-Best-Practices" class="headerlink" title="Monitoring Best Practices"></a>Monitoring Best Practices</h3><ol>
+<li><p><strong>Key Metrics to Track</strong></p>
+<ul>
+<li>Buffer pool hit rate (target: &gt;99%)</li>
+<li>Pages read rate (should be low)</li>
+<li>Young&#x2F;old promotion ratio</li>
+<li>LRU flush activity</li>
+</ul>
+</li>
+<li><p><strong>Regular Health Checks</strong></p>
+<ul>
+<li>Weekly buffer pool analysis</li>
+<li>Monitor after configuration changes</li>
+<li>Track performance during peak loads</li>
+</ul>
+</li>
+<li><p><strong>Alerting Thresholds</strong></p>
+<ul>
+<li>Hit rate &lt; 95%: Investigate immediately</li>
+<li>Hit rate &lt; 99%: Monitor closely</li>
+<li>High LRU flush rate: Check for scans</li>
+</ul>
+</li>
+</ol>
+<h3 id="Operational-Best-Practices"><a href="#Operational-Best-Practices" class="headerlink" title="Operational Best Practices"></a>Operational Best Practices</h3><ol>
+<li><p><strong>Capacity Planning</strong></p>
+<ul>
+<li>Monitor data growth trends</li>
+<li>Plan buffer pool growth with data</li>
+<li>Consider seasonal usage patterns</li>
+</ul>
+</li>
+<li><p><strong>Change Management</strong></p>
+<ul>
+<li>Test configuration changes in staging</li>
+<li>Use dynamic variables when possible</li>
+<li>Document baseline performance</li>
+</ul>
+</li>
+<li><p><strong>Disaster Recovery</strong></p>
+<ul>
+<li>Enable buffer pool dump&#x2F;restore</li>
+<li>Plan warmup strategy for failover</li>
+<li>Consider warm standby instances</li>
+</ul>
+</li>
+</ol>
+<h3 id="Performance-Optimization-Checklist"><a href="#Performance-Optimization-Checklist" class="headerlink" title="Performance Optimization Checklist"></a>Performance Optimization Checklist</h3><ul>
+<li><input disabled="" type="checkbox"> Buffer pool sized appropriately for working set</li>
+<li><input disabled="" type="checkbox"> Multiple instances configured for concurrency</li>
+<li><input disabled="" type="checkbox"> Hit rate consistently &gt;99%</li>
+<li><input disabled="" type="checkbox"> LRU parameters tuned for workload</li>
+<li><input disabled="" type="checkbox"> Buffer pool dump&#x2F;restore enabled</li>
+<li><input disabled="" type="checkbox"> Monitoring and alerting in place</li>
+<li><input disabled="" type="checkbox"> Regular performance reviews scheduled</li>
+<li><input disabled="" type="checkbox"> Capacity planning updated quarterly</li>
+</ul>
+<h3 id="Common-Anti-Patterns-to-Avoid"><a href="#Common-Anti-Patterns-to-Avoid" class="headerlink" title="Common Anti-Patterns to Avoid"></a>Common Anti-Patterns to Avoid</h3><p>❌ <strong>Don’t:</strong></p>
+<ul>
+<li>Set buffer pool too small to save memory</li>
+<li>Use single instance on multi-core systems</li>
+<li>Ignore buffer pool hit rate</li>
+<li>Make changes without baseline measurement</li>
+<li>Forget to enable buffer pool persistence</li>
+</ul>
+<p>✅ <strong>Do:</strong></p>
+<ul>
+<li>Size based on working set analysis</li>
+<li>Use multiple instances for concurrency</li>
+<li>Monitor key metrics regularly</li>
+<li>Test changes thoroughly</li>
+<li>Plan for growth and peak loads</li>
+</ul>
+<p>This comprehensive guide provides both the theoretical understanding and practical implementation knowledge needed for MySQL buffer pool optimization in production environments.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1048,9 +1391,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2025-06-01 16:20:52 / Modified: 16:21:41" itemprop="dateCreated datePublished" datetime="2025-06-01T16:20:52+08:00">2025-06-01</time>
+      <time title="Created: 2025-06-01 16:20:52" itemprop="dateCreated datePublished" datetime="2025-06-01T16:20:52+08:00">2025-06-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2025-06-09 21:40:47" itemprop="dateModified" datetime="2025-06-09T21:40:47+08:00">2025-06-09</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -2388,86 +2737,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/15/start-anew-hard/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/05/15/start-anew-hard/" class="post-title-link" itemprop="url">Start Anew Hard</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2021-05-15 13:12:17 / Modified: 13:19:29" itemprop="dateCreated datePublished" datetime="2021-05-15T13:12:17+08:00">2021-05-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/essays/" itemprop="url" rel="index"><span itemprop="name">essays</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="Start-Anew-Hard"><a href="#Start-Anew-Hard" class="headerlink" title="Start Anew Hard"></a>Start Anew Hard</h1><h2 id="新的开始"><a href="#新的开始" class="headerlink" title="新的开始"></a>新的开始</h2><h3 id="为什么要重新开始"><a href="#为什么要重新开始" class="headerlink" title="为什么要重新开始"></a>为什么要重新开始</h3><h3 id="新的目标"><a href="#新的目标" class="headerlink" title="新的目标"></a>新的目标</h3><h3 id="新的计划"><a href="#新的计划" class="headerlink" title="新的计划"></a>新的计划</h3><h2 id="技术学习"><a href="#技术学习" class="headerlink" title="技术学习"></a>技术学习</h2><h3 id="学习路线"><a href="#学习路线" class="headerlink" title="学习路线"></a>学习路线</h3><h3 id="学习方法"><a href="#学习方法" class="headerlink" title="学习方法"></a>学习方法</h3><h3 id="学习资源"><a href="#学习资源" class="headerlink" title="学习资源"></a>学习资源</h3><h2 id="项目实践"><a href="#项目实践" class="headerlink" title="项目实践"></a>项目实践</h2><h3 id="项目选择"><a href="#项目选择" class="headerlink" title="项目选择"></a>项目选择</h3><h3 id="项目规划"><a href="#项目规划" class="headerlink" title="项目规划"></a>项目规划</h3><h3 id="项目执行"><a href="#项目执行" class="headerlink" title="项目执行"></a>项目执行</h3><h2 id="时间管理"><a href="#时间管理" class="headerlink" title="时间管理"></a>时间管理</h2><h3 id="时间规划"><a href="#时间规划" class="headerlink" title="时间规划"></a>时间规划</h3><h3 id="效率提升"><a href="#效率提升" class="headerlink" title="效率提升"></a>效率提升</h3><h3 id="习惯养成"><a href="#习惯养成" class="headerlink" title="习惯养成"></a>习惯养成</h3><h2 id="总结与展望"><a href="#总结与展望" class="headerlink" title="总结与展望"></a>总结与展望</h2><h3 id="阶段性总结"><a href="#阶段性总结" class="headerlink" title="阶段性总结"></a>阶段性总结</h3><h3 id="未来规划"><a href="#未来规划" class="headerlink" title="未来规划"></a>未来规划</h3><h3 id="持续改进"><a href="#持续改进" class="headerlink" title="持续改进"></a>持续改进</h3>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" title="Previous page" aria-label="Previous page" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
