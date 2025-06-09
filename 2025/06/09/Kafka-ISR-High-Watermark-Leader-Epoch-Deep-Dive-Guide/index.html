@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionApache Kafka’s reliability and consistency guarantees are built on three fundamental mechanisms: In-Sync Replicas (ISR), High Watermark, and Leader Epoch. These mechanisms work together to">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka ISR, High Watermark &amp; Leader Epoch - Deep Dive Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="IntroductionApache Kafka’s reliability and consistency guarantees are built on three fundamental mechanisms: In-Sync Replicas (ISR), High Watermark, and Leader Epoch. These mechanisms work together to">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-09T09:49:41.000Z">
+<meta property="article:modified_time" content="2025-06-09T09:57:35.806Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/","path":"2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/","title":"Kafka ISR, High Watermark & Leader Epoch - Deep Dive Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kafka ISR, High Watermark & Leader Epoch - Deep Dive Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#In-Sync-Replicas-ISR"><span class="nav-number">2.</span> <span class="nav-text">In-Sync Replicas (ISR)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Theory-and-Core-Concepts"><span class="nav-number">2.1.</span> <span class="nav-text">Theory and Core Concepts</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ISR-Management-Algorithm"><span class="nav-number">2.2.</span> <span class="nav-text">ISR Management Algorithm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Configuration-Parameters"><span class="nav-number">2.3.</span> <span class="nav-text">Key Configuration Parameters</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-for-ISR-Management"><span class="nav-number">2.4.</span> <span class="nav-text">Best Practices for ISR Management</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Monitoring-ISR-Health"><span class="nav-number">2.4.1.</span> <span class="nav-text">1. Monitoring ISR Health</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Tuning-ISR-Parameters"><span class="nav-number">2.4.2.</span> <span class="nav-text">2. Tuning ISR Parameters</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#High-Watermark-Mechanism"><span class="nav-number">3.</span> <span class="nav-text">High Watermark Mechanism</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Theory-and-Purpose"><span class="nav-number">3.1.</span> <span class="nav-text">Theory and Purpose</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#High-Watermark-Update-Algorithm"><span class="nav-number">3.2.</span> <span class="nav-text">High Watermark Update Algorithm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#High-Watermark-Edge-Cases"><span class="nav-number">3.3.</span> <span class="nav-text">High Watermark Edge Cases</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Case-1-ISR-Shrinkage-Impact"><span class="nav-number">3.3.1.</span> <span class="nav-text">Case 1: ISR Shrinkage Impact</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Case-2-Leader-Election"><span class="nav-number">3.3.2.</span> <span class="nav-text">Case 2: Leader Election</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leader-Epoch"><span class="nav-number">4.</span> <span class="nav-text">Leader Epoch</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Theory-and-Problem-It-Solves"><span class="nav-number">4.1.</span> <span class="nav-text">Theory and Problem It Solves</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader-Epoch-Mechanism"><span class="nav-number">4.2.</span> <span class="nav-text">Leader Epoch Mechanism</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Structure-and-Storage"><span class="nav-number">4.3.</span> <span class="nav-text">Data Structure and Storage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader-Election-with-Epochs"><span class="nav-number">4.4.</span> <span class="nav-text">Leader Election with Epochs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Preventing-Data-Divergence"><span class="nav-number">4.5.</span> <span class="nav-text">Preventing Data Divergence</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Scenario-Split-Brain-Prevention"><span class="nav-number">4.5.1.</span> <span class="nav-text">Scenario: Split-Brain Prevention</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-for-Leader-Epochs"><span class="nav-number">4.6.</span> <span class="nav-text">Best Practices for Leader Epochs</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Monitoring-Epoch-Changes"><span class="nav-number">4.6.1.</span> <span class="nav-text">1. Monitoring Epoch Changes</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Configuration-for-Stability"><span class="nav-number">4.6.2.</span> <span class="nav-text">2. Configuration for Stability</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Integration-and-Best-Practices"><span class="nav-number">5.</span> <span class="nav-text">Integration and Best Practices</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#The-Complete-Flow-ISR-HW-Epochs"><span class="nav-number">5.1.</span> <span class="nav-text">The Complete Flow: ISR + HW + Epochs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Configuration-Template"><span class="nav-number">5.2.</span> <span class="nav-text">Production Configuration Template</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Advanced-Scenarios-and-Edge-Cases"><span class="nav-number">5.3.</span> <span class="nav-text">Advanced Scenarios and Edge Cases</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Scenario-1-Cascading-Failures"><span class="nav-number">5.3.1.</span> <span class="nav-text">Scenario 1: Cascading Failures</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Scenario-2-Network-Partitions"><span class="nav-number">5.3.2.</span> <span class="nav-text">Scenario 2: Network Partitions</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Troubleshooting-Common-Issues"><span class="nav-number">6.</span> <span class="nav-text">Troubleshooting Common Issues</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Issue-1-ISR-Constantly-Shrinking-Expanding"><span class="nav-number">6.1.</span> <span class="nav-text">Issue 1: ISR Constantly Shrinking&#x2F;Expanding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Issue-2-High-Watermark-Not-Advancing"><span class="nav-number">6.2.</span> <span class="nav-text">Issue 2: High Watermark Not Advancing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Issue-3-Frequent-Leader-Elections"><span class="nav-number">6.3.</span> <span class="nav-text">Issue 3: Frequent Leader Elections</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Tuning"><span class="nav-number">7.</span> <span class="nav-text">Performance Tuning</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ISR-Performance-Optimization"><span class="nav-number">7.1.</span> <span class="nav-text">ISR Performance Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#High-Watermark-Optimization"><span class="nav-number">7.2.</span> <span class="nav-text">High Watermark Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitoring-and-Alerting"><span class="nav-number">7.3.</span> <span class="nav-text">Monitoring and Alerting</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kafka ISR, High Watermark &amp; Leader Epoch - Deep Dive Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kafka ISR, High Watermark & Leader Epoch - Deep Dive Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 17:49:41 / Modified: 17:57:35" itemprop="dateCreated datePublished" datetime="2025-06-09T17:49:41+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Apache Kafka’s reliability and consistency guarantees are built on three fundamental mechanisms: <strong>In-Sync Replicas (ISR)</strong>, <strong>High Watermark</strong>, and <strong>Leader Epoch</strong>. These mechanisms work together to ensure data durability, prevent data loss, and maintain consistency across distributed partitions.</p>
+<p><strong>🎯 Interview Insight</strong>: <em>Interviewers often ask “How does Kafka ensure data consistency?” This document covers the core mechanisms that make Kafka’s distributed consensus possible.</em></p>
+<h2 id="In-Sync-Replicas-ISR"><a href="#In-Sync-Replicas-ISR" class="headerlink" title="In-Sync Replicas (ISR)"></a>In-Sync Replicas (ISR)</h2><h3 id="Theory-and-Core-Concepts"><a href="#Theory-and-Core-Concepts" class="headerlink" title="Theory and Core Concepts"></a>Theory and Core Concepts</h3><p>The ISR is a dynamic list of replicas that are “caught up” with the partition leader. A replica is considered in-sync if:</p>
+<ol>
+<li>It has contacted the leader within the last <code>replica.lag.time.max.ms</code> (default: 30 seconds)</li>
+<li>It has fetched the leader’s latest messages within this time window</li>
+</ol>
+<pre>
+<code class="mermaid">
+graph TD
+A[Leader Replica] --&gt; B[Follower 1 - In ISR]
+A --&gt; C[Follower 2 - In ISR]
+A --&gt; D[Follower 3 - Out of ISR]
+
+B --&gt; E[Last Fetch: 5s ago]
+C --&gt; F[Last Fetch: 10s ago]
+D --&gt; G[Last Fetch: 45s ago - LAGGING]
+
+style A fill:#90EE90
+style B fill:#87CEEB
+style C fill:#87CEEB
+style D fill:#FFB6C1
+</code>
+</pre>
+
+<h3 id="ISR-Management-Algorithm"><a href="#ISR-Management-Algorithm" class="headerlink" title="ISR Management Algorithm"></a>ISR Management Algorithm</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Follower Fetch Request] --&gt; B{Within lag.time.max.ms?}
+B --&gt;|Yes| C[Update ISR timestamp]
+B --&gt;|No| D[Remove from ISR]
+
+C --&gt; E{Caught up to leader?}
+E --&gt;|Yes| F[Keep in ISR]
+E --&gt;|No| G[Monitor lag]
+
+D --&gt; H[Trigger ISR shrink]
+H --&gt; I[Update ZooKeeper&#x2F;Controller]
+I --&gt; J[Notify all brokers]
+
+style A fill:#E6F3FF
+style H fill:#FFE6E6
+style I fill:#FFF2E6
+</code>
+</pre>
+
+<h3 id="Key-Configuration-Parameters"><a href="#Key-Configuration-Parameters" class="headerlink" title="Key Configuration Parameters"></a>Key Configuration Parameters</h3><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+<th>Interview Focus</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>replica.lag.time.max.ms</code></td>
+<td>30000</td>
+<td>Maximum time a follower can be behind</td>
+<td>How to tune for network latency</td>
+</tr>
+<tr>
+<td><code>min.insync.replicas</code></td>
+<td>1</td>
+<td>Minimum ISR size for writes</td>
+<td>Consistency vs availability tradeoff</td>
+</tr>
+<tr>
+<td><code>unclean.leader.election.enable</code></td>
+<td>false</td>
+<td>Allow out-of-sync replicas to become leader</td>
+<td>Data loss implications</td>
+</tr>
+</tbody></table>
+<p><strong>🎯 Interview Insight</strong>: <em>“What happens when ISR shrinks to 1?” Answer: With <code>min.insync.replicas=2</code>, producers with <code>acks=all</code> will get exceptions, ensuring no data loss but affecting availability.</em></p>
+<h3 id="Best-Practices-for-ISR-Management"><a href="#Best-Practices-for-ISR-Management" class="headerlink" title="Best Practices for ISR Management"></a>Best Practices for ISR Management</h3><h4 id="1-Monitoring-ISR-Health"><a href="#1-Monitoring-ISR-Health" class="headerlink" title="1. Monitoring ISR Health"></a>1. Monitoring ISR Health</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check ISR status</span></span><br><span class="line">kafka-topics.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --topic my-topic</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitor ISR shrink/expand events</span></span><br><span class="line">kafka-log-dirs.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --json | jq <span class="string">&#x27;.brokers[].logDirs[].partitions[] | select(.isr | length &lt; 3)&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="2-Tuning-ISR-Parameters"><a href="#2-Tuning-ISR-Parameters" class="headerlink" title="2. Tuning ISR Parameters"></a>2. Tuning ISR Parameters</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># For high-throughput, low-latency environments</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">10000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># For networks with higher latency</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">60000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Ensure strong consistency</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="High-Watermark-Mechanism"><a href="#High-Watermark-Mechanism" class="headerlink" title="High Watermark Mechanism"></a>High Watermark Mechanism</h2><h3 id="Theory-and-Purpose"><a href="#Theory-and-Purpose" class="headerlink" title="Theory and Purpose"></a>Theory and Purpose</h3><p>The High Watermark (HW) represents the highest offset that has been replicated to all ISR members. It serves as the <strong>committed offset</strong> - only messages below the HW are visible to consumers.</p>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant P as Producer
+participant L as Leader
+participant F1 as Follower 1
+participant F2 as Follower 2
+participant C as Consumer
+
+P-&gt;&gt;L: Send message (offset 100)
+L-&gt;&gt;L: Append to log (LEO: 101)
+
+L-&gt;&gt;F1: Replicate message
+L-&gt;&gt;F2: Replicate message
+
+F1-&gt;&gt;F1: Append to log (LEO: 101)
+F2-&gt;&gt;F2: Append to log (LEO: 101)
+
+F1-&gt;&gt;L: Fetch response (LEO: 101)
+F2-&gt;&gt;L: Fetch response (LEO: 101)
+
+L-&gt;&gt;L: Update HW to 101
+
+Note over L: HW &#x3D; min(LEO of all ISR members)
+
+C-&gt;&gt;L: Fetch request
+L-&gt;&gt;C: Return messages up to HW (100)
+</code>
+</pre>
+
+<h3 id="High-Watermark-Update-Algorithm"><a href="#High-Watermark-Update-Algorithm" class="headerlink" title="High Watermark Update Algorithm"></a>High Watermark Update Algorithm</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Follower Fetch Request] --&gt; B[Update Follower LEO]
+B --&gt; C[Calculate min LEO of all ISR]
+C --&gt; D{New HW &gt; Current HW?}
+D --&gt;|Yes| E[Update High Watermark]
+D --&gt;|No| F[Keep Current HW]
+E --&gt; G[Include HW in Response]
+F --&gt; G
+G --&gt; H[Send Fetch Response]
+
+style E fill:#90EE90
+style G fill:#87CEEB
+</code>
+</pre>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“Why can’t consumers see messages beyond HW?” Answer: Ensures read consistency - consumers only see messages guaranteed to be replicated to all ISR members, preventing phantom reads during leader failures.</em></p>
+<h3 id="High-Watermark-Edge-Cases"><a href="#High-Watermark-Edge-Cases" class="headerlink" title="High Watermark Edge Cases"></a>High Watermark Edge Cases</h3><h4 id="Case-1-ISR-Shrinkage-Impact"><a href="#Case-1-ISR-Shrinkage-Impact" class="headerlink" title="Case 1: ISR Shrinkage Impact"></a>Case 1: ISR Shrinkage Impact</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Before ISR shrink:</span><br><span class="line">Leader LEO: 1000, HW: 950</span><br><span class="line">Follower1 LEO: 960 (in ISR)</span><br><span class="line">Follower2 LEO: 950 (in ISR)</span><br><span class="line"></span><br><span class="line">After Follower1 removed from ISR:</span><br><span class="line">Leader LEO: 1000, HW: 950 (unchanged)</span><br><span class="line">Follower2 LEO: 950 (only ISR member)</span><br><span class="line">New HW: min(1000, 950) = 950</span><br></pre></td></tr></table></figure>
+
+<h4 id="Case-2-Leader-Election"><a href="#Case-2-Leader-Election" class="headerlink" title="Case 2: Leader Election"></a>Case 2: Leader Election</h4><pre>
+<code class="mermaid">
+graph TD
+A[Old Leader Fails] --&gt; B[Controller Chooses New Leader]
+B --&gt; C{New Leader LEO vs Old HW}
+C --&gt;|LEO &lt; Old HW| D[Truncate HW to New Leader LEO]
+C --&gt;|LEO &gt;&#x3D; Old HW| E[Keep HW, Wait for Replication]
+
+D --&gt; F[Potential Message Loss]
+E --&gt; G[No Message Loss]
+
+style F fill:#FFB6C1
+style G fill:#90EE90
+</code>
+</pre>
+
+<h2 id="Leader-Epoch"><a href="#Leader-Epoch" class="headerlink" title="Leader Epoch"></a>Leader Epoch</h2><h3 id="Theory-and-Problem-It-Solves"><a href="#Theory-and-Problem-It-Solves" class="headerlink" title="Theory and Problem It Solves"></a>Theory and Problem It Solves</h3><p>Leader Epoch was introduced to solve the <strong>data inconsistency problem</strong> during leader elections. Before leader epochs, followers could diverge from the new leader’s log, causing data loss or duplication.</p>
+<p><strong>🎯 Interview Insight</strong>: <em>“What’s the difference between Kafka with and without leader epochs?” Answer: Leader epochs prevent log divergence during leader failovers by providing a monotonic counter that helps followers detect stale data.</em></p>
+<h3 id="Leader-Epoch-Mechanism"><a href="#Leader-Epoch-Mechanism" class="headerlink" title="Leader Epoch Mechanism"></a>Leader Epoch Mechanism</h3><pre>
+<code class="mermaid">
+graph TD
+A[Epoch 0: Leader A] --&gt; B[Epoch 1: Leader B]
+B --&gt; C[Epoch 2: Leader A]
+C --&gt; D[Epoch 3: Leader C]
+
+A1[Messages 0-100] --&gt; A
+B1[Messages 101-200] --&gt; B
+C1[Messages 201-300] --&gt; C
+D1[Messages 301+] --&gt; D
+
+style A fill:#FFE6E6
+style B fill:#E6F3FF
+style C fill:#FFE6E6
+style D fill:#E6FFE6
+</code>
+</pre>
+
+<h3 id="Data-Structure-and-Storage"><a href="#Data-Structure-and-Storage" class="headerlink" title="Data Structure and Storage"></a>Data Structure and Storage</h3><p>Each partition maintains an <strong>epoch file</strong> with entries:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Epoch | Start Offset</span><br><span class="line">------|-------------</span><br><span class="line">0     | 0</span><br><span class="line">1     | 101</span><br><span class="line">2     | 201</span><br><span class="line">3     | 301</span><br></pre></td></tr></table></figure>
+
+<h3 id="Leader-Election-with-Epochs"><a href="#Leader-Election-with-Epochs" class="headerlink" title="Leader Election with Epochs"></a>Leader Election with Epochs</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant C as Controller
+participant L1 as Old Leader
+participant L2 as New Leader
+participant F as Follower
+
+Note over L1: Becomes unavailable
+
+C-&gt;&gt;L2: Become leader (Epoch N+1)
+L2-&gt;&gt;L2: Increment epoch to N+1
+L2-&gt;&gt;L2: Record epoch change in log
+
+F-&gt;&gt;L2: Fetch request (with last known epoch N)
+L2-&gt;&gt;F: Epoch validation response
+
+Note over F: Detects epoch change
+F-&gt;&gt;L2: Request epoch history
+L2-&gt;&gt;F: Send epoch N+1 start offset
+
+F-&gt;&gt;F: Truncate log if necessary
+F-&gt;&gt;L2: Resume normal fetching
+</code>
+</pre>
+
+<h3 id="Preventing-Data-Divergence"><a href="#Preventing-Data-Divergence" class="headerlink" title="Preventing Data Divergence"></a>Preventing Data Divergence</h3><h4 id="Scenario-Split-Brain-Prevention"><a href="#Scenario-Split-Brain-Prevention" class="headerlink" title="Scenario: Split-Brain Prevention"></a>Scenario: Split-Brain Prevention</h4><pre>
+<code class="mermaid">
+graph TD
+A[Network Partition] --&gt; B[Two Leaders Emerge]
+B --&gt; C[Leader A: Epoch 5]
+B --&gt; D[Leader B: Epoch 6]
+
+E[Partition Heals] --&gt; F[Controller Detects Conflict]
+F --&gt; G[Higher Epoch Wins]
+G --&gt; H[Leader A Steps Down]
+G --&gt; I[Leader B Remains Active]
+
+H --&gt; J[Followers Truncate Conflicting Data]
+
+style C fill:#FFB6C1
+style D fill:#90EE90
+style J fill:#FFF2E6
+</code>
+</pre>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“How does Kafka handle split-brain scenarios?” Answer: Leader epochs ensure only one leader per epoch can be active. When network partitions heal, the leader with the higher epoch wins, and followers truncate any conflicting data.</em></p>
+<h3 id="Best-Practices-for-Leader-Epochs"><a href="#Best-Practices-for-Leader-Epochs" class="headerlink" title="Best Practices for Leader Epochs"></a>Best Practices for Leader Epochs</h3><h4 id="1-Monitoring-Epoch-Changes"><a href="#1-Monitoring-Epoch-Changes" class="headerlink" title="1. Monitoring Epoch Changes"></a>1. Monitoring Epoch Changes</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Monitor frequent leader elections</span></span><br><span class="line">kafka-log-dirs.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --json | jq <span class="string">&#x27;.brokers[].logDirs[].partitions[] | select(.leaderEpoch &gt; 10)&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check epoch files</span></span><br><span class="line"><span class="built_in">ls</span> -la /var/lib/kafka/logs/my-topic-0/leader-epoch-checkpoint</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-Configuration-for-Stability"><a href="#2-Configuration-for-Stability" class="headerlink" title="2. Configuration for Stability"></a>2. Configuration for Stability</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Reduce unnecessary leader elections</span></span><br><span class="line"><span class="attr">replica.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">replica.socket.receive.buffer.bytes</span>=<span class="string">65536</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Controller stability</span></span><br><span class="line"><span class="attr">controller.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">controller.message.queue.size</span>=<span class="string">10</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Integration-and-Best-Practices"><a href="#Integration-and-Best-Practices" class="headerlink" title="Integration and Best Practices"></a>Integration and Best Practices</h2><h3 id="The-Complete-Flow-ISR-HW-Epochs"><a href="#The-Complete-Flow-ISR-HW-Epochs" class="headerlink" title="The Complete Flow: ISR + HW + Epochs"></a>The Complete Flow: ISR + HW + Epochs</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant P as Producer
+participant L as Leader (Epoch N)
+participant F1 as Follower 1
+participant F2 as Follower 2
+
+Note over L: ISR &#x3D; [Leader, F1, F2]
+
+P-&gt;&gt;L: Produce (acks&#x3D;all)
+L-&gt;&gt;L: Append to log (LEO: 101)
+
+par Replication
+    L-&gt;&gt;F1: Replicate message
+    L-&gt;&gt;F2: Replicate message
+end
+
+par Acknowledgments
+    F1-&gt;&gt;L: Ack (LEO: 101)
+    F2-&gt;&gt;L: Ack (LEO: 101)
+end
+
+L-&gt;&gt;L: Update HW &#x3D; min(101, 101, 101) &#x3D; 101
+L-&gt;&gt;P: Produce response (success)
+
+Note over L,F2: All ISR members have message
+Note over L: HW advanced, message visible to consumers
+</code>
+</pre>
+
+<h3 id="Production-Configuration-Template"><a href="#Production-Configuration-Template" class="headerlink" title="Production Configuration Template"></a>Production Configuration Template</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ISR Management</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># High Watermark Optimization</span></span><br><span class="line"><span class="attr">replica.fetch.wait.max.ms</span>=<span class="string">500</span></span><br><span class="line"><span class="attr">replica.fetch.min.bytes</span>=<span class="string">1024</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Leader Epoch Stability</span></span><br><span class="line"><span class="attr">controller.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">replica.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Monitoring</span></span><br><span class="line"><span class="attr">jmx.port</span>=<span class="string">9999</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“How do you ensure exactly-once delivery in Kafka?” Answer: Combine ISR with <code>min.insync.replicas=2</code>, <code>acks=all</code>, idempotent producers (<code>enable.idempotence=true</code>), and proper transaction management.</em></p>
+<h3 id="Advanced-Scenarios-and-Edge-Cases"><a href="#Advanced-Scenarios-and-Edge-Cases" class="headerlink" title="Advanced Scenarios and Edge Cases"></a>Advanced Scenarios and Edge Cases</h3><h4 id="Scenario-1-Cascading-Failures"><a href="#Scenario-1-Cascading-Failures" class="headerlink" title="Scenario 1: Cascading Failures"></a>Scenario 1: Cascading Failures</h4><pre>
+<code class="mermaid">
+graph TD
+A[3 Replicas in ISR] --&gt; B[1 Replica Fails]
+B --&gt; C[ISR &#x3D; 2, Still Accepting Writes]
+C --&gt; D[2nd Replica Fails]
+D --&gt; E{min.insync.replicas&#x3D;2?}
+E --&gt;|Yes| F[Reject Writes - Availability Impact]
+E --&gt;|No| G[Continue with 1 Replica - Consistency Risk]
+
+style F fill:#FFE6E6
+style G fill:#FFF2E6
+</code>
+</pre>
+
+<h4 id="Scenario-2-Network-Partitions"><a href="#Scenario-2-Network-Partitions" class="headerlink" title="Scenario 2: Network Partitions"></a>Scenario 2: Network Partitions</h4><pre>
+<code class="mermaid">
+flowchart LR
+subgraph &quot;Before Partition&quot;
+    A1[Leader: Broker 1]
+    B1[Follower: Broker 2]
+    C1[Follower: Broker 3]
+end
+
+subgraph &quot;During Partition&quot;
+    A2[Isolated: Broker 1]
+    B2[New Leader: Broker 2]
+    C2[Follower: Broker 3]
+end
+
+subgraph &quot;After Partition Heals&quot;
+    A3[Demoted: Broker 1]
+    B3[Leader: Broker 2]
+    C3[Follower: Broker 3]
+end
+
+A1 --&gt; A2
+B1 --&gt; B2
+C1 --&gt; C2
+
+A2 --&gt; A3
+B2 --&gt; B3
+C2 --&gt; C3
+
+style A2 fill:#FFB6C1
+style B2 fill:#90EE90
+style A3 fill:#87CEEB
+</code>
+</pre>
+
+<h2 id="Troubleshooting-Common-Issues"><a href="#Troubleshooting-Common-Issues" class="headerlink" title="Troubleshooting Common Issues"></a>Troubleshooting Common Issues</h2><h3 id="Issue-1-ISR-Constantly-Shrinking-Expanding"><a href="#Issue-1-ISR-Constantly-Shrinking-Expanding" class="headerlink" title="Issue 1: ISR Constantly Shrinking&#x2F;Expanding"></a>Issue 1: ISR Constantly Shrinking&#x2F;Expanding</h3><p><strong>Symptoms:</strong></p>
+<ul>
+<li>Frequent ISR change notifications</li>
+<li>Performance degradation</li>
+<li>Producer timeout errors</li>
+</ul>
+<p><strong>Root Causes &amp; Solutions:</strong></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[ISR Instability] --&gt; B[Network Issues]
+A --&gt; C[GC Pauses]
+A --&gt; D[Disk I&#x2F;O Bottleneck]
+A --&gt; E[Configuration Issues]
+
+B --&gt; B1[Check network latency]
+B --&gt; B2[Increase socket timeouts]
+
+C --&gt; C1[Tune JVM heap]
+C --&gt; C2[Use G1&#x2F;ZGC garbage collector]
+
+D --&gt; D1[Monitor disk utilization]
+D --&gt; D2[Use faster storage]
+
+E --&gt; E1[Adjust replica.lag.time.max.ms]
+E --&gt; E2[Review fetch settings]
+</code>
+</pre>
+
+<p><strong>Diagnostic Commands:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check ISR metrics</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=ReplicaManager,name=IsrShrinksPerSec</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitor network and disk</span></span><br><span class="line">iostat -x 1</span><br><span class="line">ss -tuln | grep 9092</span><br></pre></td></tr></table></figure>
+
+<h3 id="Issue-2-High-Watermark-Not-Advancing"><a href="#Issue-2-High-Watermark-Not-Advancing" class="headerlink" title="Issue 2: High Watermark Not Advancing"></a>Issue 2: High Watermark Not Advancing</h3><p><strong>Investigation Steps:</strong></p>
+<ol>
+<li><strong>Check ISR Status:</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kafka-topics.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --topic problematic-topic</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>Verify Follower Lag:</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kafka-consumer-groups.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --group __consumer_offsets</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong>Monitor Replica Metrics:</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check replica lag</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=FetcherLagMetrics,name=ConsumerLag,clientId=*</span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“How would you troubleshoot slow consumer lag?” Answer: Check ISR health, monitor replica fetch metrics, verify network connectivity between brokers, and ensure followers aren’t experiencing GC pauses or disk I&#x2F;O issues.</em></p>
+<h3 id="Issue-3-Frequent-Leader-Elections"><a href="#Issue-3-Frequent-Leader-Elections" class="headerlink" title="Issue 3: Frequent Leader Elections"></a>Issue 3: Frequent Leader Elections</h3><p><strong>Analysis Framework:</strong></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Frequent Leader Elections] --&gt; B{Check Controller Logs}
+B --&gt; C[ZooKeeper Session Timeouts]
+B --&gt; D[Broker Failures]
+B --&gt; E[Network Partitions]
+
+C --&gt; C1[Tune zookeeper.session.timeout.ms]
+D --&gt; D1[Investigate broker health]
+E --&gt; E1[Check network stability]
+
+D1 --&gt; D2[GC tuning]
+D1 --&gt; D3[Resource monitoring]
+D1 --&gt; D4[Hardware issues]
+</code>
+</pre>
+
+<h2 id="Performance-Tuning"><a href="#Performance-Tuning" class="headerlink" title="Performance Tuning"></a>Performance Tuning</h2><h3 id="ISR-Performance-Optimization"><a href="#ISR-Performance-Optimization" class="headerlink" title="ISR Performance Optimization"></a>ISR Performance Optimization</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Reduce ISR churn</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">30000  # Increase if network is slow</span></span><br><span class="line"><span class="attr">replica.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">replica.socket.receive.buffer.bytes</span>=<span class="string">65536</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Optimize fetch behavior</span></span><br><span class="line"><span class="attr">replica.fetch.wait.max.ms</span>=<span class="string">500</span></span><br><span class="line"><span class="attr">replica.fetch.min.bytes</span>=<span class="string">1024</span></span><br><span class="line"><span class="attr">replica.fetch.max.bytes</span>=<span class="string">1048576</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="High-Watermark-Optimization"><a href="#High-Watermark-Optimization" class="headerlink" title="High Watermark Optimization"></a>High Watermark Optimization</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Faster HW advancement</span></span><br><span class="line"><span class="attr">replica.fetch.backoff.ms</span>=<span class="string">1000</span></span><br><span class="line"><span class="attr">replica.high.watermark.checkpoint.interval.ms</span>=<span class="string">5000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Batch processing</span></span><br><span class="line"><span class="attr">replica.fetch.response.max.bytes</span>=<span class="string">10485760</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Monitoring-and-Alerting"><a href="#Monitoring-and-Alerting" class="headerlink" title="Monitoring and Alerting"></a>Monitoring and Alerting</h3><p><strong>Key Metrics to Monitor:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Threshold</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ISR Shrink Rate</td>
+<td>&gt; 1&#x2F;hour</td>
+<td>Investigate network&#x2F;GC</td>
+</tr>
+<tr>
+<td>Under Replicated Partitions</td>
+<td>&gt; 0</td>
+<td>Check broker health</td>
+</tr>
+<tr>
+<td>Leader Election Rate</td>
+<td>&gt; 1&#x2F;hour</td>
+<td>Check controller stability</td>
+</tr>
+<tr>
+<td>Replica Lag</td>
+<td>&gt; 10000 messages</td>
+<td>Scale or optimize</td>
+</tr>
+</tbody></table>
+<p><strong>JMX Monitoring Script:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Key Kafka ISR/HW metrics monitoring</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ISR shrinks per second</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;ISR Shrinks:&quot;</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=ReplicaManager,name=IsrShrinksPerSec \</span><br><span class="line">  --one-time</span><br><span class="line"></span><br><span class="line"><span class="comment"># Under-replicated partitions</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Under-replicated Partitions:&quot;</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=ReplicaManager,name=UnderReplicatedPartitions \</span><br><span class="line">  --one-time</span><br><span class="line"></span><br><span class="line"><span class="comment"># Leader election rate</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Leader Elections:&quot;</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.controller:<span class="built_in">type</span>=ControllerStats,name=LeaderElectionRateAndTimeMs \</span><br><span class="line">  --one-time</span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Final Interview Insight</strong>: <em>“What’s the relationship between ISR, HW, and Leader Epochs?” Answer: They form Kafka’s consistency triangle - ISR ensures adequate replication, HW provides read consistency, and Leader Epochs prevent split-brain scenarios. Together, they enable Kafka’s strong durability guarantees while maintaining high availability.</em></p>
+<hr>
+<p><em>This guide provides a comprehensive understanding of Kafka’s core consistency mechanisms. Use it as a reference for both system design and troubleshooting scenarios.</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/kafka/" rel="tag"># kafka</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/09/Kafka-Storage-Architecture-Deep-Dive-Guide/" rel="prev" title="Kafka Storage Architecture: Deep Dive Guide">
+                  <i class="fa fa-angle-left"></i> Kafka Storage Architecture: Deep Dive Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
