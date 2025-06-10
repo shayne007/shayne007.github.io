@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,536 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/05/28/ElasticSearch-Notes-for-Interview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/05/28/ElasticSearch-Notes-for-Interview/" class="post-title-link" itemprop="url">ElasticSearch Notes for Interview</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-05-28 16:51:37" itemprop="dateCreated datePublished" datetime="2025-05-28T16:51:37+08:00">2025-05-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2025-06-01 16:06:56" itemprop="dateModified" datetime="2025-06-01T16:06:56+08:00">2025-06-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/elasticsearch/" itemprop="url" rel="index"><span itemprop="name">elasticsearch</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <ul>
+<li><p>Es基础知识</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p>基于<strong>Lucene</strong>的Restful的分布式实时全文搜索引擎，快速存储、搜索、分析海量数据。</p>
+</li>
+<li><p><strong>Index</strong>索引：存储数据的地方，类似mysql的表。</p>
+</li>
+<li><p><strong>document</strong>文档：类似mysql种的一行数据，但是每个文档可以有不同的字段。</p>
+</li>
+<li><p><strong>field</strong>字段：最小单位。</p>
+</li>
+<li><p><strong>shard</strong>分片：数据切分为多个shard后可以分布在多台服务器，横向扩展，提升吞吐量和性能。</p>
+</li>
+<li><p><strong>replica</strong>副本：一个shard可以创建多个replica副本，提供备用服务，提升搜索吞吐量和可用性。</p>
+</li>
+<li><p><strong>text</strong>与<strong>keyword</strong>：是否分词。</p>
+</li>
+<li><p><strong>query</strong>与<strong>filter</strong>：是否计算分值。</p>
+</li>
+</ul>
+</li>
+<li><p>Es的底层原理</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p><strong>倒排索引</strong></p>
+</li>
+<li><p><strong>前缀树</strong>，也叫做<strong>字典树</strong>（Trie Tree）</p>
+</li>
+<li><p><strong>refresh</strong>操作</p>
+</li>
+<li><p><strong>flush</strong>操作</p>
+</li>
+<li><p><strong>fsync</strong>操作</p>
+</li>
+</ul>
+</li>
+<li><p>什么倒排索引</p>
+</li>
+</ul>
+<blockquote>
+<p>每个文档都有对应的文档ID，文档内容可以表示为一系列关键词（<strong>Term</strong>）的集合。通过倒排索引，可以记录每个关键词在文档中出现的次数和位置。<br>倒排索引是关键词到文档ID、出现频率、位置的映射（<strong>posting list</strong>），每个关键词都对应一系列的文件，这些文件都出现了该关键词。<br>每个字段是分散统计的，也就是说每个字段都有一个posting list。关键词的查找基于前缀树，也叫做字典树（trie tree），es里面叫做<strong>Term Dictionary</strong>。为了节省内存空间，es对前缀树做了优化，压缩了公共前缀、后缀，就是所谓的<strong>FST（Finite State Transducers）</strong>。</p>
+</blockquote>
+<ul>
+<li>写入数据</li>
+</ul>
+<p><strong>文档 -&gt; Indexing Buffer -&gt; Page Cache -&gt; 磁盘</strong></p>
+<p><strong>Translog -&gt; Page Cache -&gt; 磁盘</strong></p>
+<ul>
+<li><p>refresh刷新操作将索引缓存写入到 Page Cache，保存为segment段文件，一个段里面包含了多个文档，refresh默认<strong>1秒钟</strong>执行一次，此时文档才能够被检索，这也是称Es为近实时搜索的原因。</p>
+</li>
+<li><p>Page Cache通过异步刷新（fsync）将数据写入到磁盘文件。</p>
+</li>
+<li><p>文档写入缓存的时候，同时会记录Translog，默认<strong>5秒钟</strong>固定间隔时间刷新到磁盘。</p>
+</li>
+<li><p>前缀树</p>
+</li>
+<li><p>Es怎么保证高可用？</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p>Es高可用的核心是<strong>shard</strong>分片与<strong>replica</strong>副本</p>
+</li>
+<li><p><strong>TransLog</strong>保障数据写入的高可用，避免掉电时的写入丢失</p>
+</li>
+</ul>
+</li>
+<li><p>Es高可用的基本保证</p>
+</li>
+</ul>
+<blockquote>
+<p>Es高可用的核心是分片，并且每个分片都有主从之分，万一主分片崩溃了，还可以使用从分片，也就是副本分片，从而保证了最基本的可用性。<br>Es在写入数据的过程中，为了保证高性能，都是写入到自己的Buffer里面，后面再刷新到磁盘上。所以为了降低数据丢失的风险，es还额外写了一个Translog，类似于Mysql里的redo log。后面es崩溃之后，可以利用Translog来恢复数据。</p>
+</blockquote>
+<ul>
+<li><p>Es高可用的额外优化</p>
+<ul>
+<li><p>限流保护节点：插件、网关或代理、客户端限流。</p>
+</li>
+<li><p>利用消息队列削峰：数据写入数据库，监听binlog，发消息到MQ，消费消息并写入Es。</p>
+</li>
+<li><p>保护协调节点：使用单一角色；分组与隔离。</p>
+</li>
+<li><p>双集群部署：消息队列两个消费者双写到AB两个集群。</p>
+</li>
+</ul>
+</li>
+<li><p>Es查询性能优化？</p>
+</li>
+<li><p>关键词</p>
+<ul>
+<li><p>jvm参数</p>
+</li>
+<li><p>本地内存优化</p>
+</li>
+</ul>
+</li>
+<li><p>高性能方案</p>
+<ul>
+<li><p>常规方案</p>
+<ul>
+<li><p>优化垃圾回收</p>
+</li>
+<li><p>优化swap</p>
+</li>
+<li><p>文件描述符</p>
+</li>
+</ul>
+</li>
+<li><p>优化分页查询</p>
+</li>
+<li><p>批量提交</p>
+</li>
+<li><p>调大refresh时间间隔</p>
+</li>
+<li><p>优化不必要字段</p>
+</li>
+<li><p>冷热分离</p>
+</li>
+</ul>
+</li>
+<li><p>JVM本地内存优化</p>
+</li>
+</ul>
+<p>场景：Elasticsearch 的 Lucene 索引占用大量堆外内存（Off-Heap），配置不当易引发 OOM。</p>
+<p>优化方案：</p>
+<ul>
+<li><p>限制字段数据缓存（fielddata）大小，不超过堆内存的 30%</p>
+<ul>
+<li>indices.fielddata.cache.size: 30%</li>
+</ul>
+</li>
+<li><p>优化分片（shard）数量</p>
+<ul>
+<li><p>单个分片大小建议在 10-50GB 之间，<strong>过多分片会增加堆外内存开销</strong>。</p>
+</li>
+<li><p>例如：100GB 索引，分配 2-5 个分片。</p>
+</li>
+</ul>
+</li>
+<li><p>Es的实战应用</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://shimo.im/docs/PJtKVDqYkYXddjgJ">视频图片结构化分析系统</a>使用<strong>ElasticSearch</strong>存储结构化信息支持目标检索功能</p>
+<ul>
+<li><p>技术选型分析</p>
+<ul>
+<li><p>需要存储哪些数据：视频分析结果数据（人形、车辆、人脸、骑行等）存储。</p>
+</li>
+<li><p>支持目标检索</p>
+</li>
+</ul>
+</li>
+<li><p>部署架构与高可用：三节点部署集群。</p>
+</li>
+<li><p>性能优化：Es批量写入、Es使用Kafka异步写入、refresh时间间隔配置修改。</p>
+</li>
+<li><p>常见问题解决经验</p>
+<ul>
+<li><p>数据丢失与备份</p>
+</li>
+<li><p>分页查询（&#x2F;image_result&#x2F;_search?scroll&#x3D;10m）</p>
+</li>
+<li><p>脑裂问题</p>
+</li>
+<li><p>中文分词</p>
+<ul>
+<li><p>ik中文分词器</p>
+</li>
+<li><p><strong>定制分词器</strong>：结巴分词+公安特征词库（10万+专用词汇）</p>
+<ul>
+<li>ik分词器的配置文件中<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/468392276">修改远程扩展词典</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/17/Kafka-In-Action/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/05/17/Kafka-In-Action/" class="post-title-link" itemprop="url">Kafka In Action</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2021-05-17 13:12:17 / Modified: 13:19:29" itemprop="dateCreated datePublished" datetime="2021-05-17T13:12:17+08:00">2021-05-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="消息引擎系统"><a href="#消息引擎系统" class="headerlink" title="消息引擎系统"></a>消息引擎系统</h1><p><img src="https://uploader.shimo.im/f/GwdoPlAJ7tC6GGpA.png!thumbnail?fileGuid=Ggk3HpKgtRQH3Dh6" alt="Kafka Logo"></p>
+<ul>
+<li>Apache Kafka 是一款开源的消息引擎系统。</li>
+<li>消息引擎系统是一组规范。企业利用这组规范在不同系统之间传递语义准确的消息，实现松耦合的异步式数据传递。</li>
+<li>Kafka 是消息引擎系统，也是分布式流处理平台。</li>
+</ul>
+<h1 id="Kafka-架构"><a href="#Kafka-架构" class="headerlink" title="Kafka 架构"></a>Kafka 架构</h1><p><img src="https://uploader.shimo.im/f/sNIPG7KWTDuxoecr.png!thumbnail?fileGuid=Ggk3HpKgtRQH3Dh6" alt="Kafka Architecture"></p>
+<p>设计目标：</p>
+<ul>
+<li>提供一套 API 实现生产者和消费者；</li>
+<li>降低网络传输和磁盘存储开销；</li>
+<li>实现高伸缩性架构。</li>
+</ul>
+<h1 id="Kafka-版本号"><a href="#Kafka-版本号" class="headerlink" title="Kafka 版本号"></a>Kafka 版本号</h1><ul>
+<li>0.7 版本:只有基础消息队列功能，无副本；打死也不使用</li>
+<li>0.8 版本:增加了副本机制，新的 producer API；建议使用 0.8.2.2 版本；不建议使用 0.8.2.0 之后的 producer API</li>
+<li>0.9 版本:增加权限和认证，新的 consumer API，Kafka Connect 功能；不建议使用 consumer API；</li>
+<li>0.10 版本:引入 Kafka Streams 功能，bug 修复；建议版本<strong>0.10.2.2</strong>；建议使用新版 consumer API</li>
+<li>0.11 版本:producer API 幂等，事务 API，消息格式重构；建议版本 0.11.0.3；谨慎对待消息格式变化</li>
+<li>1.0 和 2.0 版本:Kafka Streams 改进；建议版本 2.0；</li>
+</ul>
+<h1 id="Kafka-的基本使用"><a href="#Kafka-的基本使用" class="headerlink" title="Kafka 的基本使用"></a>Kafka 的基本使用</h1><h2 id="如何做-kafka-线上集群部署方案？"><a href="#如何做-kafka-线上集群部署方案？" class="headerlink" title="如何做 kafka 线上集群部署方案？"></a>如何做 kafka 线上集群部署方案？</h2><p><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/101107">https://time.geekbang.org/column/article/101107</a></p>
+<h2 id="集群参数配置"><a href="#集群参数配置" class="headerlink" title="集群参数配置"></a>集群参数配置</h2><ul>
+<li>Broker 端参数</li>
+</ul>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># A comma separated list of directories under which to store log files</span></span><br><span class="line"><span class="attr">log.dirs</span>=<span class="string">/home/kafka1,/home/kafka2,/home/kafka3</span></span><br><span class="line"><span class="comment"># Zookeeper connection string</span></span><br><span class="line"><span class="attr">zookeeper.connect</span>=<span class="string">zk1:2181,zk2:2181,zk3:2181/kafka1</span></span><br><span class="line"><span class="comment"># Timeout in ms for connecting to zookeeper</span></span><br><span class="line"><span class="attr">zookeeper.connection.timeout.ms</span>=<span class="string">18000</span></span><br><span class="line"><span class="comment"># The address the socket server listens on</span></span><br><span class="line"><span class="attr">listeners</span>=<span class="string">PLAINTEXT://:9092</span></span><br><span class="line"><span class="comment"># Hostname and port the broker will advertise</span></span><br><span class="line"><span class="attr">advertised.listeners</span>=<span class="string">PLAINTEXT://:9092</span></span><br><span class="line"><span class="comment"># Log retention settings</span></span><br><span class="line"><span class="attr">log.retention.hours</span>=<span class="string">168</span></span><br><span class="line"><span class="attr">log.retention.ms</span>=<span class="string">15552000000</span></span><br><span class="line"><span class="attr">log.retention.bytes</span>=<span class="string">1073741824</span></span><br><span class="line"><span class="attr">log.segment.bytes</span>=<span class="string">1073741824</span></span><br><span class="line"><span class="attr">log.retention.check.interval.ms</span>=<span class="string">300000</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Topic 参数</li>
+</ul>
+<p>创建 Topic 时进行设置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-topics.sh \</span><br><span class="line">--bootstrap-server localhost:9092 \</span><br><span class="line">--create \</span><br><span class="line">--topic transaction \</span><br><span class="line">--partitions 1 \</span><br><span class="line">--replication-factor 1 \</span><br><span class="line">--config retention.ms=15552000000 \</span><br><span class="line">--config max.message.bytes=5242880</span><br></pre></td></tr></table></figure>
+
+<p>修改 Topic 时设置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-configs.sh \</span><br><span class="line">--zookeeper localhost:2181 \</span><br><span class="line">--entity-type topics \</span><br><span class="line">--entity-name transaction \</span><br><span class="line">--alter \</span><br><span class="line">--add-config max.message.bytes=10485760</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>JVM 端参数</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> KAFKA_HEAP_OPTS=<span class="string">&quot;--Xms6g --Xmx6g&quot;</span></span><br><span class="line"><span class="built_in">export</span> KAFKA_JVM_PERFORMANCE_OPTS=<span class="string">&quot; \</span></span><br><span class="line"><span class="string">-server \</span></span><br><span class="line"><span class="string">-XX:+UseG1GC \</span></span><br><span class="line"><span class="string">-XX:MaxGCPauseMillis=20 \</span></span><br><span class="line"><span class="string">-XX:InitiatingHeapOccupancyPercent=35 \</span></span><br><span class="line"><span class="string">-XX:+ExplicitGCInvokesConcurrent \</span></span><br><span class="line"><span class="string">-Djava.awt.headless=true&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="无消息丢失配置"><a href="#无消息丢失配置" class="headerlink" title="无消息丢失配置"></a>无消息丢失配置</h2><ol>
+<li>不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。记住，一定要使用带有回调通知的 send 方法。</li>
+<li>设置 acks &#x3D; all。acks 是 Producer 的一个参数，代表了你对”已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是”已提交”。这是最高等级的”已提交”定义。</li>
+<li>设置 retries 为一个较大的值。这里的 retries 同样是 Producer 的参数，对应前面提到的 Producer 自动重试。当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。</li>
+<li>设置 unclean.leader.election.enable &#x3D; false。这是 Broker 端的参数，它控制的是哪些 Broker 有资格竞选分区的 Leader。</li>
+<li>设置 replication.factor &gt;&#x3D; 3。这也是 Broker 端的参数。其实这里想表述的是，最好将消息多保存几份，毕竟目前防止消息丢失的主要机制就是冗余。</li>
+<li>设置 min.insync.replicas &gt; 1。这依然是 Broker 端参数，控制的是消息至少要被写入到多少个副本才算是”已提交”。设置成大于 1 可以提升消息持久性。在实际环境中千万不要使用默认值 1。</li>
+<li>确保 replication.factor &gt; min.insync.replicas。如果两者相等，那么只要有一个副本挂机，整个分区就无法正常工作了。我们不仅要改善消息的持久性，防止数据丢失，还要在不降低可用性的基础上完成。推荐设置成 replication.factor &#x3D; min.insync.replicas + 1。</li>
+<li>确保消息消费完成再提交。Consumer 端有个参数 enable.auto.commit，最好把它设置成 false，并采用手动提交位移的方式。就像前面说的，这对于单 Consumer 多线程处理的场景而言是至关重要的。</li>
+</ol>
+<h2 id="生产者分区策略"><a href="#生产者分区策略" class="headerlink" title="生产者分区策略"></a>生产者分区策略</h2><h2 id="数据可靠性保证"><a href="#数据可靠性保证" class="headerlink" title="数据可靠性保证"></a>数据可靠性保证</h2><h2 id="消息幂等与事务"><a href="#消息幂等与事务" class="headerlink" title="消息幂等与事务"></a>消息幂等与事务</h2><h2 id="消费者组"><a href="#消费者组" class="headerlink" title="消费者组"></a>消费者组</h2><p><img src="https://uploader.shimo.im/f/jsSjwxqokB6rcxVp.png!thumbnail?fileGuid=Ggk3HpKgtRQH3Dh6" alt="Consumer Group"></p>
+<p><strong>rebalance</strong></p>
+<ul>
+<li>session.timeout.ms</li>
+<li>heartbeat.interval.ms</li>
+</ul>
+<p>要保证 Consumer 实例在被判定为”dead”之前，能够发送至少 3 轮的心跳请求，即 session.timeout.ms &gt;&#x3D; 3 * heartbeat.interval.ms。</p>
+<ul>
+<li>max.poll.interval.ms</li>
+</ul>
+<p>This is a safety mechanism which guarantees that only active members of the group are able to commit offsets. So to stay in the group, you must continue to call poll.</p>
+<ul>
+<li>GC 参数</li>
+</ul>
+<p>The recommended way to handle these cases is to move message processing to another thread, which allows the consumer to continue calling<code>poll</code>while the processor is still working. Some care must be taken to ensure that committed offsets do not get ahead of the actual position.</p>
+<h2 id="位移提交"><a href="#位移提交" class="headerlink" title="位移提交"></a>位移提交</h2><p><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/106904">https://time.geekbang.org/column/article/106904</a></p>
+<p><img src="https://uploader.shimo.im/f/1aQ3bQwlOaMxZ7zE.png!thumbnail?fileGuid=Ggk3HpKgtRQH3Dh6" alt="Offset Commit"></p>
+<ul>
+<li>自动提交</li>
+</ul>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">enable.auto.commit</span>=<span class="string">true</span></span><br><span class="line"><span class="attr">auto.commit.interval.ms</span>=<span class="string">5000</span></span><br></pre></td></tr></table></figure>
+
+<p>一旦设置了 enable.auto.commit 为 true，Kafka 会保证在开始调用 poll 方法时，提交上次 poll 返回的所有消息。从顺序上来说，poll 方法的逻辑是先提交上一批消息的位移，再处理下一批消息，因此它能保证不出现<strong>消费丢失</strong>的情况。但自动提交位移的一个问题在于，它可能会出现<strong>重复消费</strong>。<br>重复消费发生在 consumer 故障重启后，重新从磁盘读取 commited offset。只要 consumer 没有重启，不会发生重复消费，因为在运行过程中 consumer 会记录已获取的消息位移。</p>
+<ul>
+<li>手动提交</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 同步阻塞</span></span><br><span class="line">consumer.commitSync()</span><br><span class="line"><span class="comment">// 异步回调</span></span><br><span class="line">consumer.commitAsync(callback)</span><br></pre></td></tr></table></figure>
+
+<p>可同时使用 commitSync() 和 commitAsync()。对于常规性、阶段性的手动提交，我们调用 commitAsync() 避免程序阻塞，而在 Consumer 要关闭前，我们调用 commitSync() 方法执行同步阻塞式的位移提交，以确保 Consumer 关闭前能够保存正确的位移数据。将两者结合后，我们既实现了异步无阻塞式的位移管理，也确保了 Consumer 位移的正确性。<br>比如我程序运行期间有多次异步提交没有成功，比如 101 的 offset 和 201 的 offset 没有提交成功，程序关闭的时候 501 的 offset 提交成功了，就代表前面 500 条还是消费成功了，只要最新的位移提交成功，就代表之前的消息都提交成功了。</p>
+<h2 id="消费者组消费进度监控"><a href="#消费者组消费进度监控" class="headerlink" title="消费者组消费进度监控"></a>消费者组消费进度监控</h2><ul>
+<li>使用 Kafka 自带的命令行工具 kafka-consumer-groups 脚本。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">./kafka-consumer-groups.sh \</span><br><span class="line">--bootstrap-server kafka:9092 \</span><br><span class="line">--describe \</span><br><span class="line">--all-groups</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://uploader.shimo.im/f/Cs83PebnjYOZFDXU.png!thumbnail?fileGuid=Ggk3HpKgtRQH3Dh6" alt="Consumer Groups"></p>
+<ul>
+<li>使用 Kafka Java Consumer API 编程。</li>
+<li>使用 Kafka 自带的 JMX 监控指标。</li>
+</ul>
+<h1 id="Kafka-的副本机制"><a href="#Kafka-的副本机制" class="headerlink" title="Kafka 的副本机制"></a>Kafka 的副本机制</h1><h1 id="Kafka-请求-Reactor-处理机制"><a href="#Kafka-请求-Reactor-处理机制" class="headerlink" title="Kafka 请求 Reactor 处理机制"></a>Kafka 请求 Reactor 处理机制</h1><p>broker 参数</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># The number of threads that the server uses for receiving requests from the network and sending responses to the network</span></span><br><span class="line"><span class="attr">num.network.threads</span>=<span class="string">3</span></span><br><span class="line"><span class="comment"># The number of threads that the server uses for processing requests, which may include disk I/O</span></span><br><span class="line"><span class="attr">num.io.threads</span>=<span class="string">8</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://uploader.shimo.im/f/lDRma97OpwXksWpD.png!thumbnail?fileGuid=Ggk3HpKgtRQH3Dh6" alt="Reactor Pattern"></p>
+<h1 id="高水位和-Leader-Epoch-机制"><a href="#高水位和-Leader-Epoch-机制" class="headerlink" title="高水位和 Leader Epoch 机制"></a>高水位和 Leader Epoch 机制</h1><p><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/112118">https://time.geekbang.org/column/article/112118</a></p>
+<h1 id="管理与监控"><a href="#管理与监控" class="headerlink" title="管理与监控"></a>管理与监控</h1><h2 id="主题日常管理"><a href="#主题日常管理" class="headerlink" title="主题日常管理"></a>主题日常管理</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建主题</span></span><br><span class="line">bin/kafka-topics.sh \</span><br><span class="line">--bootstrap-server broker_host:port \</span><br><span class="line">--create \</span><br><span class="line">--topic my_topic_name \</span><br><span class="line">--partitions 1 \</span><br><span class="line">--replication-factor 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看主题列表</span></span><br><span class="line">bin/kafka-topics.sh \</span><br><span class="line">--bootstrap-server broker_host:port \</span><br><span class="line">--list</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看主题详情</span></span><br><span class="line">bin/kafka-topics.sh \</span><br><span class="line">--bootstrap-server broker_host:port \</span><br><span class="line">--describe \</span><br><span class="line">--topic &lt;topic_name&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改分区数</span></span><br><span class="line">bin/kafka-topics.sh \</span><br><span class="line">--bootstrap-server broker_host:port \</span><br><span class="line">--alter \</span><br><span class="line">--topic &lt;topic_name&gt; \</span><br><span class="line">--partitions &lt;新分区数&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改主题配置</span></span><br><span class="line">bin/kafka-configs.sh \</span><br><span class="line">--zookeeper zookeeper_host:port \</span><br><span class="line">--entity-type topics \</span><br><span class="line">--entity-name &lt;topic_name&gt; \</span><br><span class="line">--alter \</span><br><span class="line">--add-config max.message.bytes=10485760</span><br><span class="line"></span><br><span class="line"><span class="comment"># 删除主题</span></span><br><span class="line">bin/kafka-topics.sh \</span><br><span class="line">--bootstrap-server broker_host:port \</span><br><span class="line">--delete \</span><br><span class="line">--topic &lt;topic_name&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="动态参数配置"><a href="#动态参数配置" class="headerlink" title="动态参数配置"></a>动态参数配置</h2><h2 id="kafka-调优"><a href="#kafka-调优" class="headerlink" title="kafka 调优"></a>kafka 调优</h2><p><a target="_blank" rel="noopener" href="https://time.geekbang.org/column/article/128184">https://time.geekbang.org/column/article/128184</a></p>
+<p>OS tuning</p>
+<ul>
+<li>Virtual Memory</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看当前配置</span></span><br><span class="line"><span class="built_in">cat</span> /proc/sys/vm/swappiness</span><br><span class="line"><span class="built_in">cat</span> /proc/sys/vm/dirty_background_ratio</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改配置</span></span><br><span class="line">vi /etc/sysctl.conf</span><br><span class="line"><span class="comment"># The percentage of how likely the VM subsystem is to use swap space rather than dropping pages from the page cache.</span></span><br><span class="line">vm.swappiness=1</span><br><span class="line"><span class="comment"># The percentage of the total amount of system memory, and setting this value to 5 is appropriate in many situations.</span></span><br><span class="line">vm.dirty_background_ratio=5</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看当前状态</span></span><br><span class="line"><span class="built_in">cat</span> /proc/vmstat | egrep <span class="string">&quot;dirty|writeback&quot;</span></span><br><span class="line">nr_dirty 11</span><br><span class="line">nr_writeback 0</span><br><span class="line">nr_writeback_temp 0</span><br><span class="line">nr_dirty_threshold 67635</span><br><span class="line">nr_dirty_background_threshold 33776</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Disk</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mount -o noatime</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2021/05/15/Java-Concurrency-Basics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/05/15/Java-Concurrency-Basics/" class="post-title-link" itemprop="url">Java Concurrency Basics</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2021-05-15 13:12:17 / Modified: 13:19:29" itemprop="dateCreated datePublished" datetime="2021-05-15T13:12:17+08:00">2021-05-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="Java-Concurrency-Basics"><a href="#Java-Concurrency-Basics" class="headerlink" title="Java Concurrency Basics"></a>Java Concurrency Basics</h1><h2 id="线程基础"><a href="#线程基础" class="headerlink" title="线程基础"></a>线程基础</h2><h3 id="线程的生命周期"><a href="#线程的生命周期" class="headerlink" title="线程的生命周期"></a>线程的生命周期</h3><h3 id="线程的创建方式"><a href="#线程的创建方式" class="headerlink" title="线程的创建方式"></a>线程的创建方式</h3><h3 id="线程的基本操作"><a href="#线程的基本操作" class="headerlink" title="线程的基本操作"></a>线程的基本操作</h3><h2 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h2><h3 id="什么是线程安全"><a href="#什么是线程安全" class="headerlink" title="什么是线程安全"></a>什么是线程安全</h3><h3 id="如何保证线程安全"><a href="#如何保证线程安全" class="headerlink" title="如何保证线程安全"></a>如何保证线程安全</h3><h3 id="原子性、可见性、有序性"><a href="#原子性、可见性、有序性" class="headerlink" title="原子性、可见性、有序性"></a>原子性、可见性、有序性</h3><h2 id="锁机制"><a href="#锁机制" class="headerlink" title="锁机制"></a>锁机制</h2><h3 id="synchronized"><a href="#synchronized" class="headerlink" title="synchronized"></a>synchronized</h3><h3 id="volatile"><a href="#volatile" class="headerlink" title="volatile"></a>volatile</h3><h3 id="Lock接口"><a href="#Lock接口" class="headerlink" title="Lock接口"></a>Lock接口</h3><h2 id="线程池"><a href="#线程池" class="headerlink" title="线程池"></a>线程池</h2><h3 id="线程池的工作原理"><a href="#线程池的工作原理" class="headerlink" title="线程池的工作原理"></a>线程池的工作原理</h3><h3 id="线程池的创建方式"><a href="#线程池的创建方式" class="headerlink" title="线程池的创建方式"></a>线程池的创建方式</h3><h3 id="线程池的参数配置"><a href="#线程池的参数配置" class="headerlink" title="线程池的参数配置"></a>线程池的参数配置</h3><h2 id="并发工具类"><a href="#并发工具类" class="headerlink" title="并发工具类"></a>并发工具类</h2><h3 id="CountDownLatch"><a href="#CountDownLatch" class="headerlink" title="CountDownLatch"></a>CountDownLatch</h3><h3 id="CyclicBarrier"><a href="#CyclicBarrier" class="headerlink" title="CyclicBarrier"></a>CyclicBarrier</h3><h3 id="Semaphore"><a href="#Semaphore" class="headerlink" title="Semaphore"></a>Semaphore</h3><h3 id="Exchanger"><a href="#Exchanger" class="headerlink" title="Exchanger"></a>Exchanger</h3><h2 id="并发集合"><a href="#并发集合" class="headerlink" title="并发集合"></a>并发集合</h2><h3 id="ConcurrentHashMap"><a href="#ConcurrentHashMap" class="headerlink" title="ConcurrentHashMap"></a>ConcurrentHashMap</h3><h3 id="CopyOnWriteArrayList"><a href="#CopyOnWriteArrayList" class="headerlink" title="CopyOnWriteArrayList"></a>CopyOnWriteArrayList</h3><h3 id="BlockingQueue"><a href="#BlockingQueue" class="headerlink" title="BlockingQueue"></a>BlockingQueue</h3>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Understanding and Mitigating Duplicate Consumption in Apache KafkaApache Kafka is a distributed streaming platform renowned for its high throughput, low latency, and fault tolerance. However, a common">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka Duplicate Message Consumption">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/10/Kafka-Duplicate-Message-Consumption/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Understanding and Mitigating Duplicate Consumption in Apache KafkaApache Kafka is a distributed streaming platform renowned for its high throughput, low latency, and fault tolerance. However, a common">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-10T06:15:57.000Z">
+<meta property="article:modified_time" content="2025-06-10T06:25:31.402Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/10/Kafka-Duplicate-Message-Consumption/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/10/Kafka-Duplicate-Message-Consumption/","path":"2025/06/10/Kafka-Duplicate-Message-Consumption/","title":"Kafka Duplicate Message Consumption"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kafka Duplicate Message Consumption | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Understanding-and-Mitigating-Duplicate-Consumption-in-Apache-Kafka"><span class="nav-number">1.</span> <span class="nav-text">Understanding and Mitigating Duplicate Consumption in Apache Kafka</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#The-Nature-of-Duplicate-Consumption-Why-it-Happens"><span class="nav-number">1.1.</span> <span class="nav-text">The Nature of Duplicate Consumption: Why it Happens</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Consumer-Offset-Management-Issues"><span class="nav-number">1.1.1.</span> <span class="nav-text">Consumer Offset Management Issues</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consumer-Failures-and-Rebalances"><span class="nav-number">1.1.2.</span> <span class="nav-text">Consumer Failures and Rebalances</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Producer-Retries"><span class="nav-number">1.1.3.</span> <span class="nav-text">Producer Retries</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%80%9CAt-Least-Once%E2%80%9D-Delivery-Semantics"><span class="nav-number">1.1.4.</span> <span class="nav-text">“At-Least-Once” Delivery Semantics</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Strategies-for-Mitigating-Duplicate-Consumption"><span class="nav-number">1.2.</span> <span class="nav-text">Strategies for Mitigating Duplicate Consumption</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Producer-Side-Idempotence"><span class="nav-number">1.2.1.</span> <span class="nav-text">Producer-Side Idempotence</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Transactional-Producers-Exactly-Once-Semantics"><span class="nav-number">1.2.2.</span> <span class="nav-text">Transactional Producers (Exactly-Once Semantics)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consumer-Side-Deduplication-Idempotent-Consumers"><span class="nav-number">1.2.3.</span> <span class="nav-text">Consumer-Side Deduplication (Idempotent Consumers)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Smart-Offset-Management"><span class="nav-number">1.2.4.</span> <span class="nav-text">Smart Offset Management</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Best-Practices-for-Minimizing-Duplicates"><span class="nav-number">1.3.</span> <span class="nav-text">Best Practices for Minimizing Duplicates</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Showcases-and-Practical-Examples"><span class="nav-number">1.4.</span> <span class="nav-text">Showcases and Practical Examples</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Financial-Transaction-Processing-Exactly-Once-Critical"><span class="nav-number">1.4.1.</span> <span class="nav-text">Financial Transaction Processing (Exactly-Once Critical)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Event-Sourcing-Idempotent-Consumer-for-Snapshotting"><span class="nav-number">1.4.2.</span> <span class="nav-text">Event Sourcing (Idempotent Consumer for Snapshotting)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Question-Insights-Throughout-the-Document"><span class="nav-number">1.5.</span> <span class="nav-text">Interview Question Insights Throughout the Document</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/10/Kafka-Duplicate-Message-Consumption/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kafka Duplicate Message Consumption | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kafka Duplicate Message Consumption
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-10 14:15:57 / Modified: 14:25:31" itemprop="dateCreated datePublished" datetime="2025-06-10T14:15:57+08:00">2025-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Understanding-and-Mitigating-Duplicate-Consumption-in-Apache-Kafka"><a href="#Understanding-and-Mitigating-Duplicate-Consumption-in-Apache-Kafka" class="headerlink" title="Understanding and Mitigating Duplicate Consumption in Apache Kafka"></a>Understanding and Mitigating Duplicate Consumption in Apache Kafka</h1><p>Apache Kafka is a distributed streaming platform renowned for its high throughput, low latency, and fault tolerance. However, a common challenge in building reliable Kafka-based applications is dealing with <strong>duplicate message consumption</strong>. While Kafka guarantees “at-least-once” delivery by default, meaning a message might be delivered more than once, achieving “exactly-once” processing requires careful design and implementation.</p>
+<p>This document delves deeply into the causes of duplicate consumption, explores the theoretical underpinnings of “exactly-once” semantics, and provides practical best practices with code showcases and illustrative diagrams. It also integrates interview insights throughout the discussion to help solidify understanding for technical assessments.</p>
+<h2 id="The-Nature-of-Duplicate-Consumption-Why-it-Happens"><a href="#The-Nature-of-Duplicate-Consumption-Why-it-Happens" class="headerlink" title="The Nature of Duplicate Consumption: Why it Happens"></a>The Nature of Duplicate Consumption: Why it Happens</h2><p>Duplicate consumption occurs when a Kafka consumer processes the same message multiple times. This isn’t necessarily a flaw in Kafka but rather a consequence of its design principles and the complexities of distributed systems. Understanding the root causes is the first step towards mitigation.</p>
+<p><strong>Interview Insight:</strong> A common interview question is “Explain the different delivery semantics in Kafka (at-most-once, at-least-once, exactly-once) and where duplicate consumption fits in.” Your answer should highlight that Kafka’s default is at-least-once, which implies potential duplicates, and that exactly-once requires additional mechanisms.</p>
+<h3 id="Consumer-Offset-Management-Issues"><a href="#Consumer-Offset-Management-Issues" class="headerlink" title="Consumer Offset Management Issues"></a>Consumer Offset Management Issues</h3><p>Kafka consumers track their progress by committing “offsets” – pointers to the last message successfully processed in a partition. If an offset is not committed correctly, or if a consumer restarts before committing, it will re-read messages from the last committed offset.</p>
+<ul>
+<li><strong>Failure to Commit Offsets:</strong> If a consumer processes a message but crashes or fails before committing its offset, upon restart, it will fetch messages from the last <em>successfully committed</em> offset, leading to reprocessing of messages that were already processed but not acknowledged.</li>
+<li><strong>Auto-commit Misconfiguration:</strong> Kafka’s <code>enable.auto.commit</code> property, when set to <code>true</code>, automatically commits offsets at regular intervals (<code>auto.commit.interval.ms</code>). If processing takes longer than this interval, or if a consumer crashes between an auto-commit and message processing, duplicates can occur. Disabling auto-commit for finer control without implementing manual commits correctly is a major source of duplicates.</li>
+</ul>
+<p><strong>Showcase: Incorrect Manual Offset Management (Pseudo-code)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Consumer configuration: disable auto-commit</span></span><br><span class="line"><span class="type">Properties</span> <span class="variable">props</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">props.put(<span class="string">&quot;bootstrap.servers&quot;</span>, <span class="string">&quot;localhost:9092&quot;</span>);</span><br><span class="line">props.put(<span class="string">&quot;group.id&quot;</span>, <span class="string">&quot;my-consumer-group&quot;</span>);</span><br><span class="line">props.put(<span class="string">&quot;enable.auto.commit&quot;</span>, <span class="string">&quot;false&quot;</span>); <span class="comment">// Critical for manual control</span></span><br><span class="line"></span><br><span class="line">KafkaConsumer&lt;String, String&gt; consumer = <span class="keyword">new</span> <span class="title class_">KafkaConsumer</span>&lt;&gt;(props);</span><br><span class="line">consumer.subscribe(Collections.singletonList(<span class="string">&quot;my-topic&quot;</span>));</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        ConsumerRecords&lt;String, String&gt; records = consumer.poll(Duration.ofMillis(<span class="number">100</span>));</span><br><span class="line">        <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">            System.out.printf(<span class="string">&quot;Processing message: offset = %d, key = %s, value = %s%n&quot;</span>,</span><br><span class="line">                              record.offset(), record.key(), record.value());</span><br><span class="line">            <span class="comment">// Simulate processing time</span></span><br><span class="line">            Thread.sleep(<span class="number">500</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// ! DANGER: Offset commit placed after potential failure point or not called reliably</span></span><br><span class="line">            <span class="comment">// If an exception occurs here, or the application crashes, the offset is not committed.</span></span><br><span class="line">            <span class="comment">// On restart, these messages will be re-processed.</span></span><br><span class="line">        &#125;</span><br><span class="line">        consumer.commitSync(); <span class="comment">// This commit might not be reached if an exception occurs inside the loop.</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (WakeupException e) &#123;</span><br><span class="line">    <span class="comment">// Expected exception when consumer is closed</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    consumer.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Consumer-Failures-and-Rebalances"><a href="#Consumer-Failures-and-Rebalances" class="headerlink" title="Consumer Failures and Rebalances"></a>Consumer Failures and Rebalances</h3><p>Kafka consumer groups dynamically distribute partitions among their members. When consumers join or leave a group, or if a consumer fails, a “rebalance” occurs, reassigning partitions.</p>
+<ul>
+<li><strong>Unclean Shutdowns&#x2F;Crashes:</strong> If a consumer crashes without gracefully shutting down and committing its offsets, the partitions it was responsible for will be reassigned. The new consumer (or the restarted one) will start processing from the last <em>committed</em> offset for those partitions, potentially reprocessing messages.</li>
+<li><strong>Frequent Rebalances:</strong> Misconfigurations (e.g., <code>session.timeout.ms</code> too low, <code>max.poll.interval.ms</code> too low relative to processing time) or an unstable consumer environment can lead to frequent rebalances. Each rebalance increases the window during which messages might be reprocessed if offsets are not committed promptly.</li>
+</ul>
+<p><strong>Interview Insight:</strong> “How do consumer group rebalances contribute to duplicate consumption?” Explain that during a rebalance, if offsets aren’t committed for currently processed messages before partition reassignment, the new consumer for that partition will start from the last committed offset, leading to reprocessing.</p>
+<h3 id="Producer-Retries"><a href="#Producer-Retries" class="headerlink" title="Producer Retries"></a>Producer Retries</h3><p>Kafka producers are configured to retry sending messages in case of transient network issues or broker failures. While this ensures message delivery (<code>at-least-once</code>), it can lead to the broker receiving and writing the same message multiple times if the acknowledgement for a prior send was lost.</p>
+<p><strong>Showcase: Producer Retries (Conceptual)</strong></p>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant P as Producer
+participant B as Kafka Broker
+
+P-&gt;&gt;B: Send Message (A)
+B--&gt;&gt;P: ACK for Message A (lost in network)
+P-&gt;&gt;B: Retry Send Message (A)
+B-&gt;&gt;P: ACK for Message A
+Note over P,B: Broker has now received Message A twice and written it.
+</code>
+</pre>
+
+<h3 id="“At-Least-Once”-Delivery-Semantics"><a href="#“At-Least-Once”-Delivery-Semantics" class="headerlink" title="“At-Least-Once” Delivery Semantics"></a>“At-Least-Once” Delivery Semantics</h3><p>By default, Kafka guarantees “at-least-once” delivery. This is a fundamental design choice prioritizing data completeness over strict non-duplication. It means messages are guaranteed to be delivered, but they <em>might</em> be delivered more than once. Achieving “exactly-once” requires additional mechanisms.</p>
+<h2 id="Strategies-for-Mitigating-Duplicate-Consumption"><a href="#Strategies-for-Mitigating-Duplicate-Consumption" class="headerlink" title="Strategies for Mitigating Duplicate Consumption"></a>Strategies for Mitigating Duplicate Consumption</h2><p>Addressing duplicate consumption requires a multi-faceted approach, combining Kafka’s built-in features with application-level design patterns.</p>
+<p><strong>Interview Insight:</strong> “What are the different approaches to handle duplicate messages in Kafka?” A comprehensive answer would cover producer idempotence, transactional producers, and consumer-side deduplication (idempotent consumers).</p>
+<h3 id="Producer-Side-Idempotence"><a href="#Producer-Side-Idempotence" class="headerlink" title="Producer-Side Idempotence"></a>Producer-Side Idempotence</h3><p>Introduced in Kafka 0.11, <strong>producer idempotence</strong> ensures that messages sent by a producer are written to the Kafka log <em>exactly once</em>, even if the producer retries sending the same message. This elevates the producer-to-broker delivery guarantee from “at-least-once” to “exactly-once” for a single partition.</p>
+<ul>
+<li><strong>How it Works:</strong> When <code>enable.idempotence</code> is set to <code>true</code>, Kafka assigns a unique Producer ID (PID) to each producer. Each message is also assigned a sequence number within that producer’s session. The broker uses the PID and sequence number to detect and discard duplicate messages during retries.</li>
+<li><strong>Configuration:</strong> Simply set <code>enable.idempotence=true</code> in your producer configuration. Kafka automatically handles retries, acks, and sequence numbering.</li>
+</ul>
+<p><strong>Showcase: Idempotent Producer Configuration (Java)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Properties</span> <span class="variable">props</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">props.put(<span class="string">&quot;bootstrap.servers&quot;</span>, <span class="string">&quot;localhost:9092&quot;</span>);</span><br><span class="line">props.put(<span class="string">&quot;key.serializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringSerializer&quot;</span>);</span><br><span class="line">props.put(<span class="string">&quot;value.serializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringSerializer&quot;</span>);</span><br><span class="line">props.put(<span class="string">&quot;enable.idempotence&quot;</span>, <span class="string">&quot;true&quot;</span>); <span class="comment">// Enable idempotent producer</span></span><br><span class="line">props.put(<span class="string">&quot;acks&quot;</span>, <span class="string">&quot;all&quot;</span>); <span class="comment">// Required for idempotence</span></span><br><span class="line">props.put(<span class="string">&quot;retries&quot;</span>, Integer.MAX_VALUE); <span class="comment">// Important for reliability with idempotence</span></span><br><span class="line"></span><br><span class="line">Producer&lt;String, String&gt; producer = <span class="keyword">new</span> <span class="title class_">KafkaProducer</span>&lt;&gt;(props);</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> <span class="string">&quot;message-key-&quot;</span> + i;</span><br><span class="line">        <span class="type">String</span> <span class="variable">value</span> <span class="operator">=</span> <span class="string">&quot;Idempotent message content &quot;</span> + i;</span><br><span class="line">        ProducerRecord&lt;String, String&gt; record = <span class="keyword">new</span> <span class="title class_">ProducerRecord</span>&lt;&gt;(<span class="string">&quot;idempotent-topic&quot;</span>, key, value);</span><br><span class="line">        producer.send(record, (metadata, exception) -&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span> (exception == <span class="literal">null</span>) &#123;</span><br><span class="line">                System.out.printf(<span class="string">&quot;Message sent successfully to topic %s, partition %d, offset %d%n&quot;</span>,</span><br><span class="line">                                  metadata.topic(), metadata.partition(), metadata.offset());</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                exception.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    producer.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> “What is the role of <code>enable.idempotence</code> and <code>acks=all</code> in Kafka producers?” Explain that <code>enable.idempotence=true</code> combined with <code>acks=all</code> provides exactly-once delivery guarantees from producer to broker for a single partition by using PIDs and sequence numbers for deduplication.</p>
+<h3 id="Transactional-Producers-Exactly-Once-Semantics"><a href="#Transactional-Producers-Exactly-Once-Semantics" class="headerlink" title="Transactional Producers (Exactly-Once Semantics)"></a>Transactional Producers (Exactly-Once Semantics)</h3><p>While idempotent producers guarantee “exactly-once” delivery to a <em>single partition</em>, <strong>transactional producers</strong> (also introduced in Kafka 0.11) extend this guarantee across <em>multiple partitions and topics</em>, as well as allowing atomic writes that also include consumer offset commits. This is crucial for “consume-transform-produce” patterns common in stream processing.</p>
+<ul>
+<li><p><strong>How it Works:</strong> Transactions allow a sequence of operations (producing messages, committing consumer offsets) to be treated as a single atomic unit. Either all operations succeed and are visible, or none are.</p>
+<ul>
+<li><strong>Transactional ID:</strong> A unique ID for the producer to enable recovery across application restarts.</li>
+<li><strong>Transaction Coordinator:</strong> A Kafka broker responsible for managing the transaction’s state.</li>
+<li><strong><code>__transaction_state</code> topic:</strong> An internal topic used by Kafka to store transaction metadata.</li>
+<li><strong><code>read_committed</code> isolation level:</strong> Consumers configured with this level will only see messages from committed transactions.</li>
+</ul>
+</li>
+<li><p><strong>Configuration:</strong></p>
+<ul>
+<li>Producer: Set <code>transactional.id</code> and call <code>initTransactions()</code>, <code>beginTransaction()</code>, <code>send()</code>, <code>sendOffsetsToTransaction()</code>, <code>commitTransaction()</code>, or <code>abortTransaction()</code>.</li>
+<li>Consumer: Set <code>isolation.level=read_committed</code>.</li>
+</ul>
+</li>
+</ul>
+<p><strong>Showcase: Transactional Consume-Produce Pattern (Java)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Producer Configuration for Transactional Producer</span></span><br><span class="line"><span class="type">Properties</span> <span class="variable">producerProps</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">producerProps.put(<span class="string">&quot;bootstrap.servers&quot;</span>, <span class="string">&quot;localhost:9092&quot;</span>);</span><br><span class="line">producerProps.put(<span class="string">&quot;key.serializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringSerializer&quot;</span>);</span><br><span class="line">producerProps.put(<span class="string">&quot;value.serializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringSerializer&quot;</span>);</span><br><span class="line">producerProps.put(<span class="string">&quot;transactional.id&quot;</span>, <span class="string">&quot;my-transactional-producer-id&quot;</span>); <span class="comment">// Unique ID for recovery</span></span><br><span class="line"></span><br><span class="line">KafkaProducer&lt;String, String&gt; transactionalProducer = <span class="keyword">new</span> <span class="title class_">KafkaProducer</span>&lt;&gt;(producerProps);</span><br><span class="line">transactionalProducer.initTransactions(); <span class="comment">// Initialize transaction</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Consumer Configuration for Transactional Consumer</span></span><br><span class="line"><span class="type">Properties</span> <span class="variable">consumerProps</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">consumerProps.put(<span class="string">&quot;bootstrap.servers&quot;</span>, <span class="string">&quot;localhost:9092&quot;</span>);</span><br><span class="line">consumerProps.put(<span class="string">&quot;group.id&quot;</span>, <span class="string">&quot;my-transactional-consumer-group&quot;</span>);</span><br><span class="line">consumerProps.put(<span class="string">&quot;enable.auto.commit&quot;</span>, <span class="string">&quot;false&quot;</span>); <span class="comment">// Must be false for transactional commits</span></span><br><span class="line">consumerProps.put(<span class="string">&quot;isolation.level&quot;</span>, <span class="string">&quot;read_committed&quot;</span>); <span class="comment">// Only read committed messages</span></span><br><span class="line">consumerProps.put(<span class="string">&quot;key.deserializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringDeserializer&quot;</span>);</span><br><span class="line">consumerProps.put(<span class="string">&quot;value.deserializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringDeserializer&quot;</span>);</span><br><span class="line"></span><br><span class="line">KafkaConsumer&lt;String, String&gt; transactionalConsumer = <span class="keyword">new</span> <span class="title class_">KafkaConsumer</span>&lt;&gt;(consumerProps);</span><br><span class="line">transactionalConsumer.subscribe(Collections.singletonList(<span class="string">&quot;input-topic&quot;</span>));</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        ConsumerRecords&lt;String, String&gt; records = transactionalConsumer.poll(Duration.ofMillis(<span class="number">100</span>));</span><br><span class="line">        <span class="keyword">if</span> (records.isEmpty()) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        transactionalProducer.beginTransaction(); <span class="comment">// Start transaction</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">                System.out.printf(<span class="string">&quot;Consumed message: offset = %d, key = %s, value = %s%n&quot;</span>,</span><br><span class="line">                                  record.offset(), record.key(), record.value());</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Simulate processing and producing to another topic</span></span><br><span class="line">                <span class="type">String</span> <span class="variable">transformedValue</span> <span class="operator">=</span> record.value().toUpperCase();</span><br><span class="line">                transactionalProducer.send(<span class="keyword">new</span> <span class="title class_">ProducerRecord</span>&lt;&gt;(<span class="string">&quot;output-topic&quot;</span>, record.key(), transformedValue));</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Commit offsets for consumed messages within the same transaction</span></span><br><span class="line">            transactionalProducer.sendOffsetsToTransaction(</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;TopicPartition, OffsetAndMetadata&gt;() &#123;&#123;</span><br><span class="line">                    records.partitions().forEach(partition -&gt;</span><br><span class="line">                        put(partition, <span class="keyword">new</span> <span class="title class_">OffsetAndMetadata</span>(records.lastRecord(partition).offset() + <span class="number">1</span>))</span><br><span class="line">                    );</span><br><span class="line">                &#125;&#125;,</span><br><span class="line">                transactionalConsumer.groupMetadata().groupId()</span><br><span class="line">            );</span><br><span class="line"></span><br><span class="line">            transactionalProducer.commitTransaction(); <span class="comment">// Commit the transaction</span></span><br><span class="line">            System.out.println(<span class="string">&quot;Transaction committed successfully.&quot;</span>);</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (KafkaException e) &#123;</span><br><span class="line">            System.err.println(<span class="string">&quot;Transaction aborted due to error: &quot;</span> + e.getMessage());</span><br><span class="line">            transactionalProducer.abortTransaction(); <span class="comment">// Abort on error</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (WakeupException e) &#123;</span><br><span class="line">    <span class="comment">// Expected on consumer close</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    transactionalConsumer.close();</span><br><span class="line">    transactionalProducer.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Mermaid Diagram: Kafka Transactional Processing (Consume-Transform-Produce)</strong></p>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant C as Consumer
+participant TP as Transactional Producer
+participant TXC as Transaction Coordinator
+participant B as Kafka Broker (Input Topic)
+participant B2 as Kafka Broker (Output Topic)
+participant CO as Consumer Offsets Topic
+
+C-&gt;&gt;B: Poll Records (Isolation Level: read_committed)
+Note over C,B: Records from committed transactions only
+C-&gt;&gt;TP: Records received
+TP-&gt;&gt;TXC: initTransactions()
+TP-&gt;&gt;TXC: beginTransaction()
+loop For each record
+    TP-&gt;&gt;B2: Send Transformed Record (uncommitted)
+end
+TP-&gt;&gt;TXC: sendOffsetsToTransaction() (uncommitted)
+TP-&gt;&gt;TXC: commitTransaction()
+TXC--&gt;&gt;B2: Mark messages as committed
+TXC--&gt;&gt;CO: Mark offsets as committed
+TP--&gt;&gt;TXC: Acknowledge Commit
+alt Transaction Fails
+    TP-&gt;&gt;TXC: abortTransaction()
+    TXC--&gt;&gt;B2: Mark messages as aborted (invisible to read_committed consumers)
+    TXC--&gt;&gt;CO: Revert offsets
+end
+</code>
+</pre>
+
+<p><strong>Interview Insight:</strong> “When would you use transactional producers over idempotent producers?” Emphasize that transactional producers are necessary when atomic operations across multiple partitions&#x2F;topics are required, especially in read-process-write patterns, where consumer offsets also need to be committed atomically with output messages.</p>
+<h3 id="Consumer-Side-Deduplication-Idempotent-Consumers"><a href="#Consumer-Side-Deduplication-Idempotent-Consumers" class="headerlink" title="Consumer-Side Deduplication (Idempotent Consumers)"></a>Consumer-Side Deduplication (Idempotent Consumers)</h3><p>Even with idempotent and transactional producers, external factors or application-level errors can sometimes lead to duplicate messages reaching the consumer. In such cases, the consumer application itself must be designed to handle duplicates, a concept known as an <strong>idempotent consumer</strong>.</p>
+<ul>
+<li><strong>How it Works:</strong> An idempotent consumer ensures that processing a message multiple times has the same outcome as processing it once. This typically involves:<ul>
+<li><strong>Unique Message ID:</strong> Each message should have a unique identifier (e.g., a UUID, a hash of the message content, or a combination of Kafka partition and offset).</li>
+<li><strong>State Store:</strong> A persistent store (database, cache, etc.) is used to record the IDs of messages that have been successfully processed.</li>
+<li><strong>Check-then-Process:</strong> Before processing a message, the consumer checks if its ID already exists in the state store. If it does, the message is a duplicate and is skipped. If not, the message is processed, and its ID is recorded in the state store.</li>
+</ul>
+</li>
+</ul>
+<p><strong>Showcase: Idempotent Consumer Logic (Pseudo-code with Database)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Assuming a database with a table for processed message IDs</span></span><br><span class="line"><span class="comment">// CREATE TABLE processed_messages (message_id VARCHAR(255) PRIMARY KEY, kafka_offset BIGINT, processed_at TIMESTAMP);</span></span><br><span class="line"></span><br><span class="line"><span class="type">Properties</span> <span class="variable">consumerProps</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">consumerProps.put(<span class="string">&quot;bootstrap.servers&quot;</span>, <span class="string">&quot;localhost:9092&quot;</span>);</span><br><span class="line">consumerProps.put(<span class="string">&quot;group.id&quot;</span>, <span class="string">&quot;my-idempotent-consumer-group&quot;</span>);</span><br><span class="line">consumerProps.put(<span class="string">&quot;enable.auto.commit&quot;</span>, <span class="string">&quot;false&quot;</span>); <span class="comment">// Manual commit is crucial for atomicity</span></span><br><span class="line">consumerProps.put(<span class="string">&quot;key.deserializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringDeserializer&quot;</span>);</span><br><span class="line">consumerProps.put(<span class="string">&quot;value.deserializer&quot;</span>, <span class="string">&quot;org.apache.kafka.common.serialization.StringDeserializer&quot;</span>);</span><br><span class="line"></span><br><span class="line">KafkaConsumer&lt;String, String&gt; consumer = <span class="keyword">new</span> <span class="title class_">KafkaConsumer</span>&lt;&gt;(consumerProps);</span><br><span class="line">consumer.subscribe(Collections.singletonList(<span class="string">&quot;my-topic&quot;</span>));</span><br><span class="line"></span><br><span class="line"><span class="type">DataSource</span> <span class="variable">dataSource</span> <span class="operator">=</span> getDataSource(); <span class="comment">// Get your database connection pool</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        ConsumerRecords&lt;String, String&gt; records = consumer.poll(Duration.ofMillis(<span class="number">100</span>));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">messageId</span> <span class="operator">=</span> generateUniqueId(record); <span class="comment">// Derive a unique ID from the message</span></span><br><span class="line">            <span class="type">long</span> <span class="variable">currentOffset</span> <span class="operator">=</span> record.offset();</span><br><span class="line">            <span class="type">TopicPartition</span> <span class="variable">partition</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TopicPartition</span>(record.topic(), record.partition());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">try</span> (<span class="type">Connection</span> <span class="variable">connection</span> <span class="operator">=</span> dataSource.getConnection()) &#123;</span><br><span class="line">                connection.setAutoCommit(<span class="literal">false</span>); <span class="comment">// Begin transaction for processing and commit</span></span><br><span class="line"></span><br><span class="line">                <span class="comment">// 1. Check if message ID has been processed</span></span><br><span class="line">                <span class="keyword">if</span> (isMessageProcessed(connection, messageId)) &#123;</span><br><span class="line">                    System.out.printf(<span class="string">&quot;Skipping duplicate message: ID = %s, offset = %d%n&quot;</span>, messageId, currentOffset);</span><br><span class="line">                    <span class="comment">// Crucial: Still commit Kafka offset even for skipped duplicates</span></span><br><span class="line">                    <span class="comment">// So that the consumer doesn&#x27;t keep pulling old duplicates</span></span><br><span class="line">                    consumer.commitSync(Collections.singletonMap(partition, <span class="keyword">new</span> <span class="title class_">OffsetAndMetadata</span>(currentOffset + <span class="number">1</span>)));</span><br><span class="line">                    connection.commit(); <span class="comment">// Commit the database transaction</span></span><br><span class="line">                    <span class="keyword">continue</span>; <span class="comment">// Skip to next message</span></span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 2. Process the message (e.g., update a database, send to external service)</span></span><br><span class="line">                System.out.printf(<span class="string">&quot;Processing new message: ID = %s, offset = %d, value = %s%n&quot;</span>,</span><br><span class="line">                                  messageId, currentOffset, record.value());</span><br><span class="line">                processBusinessLogic(connection, record); <span class="comment">// Your application logic</span></span><br><span class="line"></span><br><span class="line">                <span class="comment">// 3. Record message ID as processed</span></span><br><span class="line">                recordMessageAsProcessed(connection, messageId, currentOffset);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 4. Commit Kafka offset</span></span><br><span class="line">                consumer.commitSync(Collections.singletonMap(partition, <span class="keyword">new</span> <span class="title class_">OffsetAndMetadata</span>(currentOffset + <span class="number">1</span>)));</span><br><span class="line"></span><br><span class="line">                connection.commit(); <span class="comment">// Commit the database transaction</span></span><br><span class="line">                System.out.printf(<span class="string">&quot;Message processed and committed: ID = %s, offset = %d%n&quot;</span>, messageId, currentOffset);</span><br><span class="line"></span><br><span class="line">            &#125; <span class="keyword">catch</span> (SQLException | InterruptedException e) &#123;</span><br><span class="line">                System.err.println(<span class="string">&quot;Error processing message or committing transaction: &quot;</span> + e.getMessage());</span><br><span class="line">                <span class="comment">// Rollback database transaction on error (handled by try-with-resources if autoCommit=false)</span></span><br><span class="line">                <span class="comment">// Kafka offset will not be committed, leading to reprocessing (at-least-once)</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (WakeupException e) &#123;</span><br><span class="line">    <span class="comment">// Expected on consumer close</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    consumer.close();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Helper methods (implement based on your database/logic)</span></span><br><span class="line"><span class="keyword">private</span> String <span class="title function_">generateUniqueId</span><span class="params">(ConsumerRecord&lt;String, String&gt; record)</span> &#123;</span><br><span class="line">    <span class="comment">// Example: Combine topic, partition, and offset for a unique ID</span></span><br><span class="line">    <span class="keyword">return</span> String.format(<span class="string">&quot;%s-%d-%d&quot;</span>, record.topic(), record.partition(), record.offset());</span><br><span class="line">    <span class="comment">// Or use a business key from the message value if available</span></span><br><span class="line">    <span class="comment">// return extractBusinessKey(record.value());</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">isMessageProcessed</span><span class="params">(Connection connection, String messageId)</span> <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">query</span> <span class="operator">=</span> <span class="string">&quot;SELECT COUNT(*) FROM processed_messages WHERE message_id = ?&quot;</span>;</span><br><span class="line">    <span class="keyword">try</span> (<span class="type">PreparedStatement</span> <span class="variable">ps</span> <span class="operator">=</span> connection.prepareStatement(query)) &#123;</span><br><span class="line">        ps.setString(<span class="number">1</span>, messageId);</span><br><span class="line">        <span class="type">ResultSet</span> <span class="variable">rs</span> <span class="operator">=</span> ps.executeQuery();</span><br><span class="line">        rs.next();</span><br><span class="line">        <span class="keyword">return</span> rs.getInt(<span class="number">1</span>) &gt; <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">processBusinessLogic</span><span class="params">(Connection connection, ConsumerRecord&lt;String, String&gt; record)</span> <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="comment">// Your actual business logic here, e.g., insert into another table</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">insertSql</span> <span class="operator">=</span> <span class="string">&quot;INSERT INTO some_data_table (data_value) VALUES (?)&quot;</span>;</span><br><span class="line">    <span class="keyword">try</span> (<span class="type">PreparedStatement</span> <span class="variable">ps</span> <span class="operator">=</span> connection.prepareStatement(insertSql)) &#123;</span><br><span class="line">        ps.setString(<span class="number">1</span>, record.value());</span><br><span class="line">        ps.executeUpdate();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">recordMessageAsProcessed</span><span class="params">(Connection connection, String messageId, <span class="type">long</span> offset)</span> <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">insertSql</span> <span class="operator">=</span> <span class="string">&quot;INSERT INTO processed_messages (message_id, kafka_offset, processed_at) VALUES (?, ?, NOW())&quot;</span>;</span><br><span class="line">    <span class="keyword">try</span> (<span class="type">PreparedStatement</span> <span class="variable">ps</span> <span class="operator">=</span> connection.prepareStatement(insertSql)) &#123;</span><br><span class="line">        ps.setString(<span class="number">1</span>, messageId);</span><br><span class="line">        ps.setLong(<span class="number">2</span>, offset);</span><br><span class="line">        ps.executeUpdate();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Mermaid Diagram: Idempotent Consumer Flowchart</strong></p>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[Start Consumer Poll] --&gt; B{Records Received?};
+B -- No --&gt; A;
+B -- Yes --&gt; C{For Each Record};
+C --&gt; D[Generate Unique Message ID];
+D --&gt; E{Is ID in Processed Store?};
+E -- Yes --&gt; F[Skip Message, Commit Kafka Offset];
+F --&gt; C;
+E -- No --&gt; G[Begin DB Transaction];
+G --&gt; H[Process Business Logic];
+H --&gt; I[Record Message ID in Processed Store];
+I --&gt; J[Commit Kafka Offset];
+J --&gt; K[Commit DB Transaction];
+K --&gt; C;
+J -.-&gt; L[Error&#x2F;Failure];
+H -.-&gt; L;
+I -.-&gt; L;
+L --&gt; M[Rollback DB Transaction];
+M --&gt; N[Re-poll message on restart];
+N --&gt; A;
+</code>
+</pre>
+
+<p><strong>Interview Insight:</strong> “Describe how you would implement an idempotent consumer. What are the challenges?” Explain the need for a unique message ID and a persistent state store (e.g., database) to track processed messages. Challenges include managing the state store (scalability, consistency, cleanup) and ensuring atomic updates between processing and committing offsets.</p>
+<h3 id="Smart-Offset-Management"><a href="#Smart-Offset-Management" class="headerlink" title="Smart Offset Management"></a>Smart Offset Management</h3><p>Proper offset management is fundamental to minimizing duplicates, even when full “exactly-once” semantics aren’t required.</p>
+<ul>
+<li><strong>Manual Commits (<code>enable.auto.commit=false</code>):</strong> For critical applications, manually committing offsets using <code>commitSync()</code> or <code>commitAsync()</code> <em>after</em> messages have been successfully processed and any side effects (e.g., database writes) are complete.<ul>
+<li><code>commitSync()</code>: Synchronous, blocks until commit is acknowledged. Safer but slower.</li>
+<li><code>commitAsync()</code>: Asynchronous, non-blocking. Faster but requires handling commit callbacks for errors.</li>
+</ul>
+</li>
+<li><strong>Commit Frequency:</strong> Balance commit frequency. Too frequent commits can add overhead; too infrequent increases the window for reprocessing in case of failures. Commit after a batch of messages, or after a significant processing step.</li>
+<li><strong>Error Handling:</strong> Implement robust exception handling. If processing fails, ensure the offset is <em>not</em> committed for that message, so it will be re-processed. This aligns with at-least-once.</li>
+<li><strong><code>auto.offset.reset</code>:</strong> Understand <code>earliest</code> (start from beginning) vs. <code>latest</code> (start from new messages). <code>earliest</code> can cause significant reprocessing if not handled carefully, while <code>latest</code> can lead to data loss.</li>
+</ul>
+<p><strong>Interview Insight:</strong> “When should you use <code>commitSync()</code> vs <code>commitAsync()</code>? What are the implications for duplicate consumption?” Explain <code>commitSync()</code> provides stronger guarantees against duplicates (as it waits for confirmation) but impacts throughput, while <code>commitAsync()</code> is faster but requires explicit error handling in the callback to prevent potential re-processing.</p>
+<h2 id="Best-Practices-for-Minimizing-Duplicates"><a href="#Best-Practices-for-Minimizing-Duplicates" class="headerlink" title="Best Practices for Minimizing Duplicates"></a>Best Practices for Minimizing Duplicates</h2><p>Beyond specific mechanisms, adopting a holistic approach significantly reduces the likelihood of duplicate consumption.</p>
+<ul>
+<li><strong>Design for Idempotency from the Start:</strong> Whenever possible, make your message processing logic idempotent. This means the side effects of processing a message, regardless of how many times it’s processed, should yield the same correct outcome. This is the most robust defense against duplicates.<ul>
+<li><strong>Example:</strong> Instead of an “increment balance” operation, use an “set balance to X” operation if the target state can be derived from the message. Or, if incrementing, track the transaction ID to ensure each increment happens only once.</li>
+</ul>
+</li>
+<li><strong>Leverage Kafka’s Built-in Features:</strong><ul>
+<li><strong>Idempotent Producers (<code>enable.idempotence=true</code>):</strong> Always enable this for producers unless you have a very specific reason not to.</li>
+<li><strong>Transactional Producers:</strong> Use for consume-transform-produce patterns where strong “exactly-once” guarantees are needed across multiple Kafka topics or when combining Kafka operations with external system interactions.</li>
+<li><strong><code>read_committed</code> Isolation Level:</strong> For consumers that need to see only committed transactional messages.</li>
+</ul>
+</li>
+<li><strong>Monitor Consumer Lag and Rebalances:</strong> High consumer lag and frequent rebalances are strong indicators of potential duplicate processing issues. Use tools like Kafka’s consumer group commands or monitoring platforms to track these metrics.</li>
+<li><strong>Tune Consumer Parameters:</strong><ul>
+<li><code>max.poll.records</code>: Number of records returned in a single <code>poll()</code> call. Adjust based on processing capacity.</li>
+<li><code>max.poll.interval.ms</code>: Maximum time between <code>poll()</code> calls before the consumer is considered dead and a rebalance is triggered. Increase if processing a batch takes a long time.</li>
+<li><code>session.timeout.ms</code>: Time after which a consumer is considered dead if no heartbeats are received.</li>
+<li><code>heartbeat.interval.ms</code>: Frequency of heartbeats sent to the group coordinator. Should be less than <code>session.timeout.ms</code>.</li>
+</ul>
+</li>
+<li><strong>Consider Data Model for Deduplication:</strong> If implementing consumer-side deduplication, design your message schema to include a natural business key or a universally unique identifier (UUID) that can serve as the unique message ID.</li>
+<li><strong>Testing for Duplicates:</strong> Thoroughly test your Kafka applications under failure scenarios (e.g., consumer crashes, network partitions, broker restarts) to observe and quantify duplicate behavior.</li>
+</ul>
+<h2 id="Showcases-and-Practical-Examples"><a href="#Showcases-and-Practical-Examples" class="headerlink" title="Showcases and Practical Examples"></a>Showcases and Practical Examples</h2><h3 id="Financial-Transaction-Processing-Exactly-Once-Critical"><a href="#Financial-Transaction-Processing-Exactly-Once-Critical" class="headerlink" title="Financial Transaction Processing (Exactly-Once Critical)"></a>Financial Transaction Processing (Exactly-Once Critical)</h3><p><strong>Scenario:</strong> A system processes financial transactions. Each transaction involves debiting one account and crediting another. Duplicate processing would lead to incorrect balances.</p>
+<p><strong>Solution:</strong> Use Kafka’s transactional API.</p>
+<pre>
+<code class="mermaid">
+graph TD
+Producer[&quot;Payment Service (Transactional Producer)&quot;] --&gt; KafkaInputTopic[Kafka Topic: Payment Events]
+KafkaInputTopic --&gt; StreamApp[&quot;Financial Processor (Kafka Streams &#x2F; Consumer + Transactional Producer)&quot;]
+StreamApp --&gt; KafkaDebitTopic[Kafka Topic: Account Debits]
+StreamApp --&gt; KafkaCreditTopic[Kafka Topic: Account Credits]
+StreamApp --&gt; KafkaOffsetTopic[Kafka Internal Topic: __consumer_offsets]
+
+subgraph &quot;Transactional Unit (Financial Processor)&quot;
+    A[Consume Payment Event] --&gt; B{Begin Transaction};
+    B --&gt; C[Process Debit Logic];
+    C --&gt; D[Produce Debit Event to KafkaDebitTopic];
+    D --&gt; E[Process Credit Logic];
+    E --&gt; F[Produce Credit Event to KafkaCreditTopic];
+    F --&gt; G[Send Consumer Offsets to Transaction];
+    G --&gt; H{Commit Transaction};
+    H -- Success --&gt; I[Committed to KafkaDebit&#x2F;Credit&#x2F;Offsets];
+    H -- Failure --&gt; J[&quot;Abort Transaction (Rollback all)&quot;];
+end
+
+KafkaDebitTopic --&gt; DebitConsumer[&quot;Debit Service (read_committed)&quot;]
+KafkaCreditTopic --&gt; CreditConsumer[&quot;Credit Service (read_committed)&quot;]
+</code>
+</pre>
+
+<p><strong>Explanation:</strong></p>
+<ol>
+<li><strong>Payment Service (Producer):</strong> Uses a transactional producer to ensure that if a payment event is sent, it’s sent exactly once.</li>
+<li><strong>Financial Processor (Stream App):</strong> This is the core. It consumes payment events from <code>Payment Events</code>. For each event, it:<ul>
+<li>Starts a Kafka transaction.</li>
+<li>Processes the debit and credit logic.</li>
+<li>Produces corresponding debit and credit events to <code>Account Debits</code> and <code>Account Credits</code> topics.</li>
+<li>Crucially, it <strong>sends its consumed offsets to the transaction</strong>.</li>
+<li>Commits the transaction.</li>
+</ul>
+</li>
+<li><strong>Atomicity:</strong> If any step within the transaction (processing, producing, offset committing) fails, the entire transaction is aborted. This means:<ul>
+<li>No debit&#x2F;credit events are visible to downstream consumers.</li>
+<li>The consumer offset is not committed, so the payment event will be re-processed on restart.</li>
+<li>This ensures that the “consume-transform-produce” flow is exactly-once.</li>
+</ul>
+</li>
+<li><strong>Downstream Consumers:</strong> <code>Debit Service</code> and <code>Credit Service</code> are configured with <code>isolation.level=read_committed</code>, ensuring they only process events that are part of a successfully committed transaction, thus preventing duplicates.</li>
+</ol>
+<h3 id="Event-Sourcing-Idempotent-Consumer-for-Snapshotting"><a href="#Event-Sourcing-Idempotent-Consumer-for-Snapshotting" class="headerlink" title="Event Sourcing (Idempotent Consumer for Snapshotting)"></a>Event Sourcing (Idempotent Consumer for Snapshotting)</h3><p><strong>Scenario:</strong> An application stores all state changes as a sequence of events in Kafka. A separate service builds read-models or snapshots from these events. If the snapshotting service processes an event multiple times, the snapshot state could become inconsistent.</p>
+<p><strong>Solution:</strong> Implement an idempotent consumer for the snapshotting service.</p>
+<pre>
+<code class="mermaid">
+graph TD
+EventSource[&quot;Application (Producer)&quot;] --&gt; KafkaEventLog[Kafka Topic: Event Log]
+KafkaEventLog --&gt; SnapshotService[&quot;Snapshot Service (Idempotent Consumer)&quot;]
+SnapshotService --&gt; StateStore[&quot;Database &#x2F; Key-Value Store (Processed Events)&quot;]
+StateStore --&gt; ReadModel[Materialized Read Model &#x2F; Snapshot]
+
+subgraph Idempotent Consumer Logic
+    A[Consume Event] --&gt; B[Extract Event ID &#x2F; Checksum];
+    B --&gt; C{Is Event ID in StateStore?};
+    C -- Yes --&gt; D[Skip Event];
+    D --&gt; A;
+    C -- No --&gt; E[&quot;Process Event (Update Read Model)&quot;];
+    E --&gt; F[Store Event ID in StateStore];
+    F --&gt; G[Commit Kafka Offset];
+    G --&gt; A;
+    E -.-&gt; H[Failure during processing];
+    H --&gt; I[Event ID not stored, Kafka offset not committed];
+    I --&gt; J[Re-process Event on restart];
+    J --&gt; A;
+end
+</code>
+</pre>
+
+<p><strong>Explanation:</strong></p>
+<ol>
+<li><strong>Event Source:</strong> Produces events to the <code>Event Log</code> topic (ideally with idempotent producers).</li>
+<li><strong>Snapshot Service (Idempotent Consumer):</strong><ul>
+<li>Consumes events.</li>
+<li>For each event, it extracts a unique identifier (e.g., <code>eventId</code> from the event payload, or <code>topic-partition-offset</code> if no inherent ID).</li>
+<li>Before applying the event to the <code>Read Model</code>, it checks if the <code>eventId</code> is already present in a dedicated <code>StateStore</code> (e.g., a simple table <code>processed_events(event_id PRIMARY KEY)</code>).</li>
+<li>If the <code>eventId</code> is found, the event is a duplicate, and it’s skipped.</li>
+<li>If not found, the event is processed (e.g., updating user balance in the <code>Read Model</code>), and then the <code>eventId</code> is <em>atomically</em> recorded in the <code>StateStore</code> along with the Kafka offset.</li>
+<li>Only after the event is processed and its ID recorded in the <code>StateStore</code> does the Kafka consumer commit its offset.</li>
+</ul>
+</li>
+<li><strong>Atomicity:</strong> The critical part here is to make the “process event + record ID + commit offset” an atomic operation. This can often be achieved using a database transaction that encompasses both the read model update and the processed ID storage, followed by the Kafka offset commit. If the database transaction fails, the Kafka offset is not committed, ensuring the event is re-processed.</li>
+</ol>
+<h2 id="Interview-Question-Insights-Throughout-the-Document"><a href="#Interview-Question-Insights-Throughout-the-Document" class="headerlink" title="Interview Question Insights Throughout the Document"></a>Interview Question Insights Throughout the Document</h2><ul>
+<li><strong>“Explain the different delivery semantics in Kafka (at-most-once, at-least-once, exactly-once) and where duplicate consumption fits in.”</strong> (Section 1)</li>
+<li><strong>“How do consumer group rebalances contribute to duplicate consumption?”</strong> (Section 1.2)</li>
+<li><strong>“What is the role of <code>enable.idempotence</code> and <code>acks=all</code> in Kafka producers?”</strong> (Section 2.1)</li>
+<li><strong>“When would you use transactional producers over idempotent producers?”</strong> (Section 2.2)</li>
+<li><strong>“Describe how you would implement an idempotent consumer. What are the challenges?”</strong> (Section 2.3)</li>
+<li><strong>“When should you use <code>commitSync()</code> vs <code>commitAsync()</code>? What are the implications for duplicate consumption?”</strong> (Section 2.4)</li>
+<li><strong>“Discuss a scenario where exactly-once processing is critical and how you would achieve it with Kafka.”</strong> (Section 4.1)</li>
+<li><strong>“How would you handle duplicate messages if your downstream system doesn’t support transactions?”</strong> (Section 4.2 - points to idempotent consumer)</li>
+</ul>
+<p>By understanding these concepts, applying the best practices, and considering the trade-offs, you can effectively manage and mitigate duplicate consumption in your Kafka-based applications, leading to more robust and reliable data pipelines.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/kafka/" rel="tag"># kafka</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/10/Kafka-Message-Backlog-Theory-Best-Practices-and-Interview-Insights/" rel="prev" title="Kafka Message Backlog: Theory, Best Practices, and Interview Insights">
+                  <i class="fa fa-angle-left"></i> Kafka Message Backlog: Theory, Best Practices, and Interview Insights
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

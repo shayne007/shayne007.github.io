@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Kafka is a distributed streaming platform renowned for its high throughput and fault tolerance. However, even in well-designed Kafka systems, message backlogs can occur. A “message backlog” in Kafka s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka Message Backlog: Theory, Best Practices, and Interview Insights">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/10/Kafka-Message-Backlog-Theory-Best-Practices-and-Interview-Insights/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Kafka is a distributed streaming platform renowned for its high throughput and fault tolerance. However, even in well-designed Kafka systems, message backlogs can occur. A “message backlog” in Kafka s">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-10T06:08:18.000Z">
+<meta property="article:modified_time" content="2025-06-10T06:11:42.940Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="kafka">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/10/Kafka-Message-Backlog-Theory-Best-Practices-and-Interview-Insights/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/10/Kafka-Message-Backlog-Theory-Best-Practices-and-Interview-Insights/","path":"2025/06/10/Kafka-Message-Backlog-Theory-Best-Practices-and-Interview-Insights/","title":"Kafka Message Backlog: Theory, Best Practices, and Interview Insights"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kafka Message Backlog: Theory, Best Practices, and Interview Insights | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Understanding-Message-Backlog-in-Kafka"><span class="nav-number">1.</span> <span class="nav-text">Understanding Message Backlog in Kafka</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#What-is-Kafka-Consumer-Lag"><span class="nav-number">1.1.</span> <span class="nav-text">What is Kafka Consumer Lag?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Causes-of-Message-Backlog"><span class="nav-number">1.2.</span> <span class="nav-text">Causes of Message Backlog</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Diagnosing-Message-Backlog"><span class="nav-number">2.</span> <span class="nav-text">Monitoring and Diagnosing Message Backlog</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Metrics-to-Monitor"><span class="nav-number">2.1.</span> <span class="nav-text">Key Metrics to Monitor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitoring-Tools-and-Approaches"><span class="nav-number">2.2.</span> <span class="nav-text">Monitoring Tools and Approaches</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Best-Practices-for-Backlog-Prevention-and-Remediation"><span class="nav-number">3.</span> <span class="nav-text">Best Practices for Backlog Prevention and Remediation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Proactive-Prevention"><span class="nav-number">3.1.</span> <span class="nav-text">Proactive Prevention</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#a-Producer-Side-Optimizations"><span class="nav-number">3.1.1.</span> <span class="nav-text">a. Producer Side Optimizations</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#b-Topic-Design-and-Partitioning"><span class="nav-number">3.1.2.</span> <span class="nav-text">b. Topic Design and Partitioning</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#c-Consumer-Group-Configuration"><span class="nav-number">3.1.3.</span> <span class="nav-text">c. Consumer Group Configuration</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reactive-Remediation"><span class="nav-number">3.2.</span> <span class="nav-text">Reactive Remediation</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#a-Scaling-Consumers"><span class="nav-number">3.2.1.</span> <span class="nav-text">a. Scaling Consumers</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#b-Optimizing-Consumer-Processing-Logic"><span class="nav-number">3.2.2.</span> <span class="nav-text">b. Optimizing Consumer Processing Logic</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#c-Adjusting-Kafka-Broker-Topic-Settings-Carefully"><span class="nav-number">3.2.3.</span> <span class="nav-text">c. Adjusting Kafka Broker&#x2F;Topic Settings (Carefully)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#d-Rate-Limiting-Producers"><span class="nav-number">3.2.4.</span> <span class="nav-text">d. Rate Limiting (Producers)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Rebalance-Management"><span class="nav-number">3.3.</span> <span class="nav-text">Rebalance Management</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Question-Insights-Throughout-the-Document"><span class="nav-number">4.</span> <span class="nav-text">Interview Question Insights Throughout the Document</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Showcase-Troubleshooting-a-Backlog-Scenario"><span class="nav-number">5.</span> <span class="nav-text">Showcase: Troubleshooting a Backlog Scenario</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">6.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/10/Kafka-Message-Backlog-Theory-Best-Practices-and-Interview-Insights/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kafka Message Backlog: Theory, Best Practices, and Interview Insights | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kafka Message Backlog: Theory, Best Practices, and Interview Insights
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-10 14:08:18 / Modified: 14:11:42" itemprop="dateCreated datePublished" datetime="2025-06-10T14:08:18+08:00">2025-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>Kafka is a distributed streaming platform renowned for its high throughput and fault tolerance. However, even in well-designed Kafka systems, message backlogs can occur. A “message backlog” in Kafka signifies that consumers are falling behind the rate at which producers are generating messages, leading to an accumulation of unconsumed messages in the Kafka topics. This document delves into the theory behind Kafka message backlogs, explores best practices for prevention and resolution, and provides insights relevant to interview scenarios.</p>
+<hr>
+<h2 id="Understanding-Message-Backlog-in-Kafka"><a href="#Understanding-Message-Backlog-in-Kafka" class="headerlink" title="Understanding Message Backlog in Kafka"></a>Understanding Message Backlog in Kafka</h2><h3 id="What-is-Kafka-Consumer-Lag"><a href="#What-is-Kafka-Consumer-Lag" class="headerlink" title="What is Kafka Consumer Lag?"></a>What is Kafka Consumer Lag?</h3><p><strong>Theory:</strong> Kafka’s core strength lies in its decoupled architecture. Producers publish messages to topics, and consumers subscribe to these topics to read messages. Messages are durable and are not removed after consumption (unlike traditional message queues). Instead, Kafka retains messages for a configurable period. Consumer groups allow multiple consumer instances to jointly consume messages from a topic, with each partition being consumed by at most one consumer within a group.</p>
+<p><strong>Consumer Lag</strong> is the fundamental metric indicating a message backlog. It represents the difference between the “log end offset” (the offset of the latest message produced to a partition) and the “committed offset” (the offset of the last message successfully processed and acknowledged by a consumer within a consumer group for that partition). A positive and increasing consumer lag means consumers are falling behind.</p>
+<p><strong>Interview Insight:</strong> <em>Expect questions like: “Explain Kafka consumer lag. How is it measured, and why is it important to monitor?”</em> Your answer should cover the definition, the “log end offset” and “committed offset” concepts, and the implications of rising lag (e.g., outdated data, increased latency, potential data loss if retention expires).</p>
+<h3 id="Causes-of-Message-Backlog"><a href="#Causes-of-Message-Backlog" class="headerlink" title="Causes of Message Backlog"></a>Causes of Message Backlog</h3><p>Message backlogs are not a single-point failure but rather a symptom of imbalances or bottlenecks within the Kafka ecosystem. Common causes include:</p>
+<ul>
+<li><strong>Sudden Influx of Messages (Traffic Spikes):</strong> Producers generate messages at a rate higher than the consumers can process, often due to unexpected peak loads or upstream system bursts.</li>
+<li><strong>Slow Consumer Processing Logic:</strong> The application logic within consumers is inefficient or resource-intensive, causing consumers to take a long time to process each message. This could involve complex calculations, external database lookups, or slow API calls.</li>
+<li><strong>Insufficient Consumer Resources:</strong><ul>
+<li><strong>Too Few Consumers:</strong> Not enough consumer instances in a consumer group to handle the message volume across all partitions. If the number of consumers exceeds the number of partitions, some consumers will be idle.</li>
+<li><strong>Limited CPU&#x2F;Memory on Consumer Instances:</strong> Consumers might be CPU-bound or memory-bound, preventing them from processing messages efficiently.</li>
+<li><strong>Network Bottlenecks:</strong> High network latency or insufficient bandwidth between brokers and consumers can slow down message fetching.</li>
+</ul>
+</li>
+<li><strong>Data Skew in Partitions:</strong> Messages are not uniformly distributed across topic partitions. One or a few partitions receive a disproportionately high volume of messages, leading to “hot partitions” that overwhelm the assigned consumer. This often happens if the partitioning key is not chosen carefully (e.g., a common <code>user_id</code> for a heavily active user).</li>
+<li><strong>Frequent Consumer Group Rebalances:</strong> When consumers join or leave a consumer group (e.g., crashes, deployments, scaling events), Kafka triggers a “rebalance” to redistribute partitions among active consumers. During a rebalance, consumers temporarily stop processing messages, which can contribute to lag.</li>
+<li><strong>Misconfigured Kafka Topic&#x2F;Broker Settings:</strong><ul>
+<li><strong>Insufficient Partitions:</strong> A topic with too few partitions limits the parallelism of consumption, even if more consumers are added.</li>
+<li><strong>Short Retention Policies:</strong> If <code>log.retention.ms</code> or <code>log.retention.bytes</code> are set too low, messages might be deleted before slow consumers have a chance to process them, leading to data loss.</li>
+<li><strong>Consumer Fetch Configuration:</strong> Parameters like <code>fetch.max.bytes</code>, <code>fetch.min.bytes</code>, <code>fetch.max.wait.ms</code>, and <code>max.poll.records</code> can impact how consumers fetch messages, potentially affecting throughput.</li>
+</ul>
+</li>
+</ul>
+<p><strong>Interview Insight:</strong> <em>A common interview question is: “What are the primary reasons for Kafka consumer lag, and how would you diagnose them?”</em> Be prepared to list the causes and briefly explain how you’d investigate (e.g., checking producer rates, consumer processing times, consumer group status, partition distribution).</p>
+<h2 id="Monitoring-and-Diagnosing-Message-Backlog"><a href="#Monitoring-and-Diagnosing-Message-Backlog" class="headerlink" title="Monitoring and Diagnosing Message Backlog"></a>Monitoring and Diagnosing Message Backlog</h2><p>Effective monitoring is the first step in addressing backlogs.</p>
+<h3 id="Key-Metrics-to-Monitor"><a href="#Key-Metrics-to-Monitor" class="headerlink" title="Key Metrics to Monitor"></a>Key Metrics to Monitor</h3><ul>
+<li><strong>Consumer Lag (Offset Lag):</strong> The most direct indicator. This is the difference between the <code>log-end-offset</code> and the <code>current-offset</code> for each partition within a consumer group.<ul>
+<li><code>kafka.consumer:type=consumer-fetch-manager-metrics,client-id=*,topic=*,partition=* records-lag</code></li>
+<li><code>kafka.consumer:type=consumer-fetch-manager-metrics,client-id=*,topic=*,partition=* records-lag-max</code> (maximum lag across all partitions for a consumer)</li>
+</ul>
+</li>
+<li><strong>Consumer Throughput:</strong> Messages processed per second by consumers. A drop here while producer rates remain high indicates a processing bottleneck.</li>
+<li><strong>Producer Throughput:</strong> Messages produced per second to topics. Helps identify if the backlog is due to a sudden increase in incoming data.<ul>
+<li><code>kafka.server:type=broker-topic-metrics,name=MessagesInPerSec</code></li>
+</ul>
+</li>
+<li><strong>Consumer Rebalance Frequency and Duration:</strong> Frequent or long rebalances can significantly contribute to lag.</li>
+<li><strong>Consumer Processing Time:</strong> The time taken by the consumer application to process a single message or a batch of messages.</li>
+<li><strong>Broker Metrics:</strong><ul>
+<li><code>BytesInPerSec</code>, <code>BytesOutPerSec</code>: Indicate overall data flow.</li>
+<li>Disk I&#x2F;O and Network I&#x2F;O: Ensure brokers are not saturated.</li>
+</ul>
+</li>
+<li><strong>JVM Metrics (for Kafka brokers and consumers):</strong> Heap memory usage, garbage collection time, thread counts can indicate resource exhaustion.</li>
+</ul>
+<p><strong>Interview Insight:</strong> <em>You might be asked: “Which Kafka metrics are crucial for identifying and troubleshooting message backlogs?”</em> Focus on lag, throughput (producer and consumer), and rebalance metrics. Mentioning tools like Prometheus&#x2F;Grafana or Confluent Control Center demonstrates practical experience.</p>
+<h3 id="Monitoring-Tools-and-Approaches"><a href="#Monitoring-Tools-and-Approaches" class="headerlink" title="Monitoring Tools and Approaches"></a>Monitoring Tools and Approaches</h3><ul>
+<li><p><strong>Kafka’s Built-in <code>kafka-consumer-groups.sh</code> CLI:</strong></p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kafka-consumer-groups.sh --bootstrap-server &lt;broker-list&gt; --describe --group &lt;group-name&gt;</span><br></pre></td></tr></table></figure>
+<p>  This command provides real-time lag for each partition within a consumer group. It’s useful for ad-hoc checks.</p>
+</li>
+<li><p><strong>External Monitoring Tools (Prometheus, Grafana, Datadog, Splunk):</strong></p>
+<ul>
+<li>Utilize Kafka Exporters (e.g., Kafka Lag Exporter, JMX Exporter) to expose Kafka metrics to Prometheus.</li>
+<li>Grafana dashboards can visualize these metrics, showing trends in consumer lag, throughput, and rebalances over time.</li>
+<li>Set up alerts for high lag thresholds or sustained low consumer throughput.</li>
+</ul>
+</li>
+<li><p><strong>Confluent Control Center &#x2F; Managed Kafka Services Dashboards (AWS MSK, Aiven):</strong> These provide integrated, user-friendly dashboards for monitoring Kafka clusters, including detailed consumer lag insights.</p>
+</li>
+</ul>
+<h2 id="Best-Practices-for-Backlog-Prevention-and-Remediation"><a href="#Best-Practices-for-Backlog-Prevention-and-Remediation" class="headerlink" title="Best Practices for Backlog Prevention and Remediation"></a>Best Practices for Backlog Prevention and Remediation</h2><p>Addressing message backlogs involves a multi-faceted approach, combining configuration tuning, application optimization, and scaling strategies.</p>
+<h3 id="Proactive-Prevention"><a href="#Proactive-Prevention" class="headerlink" title="Proactive Prevention"></a>Proactive Prevention</h3><h4 id="a-Producer-Side-Optimizations"><a href="#a-Producer-Side-Optimizations" class="headerlink" title="a. Producer Side Optimizations"></a>a. Producer Side Optimizations</h4><p>While producers don’t directly cause backlog in the sense of unconsumed messages, misconfigured producers can contribute to a high message volume that overwhelms consumers.</p>
+<ul>
+<li><strong>Batching Messages (<code>batch.size</code>, <code>linger.ms</code>):</strong> Producers should batch messages to reduce overhead. <code>linger.ms</code> introduces a small delay to allow more messages to accumulate in a batch.<ul>
+<li><strong>Interview Insight:</strong> <em>Question: “How do producer configurations like <code>batch.size</code> and <code>linger.ms</code> impact throughput and latency?”</em> Explain that larger batches improve throughput by reducing network round trips but increase latency for individual messages.</li>
+</ul>
+</li>
+<li><strong>Compression (<code>compression.type</code>):</strong> Use compression (e.g., <code>gzip</code>, <code>snappy</code>, <code>lz4</code>, <code>zstd</code>) to reduce network bandwidth usage, especially for high-volume topics.</li>
+<li><strong>Asynchronous Sends:</strong> Producers should use asynchronous sending (<code>producer.send()</code>) to avoid blocking and maximize throughput.</li>
+<li><strong>Error Handling and Retries (<code>retries</code>, <code>delivery.timeout.ms</code>):</strong> Configure retries to ensure message delivery during transient network issues or broker unavailability. <code>delivery.timeout.ms</code> defines the upper bound for reporting send success or failure.</li>
+</ul>
+<h4 id="b-Topic-Design-and-Partitioning"><a href="#b-Topic-Design-and-Partitioning" class="headerlink" title="b. Topic Design and Partitioning"></a>b. Topic Design and Partitioning</h4><ul>
+<li><strong>Adequate Number of Partitions:</strong> The number of partitions determines the maximum parallelism for a consumer group. A good rule of thumb is to have at least as many partitions as your expected maximum number of consumers in a group.<ul>
+<li><strong>Interview Insight:</strong> <em>Question: “How does the number of partitions affect consumer scalability and potential for backlogs?”</em> Emphasize that more partitions allow for more parallel consumers, but too many can introduce overhead.</li>
+</ul>
+</li>
+<li><strong>Effective Partitioning Strategy:</strong> Choose a partitioning key that distributes messages evenly across partitions to avoid data skew. If no key is provided, Kafka’s default round-robin or sticky partitioning is used.<ul>
+<li><strong>Showcase:</strong><br>  Consider a topic <code>order_events</code> where messages are partitioned by <code>customer_id</code>. If one customer (<code>customer_id=123</code>) generates a huge volume of orders compared to others, the partition assigned to <code>customer_id=123</code> will become a “hot partition,” leading to lag even if other partitions are well-consumed. A better strategy might involve a more granular key or custom partitioner if specific hot spots are known.</li>
+</ul>
+</li>
+</ul>
+<h4 id="c-Consumer-Group-Configuration"><a href="#c-Consumer-Group-Configuration" class="headerlink" title="c. Consumer Group Configuration"></a>c. Consumer Group Configuration</h4><ul>
+<li><strong><code>max.poll.records</code>:</strong> Limits the number of records returned in a single <code>poll()</code> call. Tuning this balances processing batch size and memory usage.</li>
+<li><strong><code>fetch.min.bytes</code> and <code>fetch.max.wait.ms</code>:</strong> These work together to control batching on the consumer side. <code>fetch.min.bytes</code> specifies the minimum data to fetch, and <code>fetch.max.wait.ms</code> is the maximum time to wait for <code>fetch.min.bytes</code> to accumulate. Higher values reduce requests but increase latency.</li>
+<li><strong><code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code>:</strong> These settings control consumer liveness detection. Misconfigurations can lead to frequent, unnecessary rebalances.<ul>
+<li><code>heartbeat.interval.ms</code> should be less than <code>session.timeout.ms</code>.</li>
+<li><code>session.timeout.ms</code> should be within 3 times <code>heartbeat.interval.ms</code>.</li>
+<li>Increase <code>session.timeout.ms</code> if consumer processing takes longer, to prevent premature rebalances.</li>
+</ul>
+</li>
+<li><strong>Offset Management (<code>enable.auto.commit</code>, <code>auto.offset.reset</code>):</strong><ul>
+<li><code>enable.auto.commit=false</code> and manual <code>commitSync()</code> or <code>commitAsync()</code> is generally preferred for critical applications to ensure messages are only acknowledged after successful processing.</li>
+<li><code>auto.offset.reset</code>: Set to <code>earliest</code> for data integrity (start from oldest available message if no committed offset) or <code>latest</code> for real-time processing (start from new messages).</li>
+</ul>
+</li>
+</ul>
+<h3 id="Reactive-Remediation"><a href="#Reactive-Remediation" class="headerlink" title="Reactive Remediation"></a>Reactive Remediation</h3><p>When a backlog occurs, immediate actions are needed to reduce lag.</p>
+<h4 id="a-Scaling-Consumers"><a href="#a-Scaling-Consumers" class="headerlink" title="a. Scaling Consumers"></a>a. Scaling Consumers</h4><ul>
+<li><p><strong>Horizontal Scaling:</strong> The most common and effective way. Add more consumer instances to the consumer group. Each new consumer will take over some partitions during a rebalance, increasing parallel processing.</p>
+<ul>
+<li><strong>Important Note:</strong> You cannot have more active consumers in a consumer group than partitions in the topic. Adding consumers beyond this limit will result in idle consumers.</li>
+<li><strong>Interview Insight:</strong> <em>Question: “You’re experiencing significant consumer lag. What’s your first step, and what considerations do you have regarding consumer scaling?”</em> Your answer should prioritize horizontal scaling, but immediately follow up with the partition limit and the potential for idle consumers.</li>
+<li><strong>Showcase (Mermaid Diagram - Horizontal Scaling):</strong></li>
+</ul>
+  <pre>
+<code class="mermaid">
+graph TD
+subgraph Kafka Topic
+    P1(Partition 1)
+    P2(Partition 2)
+    P3(Partition 3)
+    P4(Partition 4)
+end
+
+subgraph &quot;Consumer Group (Initial State)&quot;
+    C1_initial(Consumer 1)
+    C2_initial(Consumer 2)
+end
+
+subgraph &quot;Consumer Group (Scaled State)&quot;
+    C1_scaled(Consumer 1)
+    C2_scaled(Consumer 2)
+    C3_scaled(Consumer 3)
+    C4_scaled(Consumer 4)
+end
+
+P1 --&gt; C1_initial
+P2 --&gt; C1_initial
+P3 --&gt; C2_initial
+P4 --&gt; C2_initial
+
+P1 --&gt; C1_scaled
+P2 --&gt; C2_scaled
+P3 --&gt; C3_scaled
+P4 --&gt; C4_scaled
+
+style C1_initial fill:#f9f,stroke:#333,stroke-width:2px
+style C2_initial fill:#f9f,stroke:#333,stroke-width:2px
+style C1_scaled fill:#9cf,stroke:#333,stroke-width:2px
+style C2_scaled fill:#9cf,stroke:#333,stroke-width:2px
+style C3_scaled fill:#9cf,stroke:#333,stroke-width:2px
+style C4_scaled fill:#9cf,stroke:#333,stroke-width:2px
+    
+</code>
+</pre>
+<p>  <em>Explanation: Initially, 2 consumers handle 4 partitions. After scaling, 4 consumers each handle one partition, increasing processing parallelism.</em></p>
+</li>
+<li><p><strong>Vertical Scaling (for consumer instances):</strong> Increase the CPU, memory, or network bandwidth of existing consumer instances if they are resource-constrained. This is less common than horizontal scaling for Kafka consumers, as Kafka is designed for horizontal scalability.</p>
+</li>
+<li><p><strong>Multi-threading within Consumers:</strong> For single-partition processing, consumers can use multiple threads to process messages concurrently within that partition. This can be beneficial if the processing logic is bottlenecked by CPU.</p>
+</li>
+</ul>
+<h4 id="b-Optimizing-Consumer-Processing-Logic"><a href="#b-Optimizing-Consumer-Processing-Logic" class="headerlink" title="b. Optimizing Consumer Processing Logic"></a>b. Optimizing Consumer Processing Logic</h4><ul>
+<li><strong>Identify Bottlenecks:</strong> Use profiling tools to pinpoint slow operations within your consumer application.</li>
+<li><strong>Improve Efficiency:</strong> Optimize database queries, external API calls, or complex computations.</li>
+<li><strong>Batch Processing within Consumers:</strong> Process messages in larger batches within the consumer application, if applicable, to reduce overhead.</li>
+<li><strong>Asynchronous Processing:</strong> If message processing involves I&#x2F;O-bound operations (e.g., writing to a database), consider using asynchronous processing within the consumer to avoid blocking the main processing thread.</li>
+</ul>
+<h4 id="c-Adjusting-Kafka-Broker-Topic-Settings-Carefully"><a href="#c-Adjusting-Kafka-Broker-Topic-Settings-Carefully" class="headerlink" title="c. Adjusting Kafka Broker&#x2F;Topic Settings (Carefully)"></a>c. Adjusting Kafka Broker&#x2F;Topic Settings (Carefully)</h4><ul>
+<li><strong>Increase Partitions (Long-term Solution):</strong> If persistent backlog is due to insufficient parallelism, increasing partitions might be necessary. This requires careful planning and can be disruptive as it involves rebalancing.<ul>
+<li><strong>Interview Insight:</strong> <em>Question: “When should you consider increasing the number of partitions on a Kafka topic, and what are the implications?”</em> Emphasize the long-term solution, impact on parallelism, and the rebalance overhead.</li>
+</ul>
+</li>
+<li><strong>Consider Tiered Storage (for very long retention):</strong> For use cases requiring very long data retention where cold data doesn’t need immediate processing, Kafka’s tiered storage feature (available in newer versions) can offload old log segments to cheaper, slower storage (e.g., S3). This doesn’t directly solve consumer lag for <em>current</em> data but helps manage storage costs and capacity for topics with large backlogs of historical data.</li>
+</ul>
+<h4 id="d-Rate-Limiting-Producers"><a href="#d-Rate-Limiting-Producers" class="headerlink" title="d. Rate Limiting (Producers)"></a>d. Rate Limiting (Producers)</h4><ul>
+<li>If the consumer system is consistently overloaded, consider implementing rate limiting on the producer side to prevent overwhelming the downstream consumers. This is a last resort to prevent cascading failures.</li>
+</ul>
+<h3 id="Rebalance-Management"><a href="#Rebalance-Management" class="headerlink" title="Rebalance Management"></a>Rebalance Management</h3><p>Frequent rebalances can significantly impact consumer throughput and contribute to lag.</p>
+<ul>
+<li><strong>Graceful Shutdown:</strong> Implement graceful shutdowns for consumers (e.g., by catching <code>SIGTERM</code> signals) to allow them to commit offsets and leave the group gracefully, minimizing rebalance impact.</li>
+<li><strong>Tuning <code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code>:</strong> As mentioned earlier, set these appropriately to avoid premature rebalances due to slow processing or temporary network glitches.</li>
+<li><strong>Cooperative Rebalancing (Kafka 2.4+):</strong> Use the <code>CooperativeStickyAssignor</code> (introduced in Kafka 2.4) as the <code>partition.assignment.strategy</code>. This assignor attempts to rebalance partitions incrementally, allowing unaffected consumers to continue processing during the rebalance, reducing “stop-the-world” pauses.<ul>
+<li><strong>Interview Insight:</strong> <em>Question: “What is cooperative rebalancing in Kafka, and why is it beneficial for reducing consumer lag during scaling events?”</em> Highlight the “incremental” and “stop-the-world reduction” aspects.</li>
+</ul>
+</li>
+</ul>
+<h2 id="Interview-Question-Insights-Throughout-the-Document"><a href="#Interview-Question-Insights-Throughout-the-Document" class="headerlink" title="Interview Question Insights Throughout the Document"></a>Interview Question Insights Throughout the Document</h2><p>Interview questions have been integrated into each relevant section, but here’s a consolidated list of common themes related to message backlog:</p>
+<ul>
+<li><strong>Core Concepts:</strong><ul>
+<li>What is Kafka consumer lag? How is it calculated?</li>
+<li>Explain the role of offsets in Kafka.</li>
+<li>What is a consumer group, and how does it relate to scaling?</li>
+</ul>
+</li>
+<li><strong>Causes and Diagnosis:</strong><ul>
+<li>What are the common reasons for message backlog in Kafka?</li>
+<li>How would you identify if you have a message backlog? What metrics would you look at?</li>
+<li>Describe a scenario where data skew could lead to consumer lag.</li>
+</ul>
+</li>
+<li><strong>Prevention and Remediation:</strong><ul>
+<li>You’re seeing increasing consumer lag. What steps would you take to address it, both short-term and long-term?</li>
+<li>How can producer configurations help prevent backlogs? (e.g., batching, compression)</li>
+<li>How does the number of partitions impact consumer scalability and lag?</li>
+<li>Discuss the trade-offs of increasing <code>fetch.max.bytes</code> or <code>max.poll.records</code>.</li>
+<li>Explain the difference between automatic and manual offset committing. When would you use each?</li>
+<li>What is the purpose of <code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code>? How do they relate to rebalances?</li>
+<li>Describe how you would scale consumers to reduce lag. What are the limitations?</li>
+<li>What is cooperative rebalancing, and how does it improve consumer group stability?</li>
+</ul>
+</li>
+<li><strong>Advanced Topics:</strong><ul>
+<li>How does Kafka’s message retention policy interact with consumer lag? What are the risks of a short retention period?</li>
+<li>When might you consider using multi-threading within a single consumer instance?</li>
+<li>Briefly explain Kafka’s tiered storage and how it might be relevant (though not a direct solution to <em>active</em> backlog).</li>
+</ul>
+</li>
+</ul>
+<h2 id="Showcase-Troubleshooting-a-Backlog-Scenario"><a href="#Showcase-Troubleshooting-a-Backlog-Scenario" class="headerlink" title="Showcase: Troubleshooting a Backlog Scenario"></a>Showcase: Troubleshooting a Backlog Scenario</h2><p>Let’s imagine a scenario where your Kafka application experiences significant and sustained consumer lag for a critical topic, <code>user_activity_events</code>.</p>
+<p><strong>Initial Observation:</strong> Monitoring dashboards show <code>records-lag-max</code> for the <code>user_activity_processor</code> consumer group steadily increasing over the last hour, reaching millions of messages. Producer <code>MessagesInPerSec</code> for <code>user_activity_events</code> has remained relatively constant.</p>
+<p><strong>Troubleshooting Steps:</strong></p>
+<ol>
+<li><p><strong>Check Consumer Group Status:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group user_activity_processor</span><br></pre></td></tr></table></figure>
+<p><em>Output analysis:</em></p>
+<ul>
+<li>If some partitions show <code>LAG</code> and others don’t, it might indicate data skew or a problem with specific consumer instances.</li>
+<li>If all partitions show high and increasing <code>LAG</code>, it suggests a general processing bottleneck or insufficient consumers.</li>
+<li>Note the number of active consumers. If it’s less than the number of partitions, you have idle capacity.</li>
+</ul>
+</li>
+<li><p><strong>Examine Consumer Application Logs and Metrics:</strong></p>
+<ul>
+<li>Look for errors, warnings, or long processing times.</li>
+<li>Check CPU and memory usage of consumer instances. Are they maxed out?</li>
+<li>Are there any external dependencies that the consumer relies on (databases, external APIs) that are experiencing high latency or errors?</li>
+</ul>
+</li>
+<li><p><strong>Analyze Partition Distribution:</strong></p>
+<ul>
+<li>Check <code>kafka-topics.sh --describe --topic user_activity_events</code> to see the number of partitions.</li>
+<li>If <code>user_activity_events</code> uses a partitioning key, investigate if there are “hot keys” leading to data skew. This might involve analyzing a sample of messages or checking specific application metrics.</li>
+</ul>
+</li>
+<li><p><strong>Evaluate Rebalance Activity:</strong></p>
+<ul>
+<li>Check broker logs or consumer group metrics for frequent rebalance events. If consumers are constantly joining&#x2F;leaving or timing out, it will impact processing.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Hypothetical Diagnosis and Remediation:</strong></p>
+<ul>
+<li><p><strong>Scenario 1: Insufficient Consumers:</strong></p>
+<ul>
+<li><strong>Diagnosis:</strong> <code>kafka-consumer-groups.sh</code> shows <code>LAG</code> on all partitions, and the number of active consumers is less than the number of partitions (e.g., 2 consumers for 8 partitions). Consumer CPU&#x2F;memory are not maxed out.</li>
+<li><strong>Remediation:</strong> Horizontally scale the <code>user_activity_processor</code> by adding more consumer instances (e.g., scale to 8 instances). Monitor lag reduction.</li>
+</ul>
+</li>
+<li><p><strong>Scenario 2: Slow Consumer Processing:</strong></p>
+<ul>
+<li><strong>Diagnosis:</strong> <code>kafka-consumer-groups.sh</code> shows <code>LAG</code> on all partitions, and consumer instances are CPU-bound or memory-bound. Application logs indicate long processing times for individual messages or batches.</li>
+<li><strong>Remediation:</strong><ul>
+<li><strong>Short-term:</strong> Vertically scale consumer instances (if resources allow) or add more horizontal consumers (if current instances aren’t fully utilized).</li>
+<li><strong>Long-term:</strong> Profile and optimize the consumer application code. Consider offloading heavy processing to another service or using multi-threading within consumers for I&#x2F;O-bound tasks.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Scenario 3: Data Skew:</strong></p>
+<ul>
+<li><strong>Diagnosis:</strong> <code>kafka-consumer-groups.sh</code> shows high <code>LAG</code> concentrated on a few specific partitions, while others are fine.</li>
+<li><strong>Remediation:</strong><ul>
+<li><strong>Short-term:</strong> If possible, temporarily add more consumers than partitions (though some will be idle, this might allow some hot partitions to be processed faster if a cooperative assignor is used and new consumers pick up those partitions).</li>
+<li><strong>Long-term:</strong> Re-evaluate the partitioning key for <code>user_activity_events</code>. Consider a more granular key or implementing a custom partitioner that distributes messages more evenly. If a hot key cannot be avoided, create a dedicated topic for that key’s messages and scale consumers specifically for that topic.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Scenario 4: Frequent Rebalances:</strong></p>
+<ul>
+<li><strong>Diagnosis:</strong> Monitoring shows high rebalance frequency. Consumer logs indicate consumers joining&#x2F;leaving groups unexpectedly.</li>
+<li><strong>Remediation:</strong><ul>
+<li>Adjust <code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code> in consumer configuration.</li>
+<li>Ensure graceful shutdown for consumers.</li>
+<li>Consider upgrading to a Kafka version that supports and configuring <code>CooperativeStickyAssignor</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>Mermaid Flowchart: Backlog Troubleshooting Workflow</strong></p>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[Monitor Consumer Lag] --&gt; B{Lag Increasing Steadily?};
+B -- Yes --&gt; C{Producer Rate High &#x2F; Constant?};
+B -- No --&gt; D[Lag is stable or decreasing - Ok];
+C -- Yes --&gt; E{Check Consumer Group Status};
+C -- No --&gt; F[Producer Issue - Investigate Producer];
+
+E --&gt; G{Are all partitions lagging evenly?};
+G -- Yes --&gt; H{&quot;Check Consumer Instance Resources (CPU&#x2F;Mem)&quot;};
+H -- High --&gt; I[Consumer Processing Bottleneck - Optimize Code &#x2F; Vertical Scale];
+H -- Low --&gt; J{Number of Active Consumers &lt; Number of Partitions?};
+J -- Yes --&gt; K[Insufficient Consumers - Horizontal Scale];
+J -- No --&gt; L[&quot;Check &#96;max.poll.records&#96;, &#96;fetch.min.bytes&#96;, &#96;fetch.max.wait.ms&#96;&quot;];
+L --&gt; M[Tune Consumer Fetch Config];
+
+G -- &quot;No (Some Partitions Lagging More)&quot; --&gt; N{Data Skew Suspected?};
+N -- Yes --&gt; O[Investigate Partitioning Key &#x2F; Custom Partitioner];
+N -- No --&gt; P{Check for Frequent Rebalances};
+P -- Yes --&gt; Q[&quot;Tune &#96;session.timeout.ms&#96;, &#96;heartbeat.interval.ms&#96;, Cooperative Rebalancing&quot;];
+P -- No --&gt; R[Other unknown consumer issue - Deeper dive into logs];
+</code>
+</pre>
+
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Managing message backlogs in Kafka is critical for maintaining data freshness, system performance, and reliability. A deep understanding of Kafka’s architecture, especially consumer groups and partitioning, coupled with robust monitoring and a systematic troubleshooting approach, is essential. By proactively designing topics and consumers, and reactively scaling and optimizing when issues arise, you can ensure your Kafka pipelines remain efficient and responsive.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/kafka/" rel="tag"># kafka</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/10/Kafka-Avoiding-Message-Loss-Theory-Best-Practices-and-Interview-Insights/" rel="prev" title="Kafka Avoiding Message Loss: Theory, Best Practices, and Interview Insights">
+                  <i class="fa fa-angle-left"></i> Kafka Avoiding Message Loss: Theory, Best Practices, and Interview Insights
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/06/10/Kafka-Duplicate-Message-Consumption/" rel="next" title="Kafka Duplicate Message Consumption">
+                  Kafka Duplicate Message Consumption <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
