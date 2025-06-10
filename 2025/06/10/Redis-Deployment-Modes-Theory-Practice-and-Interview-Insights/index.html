@@ -27,7 +27,7 @@
 <meta property="og:description" content="IntroductionRedis supports multiple deployment modes, each designed for different use cases, scalability requirements, and availability needs. Understanding these modes is crucial for designing robust">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-06-10T08:21:06.000Z">
-<meta property="article:modified_time" content="2025-06-10T08:25:20.469Z">
+<meta property="article:modified_time" content="2025-06-10T09:17:39.321Z">
 <meta property="article:author" content="Charlie Feng">
 <meta property="article:tag" content="redis">
 <meta name="twitter:card" content="summary">
@@ -131,7 +131,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Standalone-Redis"><span class="nav-number">2.</span> <span class="nav-text">Standalone Redis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview"><span class="nav-number">2.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture"><span class="nav-number">2.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-Example"><span class="nav-number">2.3.</span> <span class="nav-text">Configuration Example</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices"><span class="nav-number">2.4.</span> <span class="nav-text">Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Limitations-and-Use-Cases"><span class="nav-number">2.5.</span> <span class="nav-text">Limitations and Use Cases</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Replication-Master-Slave"><span class="nav-number">3.</span> <span class="nav-text">Redis Replication (Master-Slave)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview-1"><span class="nav-number">3.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-1"><span class="nav-number">3.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration"><span class="nav-number">3.3.</span> <span class="nav-text">Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Replication-Process-Flow"><span class="nav-number">3.4.</span> <span class="nav-text">Replication Process Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-1"><span class="nav-number">3.5.</span> <span class="nav-text">Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Showcase"><span class="nav-number">3.6.</span> <span class="nav-text">Production Showcase</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Sentinel"><span class="nav-number">4.</span> <span class="nav-text">Redis Sentinel</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview-2"><span class="nav-number">4.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-2"><span class="nav-number">4.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Sentinel-Configuration"><span class="nav-number">4.3.</span> <span class="nav-text">Sentinel Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Failover-Process"><span class="nav-number">4.4.</span> <span class="nav-text">Failover Process</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-2"><span class="nav-number">4.5.</span> <span class="nav-text">Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Monitoring-Script"><span class="nav-number">4.6.</span> <span class="nav-text">Production Monitoring Script</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Cluster"><span class="nav-number">5.</span> <span class="nav-text">Redis Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview-3"><span class="nav-number">5.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-3"><span class="nav-number">5.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hash-Slot-Distribution"><span class="nav-number">5.3.</span> <span class="nav-text">Hash Slot Distribution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cluster-Configuration"><span class="nav-number">5.4.</span> <span class="nav-text">Cluster Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Distribution-and-Client-Routing"><span class="nav-number">5.5.</span> <span class="nav-text">Data Distribution and Client Routing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Advanced-Operations"><span class="nav-number">5.6.</span> <span class="nav-text">Advanced Operations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Client-Implementation-Best-Practices"><span class="nav-number">5.7.</span> <span class="nav-text">Client Implementation Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Limitations-and-Considerations"><span class="nav-number">5.8.</span> <span class="nav-text">Limitations and Considerations</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Deployment-Architecture-Comparison"><span class="nav-number">6.</span> <span class="nav-text">Deployment Architecture Comparison</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Feature-Matrix"><span class="nav-number">6.1.</span> <span class="nav-text">Feature Matrix</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Decision-Flow-Chart"><span class="nav-number">6.2.</span> <span class="nav-text">Decision Flow Chart</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Production-Considerations"><span class="nav-number">7.</span> <span class="nav-text">Production Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hardware-Sizing-Guidelines"><span class="nav-number">7.1.</span> <span class="nav-text">Hardware Sizing Guidelines</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Best-Practices"><span class="nav-number">7.2.</span> <span class="nav-text">Security Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Backup-and-Recovery-Strategy"><span class="nav-number">7.3.</span> <span class="nav-text">Backup and Recovery Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Operations"><span class="nav-number">8.</span> <span class="nav-text">Monitoring and Operations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Performance-Metrics"><span class="nav-number">8.1.</span> <span class="nav-text">Key Performance Metrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Alerting-Thresholds"><span class="nav-number">8.2.</span> <span class="nav-text">Alerting Thresholds</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Troubleshooting-Common-Issues"><span class="nav-number">8.3.</span> <span class="nav-text">Troubleshooting Common Issues</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">9.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Standalone-Redis"><span class="nav-number">2.</span> <span class="nav-text">Standalone Redis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview"><span class="nav-number">2.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture"><span class="nav-number">2.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-Example"><span class="nav-number">2.3.</span> <span class="nav-text">Configuration Example</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices"><span class="nav-number">2.4.</span> <span class="nav-text">Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Limitations-and-Use-Cases"><span class="nav-number">2.5.</span> <span class="nav-text">Limitations and Use Cases</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RDB-Operation-Impact-Analysis"><span class="nav-number">2.6.</span> <span class="nav-text">RDB Operation Impact Analysis</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Replication-Master-Slave"><span class="nav-number">3.</span> <span class="nav-text">Redis Replication (Master-Slave)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview-1"><span class="nav-number">3.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-1"><span class="nav-number">3.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration"><span class="nav-number">3.3.</span> <span class="nav-text">Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Replication-Process-Flow"><span class="nav-number">3.4.</span> <span class="nav-text">Replication Process Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-1"><span class="nav-number">3.5.</span> <span class="nav-text">Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Showcase"><span class="nav-number">3.6.</span> <span class="nav-text">Production Showcase</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Sentinel"><span class="nav-number">4.</span> <span class="nav-text">Redis Sentinel</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview-2"><span class="nav-number">4.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-2"><span class="nav-number">4.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Sentinel-Configuration"><span class="nav-number">4.3.</span> <span class="nav-text">Sentinel Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Failover-Process"><span class="nav-number">4.4.</span> <span class="nav-text">Failover Process</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Best-Practices-2"><span class="nav-number">4.5.</span> <span class="nav-text">Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Monitoring-Script"><span class="nav-number">4.6.</span> <span class="nav-text">Production Monitoring Script</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Cluster"><span class="nav-number">5.</span> <span class="nav-text">Redis Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overview-3"><span class="nav-number">5.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-3"><span class="nav-number">5.2.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hash-Slot-Distribution"><span class="nav-number">5.3.</span> <span class="nav-text">Hash Slot Distribution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cluster-Configuration"><span class="nav-number">5.4.</span> <span class="nav-text">Cluster Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Distribution-and-Client-Routing"><span class="nav-number">5.5.</span> <span class="nav-text">Data Distribution and Client Routing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Advanced-Operations"><span class="nav-number">5.6.</span> <span class="nav-text">Advanced Operations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Client-Implementation-Best-Practices"><span class="nav-number">5.7.</span> <span class="nav-text">Client Implementation Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Limitations-and-Considerations"><span class="nav-number">5.8.</span> <span class="nav-text">Limitations and Considerations</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Deployment-Architecture-Comparison"><span class="nav-number">6.</span> <span class="nav-text">Deployment Architecture Comparison</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Feature-Matrix"><span class="nav-number">6.1.</span> <span class="nav-text">Feature Matrix</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Decision-Flow-Chart"><span class="nav-number">6.2.</span> <span class="nav-text">Decision Flow Chart</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Production-Considerations"><span class="nav-number">7.</span> <span class="nav-text">Production Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hardware-Sizing-Guidelines"><span class="nav-number">7.1.</span> <span class="nav-text">Hardware Sizing Guidelines</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Best-Practices"><span class="nav-number">7.2.</span> <span class="nav-text">Security Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Backup-and-Recovery-Strategy"><span class="nav-number">7.3.</span> <span class="nav-text">Backup and Recovery Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Operations"><span class="nav-number">8.</span> <span class="nav-text">Monitoring and Operations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Performance-Metrics"><span class="nav-number">8.1.</span> <span class="nav-text">Key Performance Metrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Alerting-Thresholds"><span class="nav-number">8.2.</span> <span class="nav-text">Alerting Thresholds</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Troubleshooting-Common-Issues"><span class="nav-number">8.3.</span> <span class="nav-text">Troubleshooting Common Issues</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">9.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -144,18 +144,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-count">27</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -212,7 +212,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2025-06-10 16:21:06 / Modified: 16:25:20" itemprop="dateCreated datePublished" datetime="2025-06-10T16:21:06+08:00">2025-06-10</time>
+      <time title="Created: 2025-06-10 16:21:06 / Modified: 17:17:39" itemprop="dateCreated datePublished" datetime="2025-06-10T16:21:06+08:00">2025-06-10</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -237,7 +237,7 @@
 <p><strong>🎯 Common Interview Question</strong>: <em>“How do you decide which Redis deployment mode to use for a given application?”</em></p>
 <p><strong>Answer Framework</strong>: Consider these factors:</p>
 <ul>
-<li><strong>Data size</strong>: Single instance limits (~25GB recommended)</li>
+<li><strong>Data size</strong>: Single instance practical limits (~25GB operational recommendation)</li>
 <li><strong>Availability requirements</strong>: RTO&#x2F;RPO expectations</li>
 <li><strong>Read&#x2F;write patterns</strong>: Read-heavy vs write-heavy workloads</li>
 <li><strong>Geographic distribution</strong>: Single vs multi-region</li>
@@ -290,11 +290,45 @@ style C fill:#99ff99
 <p><strong>Optimal Use Cases:</strong></p>
 <ul>
 <li>Development and testing environments</li>
-<li>Applications with &lt; 10GB data</li>
+<li>Applications with &lt; 25GB data (to avoid RDB performance impact)</li>
 <li>Non-critical applications where downtime is acceptable</li>
 <li>Cache-only scenarios with acceptable data loss</li>
 </ul>
-<p><strong>🎯 Interview Insight</strong>: <em>“When would you NOT use standalone Redis?”</em><br>Answer: When you need high availability (&gt;99.9% uptime), data sizes exceed single machine capacity, or when application criticality requires zero data loss guarantees.</p>
+<p><strong>🎯 Interview Insight</strong>: <em>“When would you NOT use standalone Redis?”</em><br>Answer: When you need high availability (&gt;99.9% uptime), <strong>data sizes exceed 25GB</strong> (RDB operations impact performance), or when application criticality requires zero data loss guarantees.</p>
+<h3 id="RDB-Operation-Impact-Analysis"><a href="#RDB-Operation-Impact-Analysis" class="headerlink" title="RDB Operation Impact Analysis"></a>RDB Operation Impact Analysis</h3><p><strong>Critical Production Insight</strong>: The <strong>25GB threshold</strong> is where RDB operations start significantly impacting online business:</p>
+<pre>
+<code class="mermaid">
+graph LR
+A[BGSAVE Command] --&gt; B[&quot;fork() syscall&quot;]
+B --&gt; C[Copy-on-Write Memory]
+C --&gt; D[Memory Usage Spike]
+D --&gt; E[Potential OOM]
+
+F[Write Operations] --&gt; G[COW Page Copies]
+G --&gt; H[Increased Latency]
+H --&gt; I[Client Timeouts]
+
+style D fill:#ff9999
+style E fill:#ff6666
+style H fill:#ffcc99
+style I fill:#ff9999
+</code>
+</pre>
+
+<p><strong>Real-world Impact at 25GB+:</strong></p>
+<ul>
+<li><strong>Memory spike</strong>: Up to 2x memory usage during fork</li>
+<li><strong>Latency impact</strong>: P99 latencies can spike from 1ms to 100ms+</li>
+<li><strong>CPU impact</strong>: Fork operation can freeze Redis for 100ms-1s</li>
+<li><strong>I&#x2F;O saturation</strong>: Large RDB writes competing with normal operations</li>
+</ul>
+<p><strong>Mitigation Strategies:</strong></p>
+<ol>
+<li><strong>Disable automatic RDB</strong>: Use <code>save &quot;&quot;</code> and only manual BGSAVE during low traffic</li>
+<li><strong>AOF-only persistence</strong>: More predictable performance impact</li>
+<li><strong>Slave-based backups</strong>: Perform RDB operations on slave instances</li>
+<li><strong>Memory optimization</strong>: Use compression, optimize data structures</li>
+</ol>
 <h2 id="Redis-Replication-Master-Slave"><a href="#Redis-Replication-Master-Slave" class="headerlink" title="Redis Replication (Master-Slave)"></a>Redis Replication (Master-Slave)</h2><h3 id="Overview-1"><a href="#Overview-1" class="headerlink" title="Overview"></a>Overview</h3><p>Redis replication creates exact copies of the master instance on one or more slave instances. It provides read scalability and basic redundancy.</p>
 <h3 id="Architecture-1"><a href="#Architecture-1" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
 <code class="mermaid">
@@ -657,20 +691,22 @@ end
 <h3 id="Decision-Flow-Chart"><a href="#Decision-Flow-Chart" class="headerlink" title="Decision Flow Chart"></a>Decision Flow Chart</h3><pre>
 <code class="mermaid">
 flowchart TD
-A[Start: Redis Deployment Decision] --&gt; B{Data Size &gt; 250GB?}
-B --&gt;|Yes| C[Redis Cluster]
-B --&gt;|No| D{High Availability Required?}
-D --&gt;|No| E{Read Scaling Needed?}
-E --&gt;|Yes| F[Master-Slave Replication]
-E --&gt;|No| G[Standalone Redis]
-D --&gt;|Yes| H{Automatic Failover Needed?}
-H --&gt;|Yes| I[Redis Sentinel]
-H --&gt;|No| F
+A[Start: Redis Deployment Decision] --&gt; B{Data Size &gt; 25GB?}
+B --&gt;|Yes| C{Can tolerate RDB impact?}
+C --&gt;|No| D[Consider Redis Cluster]
+C --&gt;|Yes| E{High Availability Required?}
+B --&gt;|No| E
+E --&gt;|No| F{Read Scaling Needed?}
+F --&gt;|Yes| G[Master-Slave Replication]
+F --&gt;|No| H[Standalone Redis]
+E --&gt;|Yes| I{Automatic Failover Needed?}
+I --&gt;|Yes| J[Redis Sentinel]
+I --&gt;|No| G
 
-style C fill:#ff6b6b
-style I fill:#4ecdc4
-style F fill:#45b7d1
-style G fill:#96ceb4
+style D fill:#ff6b6b
+style J fill:#4ecdc4
+style G fill:#45b7d1
+style H fill:#96ceb4
 </code>
 </pre>
 
@@ -767,6 +803,9 @@ style G fill:#96ceb4
                 </a>
             </div>
             <div class="post-nav-item">
+                <a href="/2025/06/10/Redis-Cache-Problems-Penetration-Breakdown-and-Avalanche/" rel="next" title="Redis Cache Problems:Penetration,Breakdown and Avalanche">
+                  Redis Cache Problems:Penetration,Breakdown and Avalanche <i class="fa fa-angle-right"></i>
+                </a>
             </div>
           </div>
     </footer>

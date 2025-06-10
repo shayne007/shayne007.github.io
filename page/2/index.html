@@ -140,18 +140,18 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-count">27</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
           <a href="/categories/">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,907 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/09/Kafka-ISR-High-Watermark-Leader-Epoch-Deep-Dive-Guide/" class="post-title-link" itemprop="url">Kafka ISR, High Watermark & Leader Epoch - Deep Dive Guide</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 17:49:41 / Modified: 17:57:35" itemprop="dateCreated datePublished" datetime="2025-06-09T17:49:41+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Apache Kafka’s reliability and consistency guarantees are built on three fundamental mechanisms: <strong>In-Sync Replicas (ISR)</strong>, <strong>High Watermark</strong>, and <strong>Leader Epoch</strong>. These mechanisms work together to ensure data durability, prevent data loss, and maintain consistency across distributed partitions.</p>
+<p><strong>🎯 Interview Insight</strong>: <em>Interviewers often ask “How does Kafka ensure data consistency?” This document covers the core mechanisms that make Kafka’s distributed consensus possible.</em></p>
+<h2 id="In-Sync-Replicas-ISR"><a href="#In-Sync-Replicas-ISR" class="headerlink" title="In-Sync Replicas (ISR)"></a>In-Sync Replicas (ISR)</h2><h3 id="Theory-and-Core-Concepts"><a href="#Theory-and-Core-Concepts" class="headerlink" title="Theory and Core Concepts"></a>Theory and Core Concepts</h3><p>The ISR is a dynamic list of replicas that are “caught up” with the partition leader. A replica is considered in-sync if:</p>
+<ol>
+<li>It has contacted the leader within the last <code>replica.lag.time.max.ms</code> (default: 30 seconds)</li>
+<li>It has fetched the leader’s latest messages within this time window</li>
+</ol>
+<pre>
+<code class="mermaid">
+graph TD
+A[Leader Replica] --&gt; B[Follower 1 - In ISR]
+A --&gt; C[Follower 2 - In ISR]
+A --&gt; D[Follower 3 - Out of ISR]
+
+B --&gt; E[Last Fetch: 5s ago]
+C --&gt; F[Last Fetch: 10s ago]
+D --&gt; G[Last Fetch: 45s ago - LAGGING]
+
+style A fill:#90EE90
+style B fill:#87CEEB
+style C fill:#87CEEB
+style D fill:#FFB6C1
+</code>
+</pre>
+
+<h3 id="ISR-Management-Algorithm"><a href="#ISR-Management-Algorithm" class="headerlink" title="ISR Management Algorithm"></a>ISR Management Algorithm</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Follower Fetch Request] --&gt; B{Within lag.time.max.ms?}
+B --&gt;|Yes| C[Update ISR timestamp]
+B --&gt;|No| D[Remove from ISR]
+
+C --&gt; E{Caught up to leader?}
+E --&gt;|Yes| F[Keep in ISR]
+E --&gt;|No| G[Monitor lag]
+
+D --&gt; H[Trigger ISR shrink]
+H --&gt; I[Update ZooKeeper&#x2F;Controller]
+I --&gt; J[Notify all brokers]
+
+style A fill:#E6F3FF
+style H fill:#FFE6E6
+style I fill:#FFF2E6
+</code>
+</pre>
+
+<h3 id="Key-Configuration-Parameters"><a href="#Key-Configuration-Parameters" class="headerlink" title="Key Configuration Parameters"></a>Key Configuration Parameters</h3><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+<th>Interview Focus</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>replica.lag.time.max.ms</code></td>
+<td>30000</td>
+<td>Maximum time a follower can be behind</td>
+<td>How to tune for network latency</td>
+</tr>
+<tr>
+<td><code>min.insync.replicas</code></td>
+<td>1</td>
+<td>Minimum ISR size for writes</td>
+<td>Consistency vs availability tradeoff</td>
+</tr>
+<tr>
+<td><code>unclean.leader.election.enable</code></td>
+<td>false</td>
+<td>Allow out-of-sync replicas to become leader</td>
+<td>Data loss implications</td>
+</tr>
+</tbody></table>
+<p><strong>🎯 Interview Insight</strong>: <em>“What happens when ISR shrinks to 1?” Answer: With <code>min.insync.replicas=2</code>, producers with <code>acks=all</code> will get exceptions, ensuring no data loss but affecting availability.</em></p>
+<h3 id="Best-Practices-for-ISR-Management"><a href="#Best-Practices-for-ISR-Management" class="headerlink" title="Best Practices for ISR Management"></a>Best Practices for ISR Management</h3><h4 id="1-Monitoring-ISR-Health"><a href="#1-Monitoring-ISR-Health" class="headerlink" title="1. Monitoring ISR Health"></a>1. Monitoring ISR Health</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check ISR status</span></span><br><span class="line">kafka-topics.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --topic my-topic</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitor ISR shrink/expand events</span></span><br><span class="line">kafka-log-dirs.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --json | jq <span class="string">&#x27;.brokers[].logDirs[].partitions[] | select(.isr | length &lt; 3)&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="2-Tuning-ISR-Parameters"><a href="#2-Tuning-ISR-Parameters" class="headerlink" title="2. Tuning ISR Parameters"></a>2. Tuning ISR Parameters</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># For high-throughput, low-latency environments</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">10000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># For networks with higher latency</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">60000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Ensure strong consistency</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="High-Watermark-Mechanism"><a href="#High-Watermark-Mechanism" class="headerlink" title="High Watermark Mechanism"></a>High Watermark Mechanism</h2><h3 id="Theory-and-Purpose"><a href="#Theory-and-Purpose" class="headerlink" title="Theory and Purpose"></a>Theory and Purpose</h3><p>The High Watermark (HW) represents the highest offset that has been replicated to all ISR members. It serves as the <strong>committed offset</strong> - only messages below the HW are visible to consumers.</p>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant P as Producer
+participant L as Leader
+participant F1 as Follower 1
+participant F2 as Follower 2
+participant C as Consumer
+
+P-&gt;&gt;L: Send message (offset 100)
+L-&gt;&gt;L: Append to log (LEO: 101)
+
+L-&gt;&gt;F1: Replicate message
+L-&gt;&gt;F2: Replicate message
+
+F1-&gt;&gt;F1: Append to log (LEO: 101)
+F2-&gt;&gt;F2: Append to log (LEO: 101)
+
+F1-&gt;&gt;L: Fetch response (LEO: 101)
+F2-&gt;&gt;L: Fetch response (LEO: 101)
+
+L-&gt;&gt;L: Update HW to 101
+
+Note over L: HW &#x3D; min(LEO of all ISR members)
+
+C-&gt;&gt;L: Fetch request
+L-&gt;&gt;C: Return messages up to HW (100)
+</code>
+</pre>
+
+<h3 id="High-Watermark-Update-Algorithm"><a href="#High-Watermark-Update-Algorithm" class="headerlink" title="High Watermark Update Algorithm"></a>High Watermark Update Algorithm</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Follower Fetch Request] --&gt; B[Update Follower LEO]
+B --&gt; C[Calculate min LEO of all ISR]
+C --&gt; D{New HW &gt; Current HW?}
+D --&gt;|Yes| E[Update High Watermark]
+D --&gt;|No| F[Keep Current HW]
+E --&gt; G[Include HW in Response]
+F --&gt; G
+G --&gt; H[Send Fetch Response]
+
+style E fill:#90EE90
+style G fill:#87CEEB
+</code>
+</pre>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“Why can’t consumers see messages beyond HW?” Answer: Ensures read consistency - consumers only see messages guaranteed to be replicated to all ISR members, preventing phantom reads during leader failures.</em></p>
+<h3 id="High-Watermark-Edge-Cases"><a href="#High-Watermark-Edge-Cases" class="headerlink" title="High Watermark Edge Cases"></a>High Watermark Edge Cases</h3><h4 id="Case-1-ISR-Shrinkage-Impact"><a href="#Case-1-ISR-Shrinkage-Impact" class="headerlink" title="Case 1: ISR Shrinkage Impact"></a>Case 1: ISR Shrinkage Impact</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Before ISR shrink:</span><br><span class="line">Leader LEO: 1000, HW: 950</span><br><span class="line">Follower1 LEO: 960 (in ISR)</span><br><span class="line">Follower2 LEO: 950 (in ISR)</span><br><span class="line"></span><br><span class="line">After Follower1 removed from ISR:</span><br><span class="line">Leader LEO: 1000, HW: 950 (unchanged)</span><br><span class="line">Follower2 LEO: 950 (only ISR member)</span><br><span class="line">New HW: min(1000, 950) = 950</span><br></pre></td></tr></table></figure>
+
+<h4 id="Case-2-Leader-Election"><a href="#Case-2-Leader-Election" class="headerlink" title="Case 2: Leader Election"></a>Case 2: Leader Election</h4><pre>
+<code class="mermaid">
+graph TD
+A[Old Leader Fails] --&gt; B[Controller Chooses New Leader]
+B --&gt; C{New Leader LEO vs Old HW}
+C --&gt;|LEO &lt; Old HW| D[Truncate HW to New Leader LEO]
+C --&gt;|LEO &gt;&#x3D; Old HW| E[Keep HW, Wait for Replication]
+
+D --&gt; F[Potential Message Loss]
+E --&gt; G[No Message Loss]
+
+style F fill:#FFB6C1
+style G fill:#90EE90
+</code>
+</pre>
+
+<h2 id="Leader-Epoch"><a href="#Leader-Epoch" class="headerlink" title="Leader Epoch"></a>Leader Epoch</h2><h3 id="Theory-and-Problem-It-Solves"><a href="#Theory-and-Problem-It-Solves" class="headerlink" title="Theory and Problem It Solves"></a>Theory and Problem It Solves</h3><p>Leader Epoch was introduced to solve the <strong>data inconsistency problem</strong> during leader elections. Before leader epochs, followers could diverge from the new leader’s log, causing data loss or duplication.</p>
+<p><strong>🎯 Interview Insight</strong>: <em>“What’s the difference between Kafka with and without leader epochs?” Answer: Leader epochs prevent log divergence during leader failovers by providing a monotonic counter that helps followers detect stale data.</em></p>
+<h3 id="Leader-Epoch-Mechanism"><a href="#Leader-Epoch-Mechanism" class="headerlink" title="Leader Epoch Mechanism"></a>Leader Epoch Mechanism</h3><pre>
+<code class="mermaid">
+graph TD
+A[Epoch 0: Leader A] --&gt; B[Epoch 1: Leader B]
+B --&gt; C[Epoch 2: Leader A]
+C --&gt; D[Epoch 3: Leader C]
+
+A1[Messages 0-100] --&gt; A
+B1[Messages 101-200] --&gt; B
+C1[Messages 201-300] --&gt; C
+D1[Messages 301+] --&gt; D
+
+style A fill:#FFE6E6
+style B fill:#E6F3FF
+style C fill:#FFE6E6
+style D fill:#E6FFE6
+</code>
+</pre>
+
+<h3 id="Data-Structure-and-Storage"><a href="#Data-Structure-and-Storage" class="headerlink" title="Data Structure and Storage"></a>Data Structure and Storage</h3><p>Each partition maintains an <strong>epoch file</strong> with entries:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Epoch | Start Offset</span><br><span class="line">------|-------------</span><br><span class="line">0     | 0</span><br><span class="line">1     | 101</span><br><span class="line">2     | 201</span><br><span class="line">3     | 301</span><br></pre></td></tr></table></figure>
+
+<h3 id="Leader-Election-with-Epochs"><a href="#Leader-Election-with-Epochs" class="headerlink" title="Leader Election with Epochs"></a>Leader Election with Epochs</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant C as Controller
+participant L1 as Old Leader
+participant L2 as New Leader
+participant F as Follower
+
+Note over L1: Becomes unavailable
+
+C-&gt;&gt;L2: Become leader (Epoch N+1)
+L2-&gt;&gt;L2: Increment epoch to N+1
+L2-&gt;&gt;L2: Record epoch change in log
+
+F-&gt;&gt;L2: Fetch request (with last known epoch N)
+L2-&gt;&gt;F: Epoch validation response
+
+Note over F: Detects epoch change
+F-&gt;&gt;L2: Request epoch history
+L2-&gt;&gt;F: Send epoch N+1 start offset
+
+F-&gt;&gt;F: Truncate log if necessary
+F-&gt;&gt;L2: Resume normal fetching
+</code>
+</pre>
+
+<h3 id="Preventing-Data-Divergence"><a href="#Preventing-Data-Divergence" class="headerlink" title="Preventing Data Divergence"></a>Preventing Data Divergence</h3><h4 id="Scenario-Split-Brain-Prevention"><a href="#Scenario-Split-Brain-Prevention" class="headerlink" title="Scenario: Split-Brain Prevention"></a>Scenario: Split-Brain Prevention</h4><pre>
+<code class="mermaid">
+graph TD
+A[Network Partition] --&gt; B[Two Leaders Emerge]
+B --&gt; C[Leader A: Epoch 5]
+B --&gt; D[Leader B: Epoch 6]
+
+E[Partition Heals] --&gt; F[Controller Detects Conflict]
+F --&gt; G[Higher Epoch Wins]
+G --&gt; H[Leader A Steps Down]
+G --&gt; I[Leader B Remains Active]
+
+H --&gt; J[Followers Truncate Conflicting Data]
+
+style C fill:#FFB6C1
+style D fill:#90EE90
+style J fill:#FFF2E6
+</code>
+</pre>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“How does Kafka handle split-brain scenarios?” Answer: Leader epochs ensure only one leader per epoch can be active. When network partitions heal, the leader with the higher epoch wins, and followers truncate any conflicting data.</em></p>
+<h3 id="Best-Practices-for-Leader-Epochs"><a href="#Best-Practices-for-Leader-Epochs" class="headerlink" title="Best Practices for Leader Epochs"></a>Best Practices for Leader Epochs</h3><h4 id="1-Monitoring-Epoch-Changes"><a href="#1-Monitoring-Epoch-Changes" class="headerlink" title="1. Monitoring Epoch Changes"></a>1. Monitoring Epoch Changes</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Monitor frequent leader elections</span></span><br><span class="line">kafka-log-dirs.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --json | jq <span class="string">&#x27;.brokers[].logDirs[].partitions[] | select(.leaderEpoch &gt; 10)&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check epoch files</span></span><br><span class="line"><span class="built_in">ls</span> -la /var/lib/kafka/logs/my-topic-0/leader-epoch-checkpoint</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-Configuration-for-Stability"><a href="#2-Configuration-for-Stability" class="headerlink" title="2. Configuration for Stability"></a>2. Configuration for Stability</h4><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Reduce unnecessary leader elections</span></span><br><span class="line"><span class="attr">replica.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">replica.socket.receive.buffer.bytes</span>=<span class="string">65536</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Controller stability</span></span><br><span class="line"><span class="attr">controller.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">controller.message.queue.size</span>=<span class="string">10</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Integration-and-Best-Practices"><a href="#Integration-and-Best-Practices" class="headerlink" title="Integration and Best Practices"></a>Integration and Best Practices</h2><h3 id="The-Complete-Flow-ISR-HW-Epochs"><a href="#The-Complete-Flow-ISR-HW-Epochs" class="headerlink" title="The Complete Flow: ISR + HW + Epochs"></a>The Complete Flow: ISR + HW + Epochs</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant P as Producer
+participant L as Leader (Epoch N)
+participant F1 as Follower 1
+participant F2 as Follower 2
+
+Note over L: ISR &#x3D; [Leader, F1, F2]
+
+P-&gt;&gt;L: Produce (acks&#x3D;all)
+L-&gt;&gt;L: Append to log (LEO: 101)
+
+par Replication
+    L-&gt;&gt;F1: Replicate message
+    L-&gt;&gt;F2: Replicate message
+end
+
+par Acknowledgments
+    F1-&gt;&gt;L: Ack (LEO: 101)
+    F2-&gt;&gt;L: Ack (LEO: 101)
+end
+
+L-&gt;&gt;L: Update HW &#x3D; min(101, 101, 101) &#x3D; 101
+L-&gt;&gt;P: Produce response (success)
+
+Note over L,F2: All ISR members have message
+Note over L: HW advanced, message visible to consumers
+</code>
+</pre>
+
+<h3 id="Production-Configuration-Template"><a href="#Production-Configuration-Template" class="headerlink" title="Production Configuration Template"></a>Production Configuration Template</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ISR Management</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># High Watermark Optimization</span></span><br><span class="line"><span class="attr">replica.fetch.wait.max.ms</span>=<span class="string">500</span></span><br><span class="line"><span class="attr">replica.fetch.min.bytes</span>=<span class="string">1024</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Leader Epoch Stability</span></span><br><span class="line"><span class="attr">controller.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">replica.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Monitoring</span></span><br><span class="line"><span class="attr">jmx.port</span>=<span class="string">9999</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“How do you ensure exactly-once delivery in Kafka?” Answer: Combine ISR with <code>min.insync.replicas=2</code>, <code>acks=all</code>, idempotent producers (<code>enable.idempotence=true</code>), and proper transaction management.</em></p>
+<h3 id="Advanced-Scenarios-and-Edge-Cases"><a href="#Advanced-Scenarios-and-Edge-Cases" class="headerlink" title="Advanced Scenarios and Edge Cases"></a>Advanced Scenarios and Edge Cases</h3><h4 id="Scenario-1-Cascading-Failures"><a href="#Scenario-1-Cascading-Failures" class="headerlink" title="Scenario 1: Cascading Failures"></a>Scenario 1: Cascading Failures</h4><pre>
+<code class="mermaid">
+graph TD
+A[3 Replicas in ISR] --&gt; B[1 Replica Fails]
+B --&gt; C[ISR &#x3D; 2, Still Accepting Writes]
+C --&gt; D[2nd Replica Fails]
+D --&gt; E{min.insync.replicas&#x3D;2?}
+E --&gt;|Yes| F[Reject Writes - Availability Impact]
+E --&gt;|No| G[Continue with 1 Replica - Consistency Risk]
+
+style F fill:#FFE6E6
+style G fill:#FFF2E6
+</code>
+</pre>
+
+<h4 id="Scenario-2-Network-Partitions"><a href="#Scenario-2-Network-Partitions" class="headerlink" title="Scenario 2: Network Partitions"></a>Scenario 2: Network Partitions</h4><pre>
+<code class="mermaid">
+flowchart LR
+subgraph &quot;Before Partition&quot;
+    A1[Leader: Broker 1]
+    B1[Follower: Broker 2]
+    C1[Follower: Broker 3]
+end
+
+subgraph &quot;During Partition&quot;
+    A2[Isolated: Broker 1]
+    B2[New Leader: Broker 2]
+    C2[Follower: Broker 3]
+end
+
+subgraph &quot;After Partition Heals&quot;
+    A3[Demoted: Broker 1]
+    B3[Leader: Broker 2]
+    C3[Follower: Broker 3]
+end
+
+A1 --&gt; A2
+B1 --&gt; B2
+C1 --&gt; C2
+
+A2 --&gt; A3
+B2 --&gt; B3
+C2 --&gt; C3
+
+style A2 fill:#FFB6C1
+style B2 fill:#90EE90
+style A3 fill:#87CEEB
+</code>
+</pre>
+
+<h2 id="Troubleshooting-Common-Issues"><a href="#Troubleshooting-Common-Issues" class="headerlink" title="Troubleshooting Common Issues"></a>Troubleshooting Common Issues</h2><h3 id="Issue-1-ISR-Constantly-Shrinking-Expanding"><a href="#Issue-1-ISR-Constantly-Shrinking-Expanding" class="headerlink" title="Issue 1: ISR Constantly Shrinking&#x2F;Expanding"></a>Issue 1: ISR Constantly Shrinking&#x2F;Expanding</h3><p><strong>Symptoms:</strong></p>
+<ul>
+<li>Frequent ISR change notifications</li>
+<li>Performance degradation</li>
+<li>Producer timeout errors</li>
+</ul>
+<p><strong>Root Causes &amp; Solutions:</strong></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[ISR Instability] --&gt; B[Network Issues]
+A --&gt; C[GC Pauses]
+A --&gt; D[Disk I&#x2F;O Bottleneck]
+A --&gt; E[Configuration Issues]
+
+B --&gt; B1[Check network latency]
+B --&gt; B2[Increase socket timeouts]
+
+C --&gt; C1[Tune JVM heap]
+C --&gt; C2[Use G1&#x2F;ZGC garbage collector]
+
+D --&gt; D1[Monitor disk utilization]
+D --&gt; D2[Use faster storage]
+
+E --&gt; E1[Adjust replica.lag.time.max.ms]
+E --&gt; E2[Review fetch settings]
+</code>
+</pre>
+
+<p><strong>Diagnostic Commands:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check ISR metrics</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=ReplicaManager,name=IsrShrinksPerSec</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitor network and disk</span></span><br><span class="line">iostat -x 1</span><br><span class="line">ss -tuln | grep 9092</span><br></pre></td></tr></table></figure>
+
+<h3 id="Issue-2-High-Watermark-Not-Advancing"><a href="#Issue-2-High-Watermark-Not-Advancing" class="headerlink" title="Issue 2: High Watermark Not Advancing"></a>Issue 2: High Watermark Not Advancing</h3><p><strong>Investigation Steps:</strong></p>
+<ol>
+<li><strong>Check ISR Status:</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kafka-topics.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --topic problematic-topic</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>Verify Follower Lag:</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kafka-consumer-groups.sh --bootstrap-server localhost:9092 \</span><br><span class="line">  --describe --group __consumer_offsets</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong>Monitor Replica Metrics:</strong></li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check replica lag</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=FetcherLagMetrics,name=ConsumerLag,clientId=*</span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Insight</strong>: <em>“How would you troubleshoot slow consumer lag?” Answer: Check ISR health, monitor replica fetch metrics, verify network connectivity between brokers, and ensure followers aren’t experiencing GC pauses or disk I&#x2F;O issues.</em></p>
+<h3 id="Issue-3-Frequent-Leader-Elections"><a href="#Issue-3-Frequent-Leader-Elections" class="headerlink" title="Issue 3: Frequent Leader Elections"></a>Issue 3: Frequent Leader Elections</h3><p><strong>Analysis Framework:</strong></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Frequent Leader Elections] --&gt; B{Check Controller Logs}
+B --&gt; C[ZooKeeper Session Timeouts]
+B --&gt; D[Broker Failures]
+B --&gt; E[Network Partitions]
+
+C --&gt; C1[Tune zookeeper.session.timeout.ms]
+D --&gt; D1[Investigate broker health]
+E --&gt; E1[Check network stability]
+
+D1 --&gt; D2[GC tuning]
+D1 --&gt; D3[Resource monitoring]
+D1 --&gt; D4[Hardware issues]
+</code>
+</pre>
+
+<h2 id="Performance-Tuning"><a href="#Performance-Tuning" class="headerlink" title="Performance Tuning"></a>Performance Tuning</h2><h3 id="ISR-Performance-Optimization"><a href="#ISR-Performance-Optimization" class="headerlink" title="ISR Performance Optimization"></a>ISR Performance Optimization</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Reduce ISR churn</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">30000  # Increase if network is slow</span></span><br><span class="line"><span class="attr">replica.socket.timeout.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="attr">replica.socket.receive.buffer.bytes</span>=<span class="string">65536</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Optimize fetch behavior</span></span><br><span class="line"><span class="attr">replica.fetch.wait.max.ms</span>=<span class="string">500</span></span><br><span class="line"><span class="attr">replica.fetch.min.bytes</span>=<span class="string">1024</span></span><br><span class="line"><span class="attr">replica.fetch.max.bytes</span>=<span class="string">1048576</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="High-Watermark-Optimization"><a href="#High-Watermark-Optimization" class="headerlink" title="High Watermark Optimization"></a>High Watermark Optimization</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Faster HW advancement</span></span><br><span class="line"><span class="attr">replica.fetch.backoff.ms</span>=<span class="string">1000</span></span><br><span class="line"><span class="attr">replica.high.watermark.checkpoint.interval.ms</span>=<span class="string">5000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Batch processing</span></span><br><span class="line"><span class="attr">replica.fetch.response.max.bytes</span>=<span class="string">10485760</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Monitoring-and-Alerting"><a href="#Monitoring-and-Alerting" class="headerlink" title="Monitoring and Alerting"></a>Monitoring and Alerting</h3><p><strong>Key Metrics to Monitor:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Threshold</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ISR Shrink Rate</td>
+<td>&gt; 1&#x2F;hour</td>
+<td>Investigate network&#x2F;GC</td>
+</tr>
+<tr>
+<td>Under Replicated Partitions</td>
+<td>&gt; 0</td>
+<td>Check broker health</td>
+</tr>
+<tr>
+<td>Leader Election Rate</td>
+<td>&gt; 1&#x2F;hour</td>
+<td>Check controller stability</td>
+</tr>
+<tr>
+<td>Replica Lag</td>
+<td>&gt; 10000 messages</td>
+<td>Scale or optimize</td>
+</tr>
+</tbody></table>
+<p><strong>JMX Monitoring Script:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Key Kafka ISR/HW metrics monitoring</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ISR shrinks per second</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;ISR Shrinks:&quot;</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=ReplicaManager,name=IsrShrinksPerSec \</span><br><span class="line">  --one-time</span><br><span class="line"></span><br><span class="line"><span class="comment"># Under-replicated partitions</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Under-replicated Partitions:&quot;</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.server:<span class="built_in">type</span>=ReplicaManager,name=UnderReplicatedPartitions \</span><br><span class="line">  --one-time</span><br><span class="line"></span><br><span class="line"><span class="comment"># Leader election rate</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Leader Elections:&quot;</span></span><br><span class="line">kafka-run-class.sh kafka.tools.JmxTool \</span><br><span class="line">  --object-name kafka.controller:<span class="built_in">type</span>=ControllerStats,name=LeaderElectionRateAndTimeMs \</span><br><span class="line">  --one-time</span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Final Interview Insight</strong>: <em>“What’s the relationship between ISR, HW, and Leader Epochs?” Answer: They form Kafka’s consistency triangle - ISR ensures adequate replication, HW provides read consistency, and Leader Epochs prevent split-brain scenarios. Together, they enable Kafka’s strong durability guarantees while maintaining high availability.</em></p>
+<hr>
+<p><em>This guide provides a comprehensive understanding of Kafka’s core consistency mechanisms. Use it as a reference for both system design and troubleshooting scenarios.</em></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Kafka-Storage-Architecture-Deep-Dive-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/09/Kafka-Storage-Architecture-Deep-Dive-Guide/" class="post-title-link" itemprop="url">Kafka Storage Architecture: Deep Dive Guide</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 17:14:18 / Modified: 17:19:52" itemprop="dateCreated datePublished" datetime="2025-06-09T17:14:18+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Apache Kafka’s storage architecture is designed for high-throughput, fault-tolerant, and scalable distributed streaming. Understanding its storage mechanics is crucial for system design, performance tuning, and operational excellence.</p>
+<p><strong>Key Design Principles:</strong></p>
+<ul>
+<li><strong>Append-only logs</strong>: Sequential writes for maximum performance</li>
+<li><strong>Immutable records</strong>: Once written, messages are never modified</li>
+<li><strong>Distributed partitioning</strong>: Horizontal scaling across brokers</li>
+<li><strong>Configurable retention</strong>: Time and size-based cleanup policies</li>
+</ul>
+<h2 id="Core-Storage-Components"><a href="#Core-Storage-Components" class="headerlink" title="Core Storage Components"></a>Core Storage Components</h2><h3 id="Log-Structure-Overview"><a href="#Log-Structure-Overview" class="headerlink" title="Log Structure Overview"></a>Log Structure Overview</h3><pre>
+<code class="mermaid">
+graph TD
+A[Topic] --&gt; B[Partition 0]
+A --&gt; C[Partition 1]
+A --&gt; D[Partition 2]
+
+B --&gt; E[Segment 0]
+B --&gt; F[Segment 1]
+B --&gt; G[Active Segment]
+
+E --&gt; H[.log file]
+E --&gt; I[.index file]
+E --&gt; J[.timeindex file]
+
+subgraph &quot;Broker File System&quot;
+    H
+    I
+    J
+    K[.snapshot files]
+    L[leader-epoch-checkpoint]
+end
+</code>
+</pre>
+
+<h3 id="File-Types-and-Their-Purposes"><a href="#File-Types-and-Their-Purposes" class="headerlink" title="File Types and Their Purposes"></a>File Types and Their Purposes</h3><table>
+<thead>
+<tr>
+<th>File Type</th>
+<th>Extension</th>
+<th>Purpose</th>
+<th>Size Limit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Log Segment</td>
+<td><code>.log</code></td>
+<td>Actual message data</td>
+<td><code>log.segment.bytes</code> (1GB default)</td>
+</tr>
+<tr>
+<td>Offset Index</td>
+<td><code>.index</code></td>
+<td>Maps logical offset to physical position</td>
+<td><code>log.index.size.max.bytes</code> (10MB default)</td>
+</tr>
+<tr>
+<td>Time Index</td>
+<td><code>.timeindex</code></td>
+<td>Maps timestamp to offset</td>
+<td><code>log.index.size.max.bytes</code></td>
+</tr>
+<tr>
+<td>Snapshot</td>
+<td><code>.snapshot</code></td>
+<td>Compacted topic state snapshots</td>
+<td>Variable</td>
+</tr>
+<tr>
+<td>Leader Epoch</td>
+<td><code>leader-epoch-checkpoint</code></td>
+<td>Tracks leadership changes</td>
+<td>Small</td>
+</tr>
+</tbody></table>
+<h2 id="Log-Segments-and-File-Structure"><a href="#Log-Segments-and-File-Structure" class="headerlink" title="Log Segments and File Structure"></a>Log Segments and File Structure</h2><h3 id="Segment-Lifecycle"><a href="#Segment-Lifecycle" class="headerlink" title="Segment Lifecycle"></a>Segment Lifecycle</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant Producer
+participant ActiveSegment
+participant ClosedSegment
+participant CleanupThread
+
+Producer-&gt;&gt;ActiveSegment: Write messages
+Note over ActiveSegment: Grows until segment.bytes limit
+ActiveSegment-&gt;&gt;ClosedSegment: Roll to new segment
+Note over ClosedSegment: Becomes immutable
+CleanupThread-&gt;&gt;ClosedSegment: Apply retention policy
+ClosedSegment-&gt;&gt;CleanupThread: Delete when expired
+</code>
+</pre>
+
+<h3 id="Internal-File-Structure-Example"><a href="#Internal-File-Structure-Example" class="headerlink" title="Internal File Structure Example"></a>Internal File Structure Example</h3><p><strong>Directory Structure:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">/var/kafka-logs/</span><br><span class="line">├── my-topic-0/</span><br><span class="line">│   ├── 00000000000000000000.log      # Messages 0-999</span><br><span class="line">│   ├── 00000000000000000000.index    # Offset index</span><br><span class="line">│   ├── 00000000000000000000.timeindex # Time index</span><br><span class="line">│   ├── 00000000000000001000.log      # Messages 1000-1999</span><br><span class="line">│   ├── 00000000000000001000.index</span><br><span class="line">│   ├── 00000000000000001000.timeindex</span><br><span class="line">│   └── leader-epoch-checkpoint</span><br><span class="line">└── my-topic-1/</span><br><span class="line">    └── ... (similar structure)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Message-Format-Deep-Dive"><a href="#Message-Format-Deep-Dive" class="headerlink" title="Message Format Deep Dive"></a>Message Format Deep Dive</h3><p><strong>Record Batch Structure (v2):</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Record Batch Header:</span><br><span class="line">├── First Offset (8 bytes)</span><br><span class="line">├── Batch Length (4 bytes)</span><br><span class="line">├── Partition Leader Epoch (4 bytes)</span><br><span class="line">├── Magic Byte (1 byte)</span><br><span class="line">├── CRC (4 bytes)</span><br><span class="line">├── Attributes (2 bytes)</span><br><span class="line">├── Last Offset Delta (4 bytes)</span><br><span class="line">├── First Timestamp (8 bytes)</span><br><span class="line">├── Max Timestamp (8 bytes)</span><br><span class="line">├── Producer ID (8 bytes)</span><br><span class="line">├── Producer Epoch (2 bytes)</span><br><span class="line">├── Base Sequence (4 bytes)</span><br><span class="line">└── Records Array</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>Why does Kafka use batch compression instead of individual message compression?</em></p>
+<ul>
+<li>Reduces CPU overhead by compressing multiple messages together</li>
+<li>Better compression ratios due to similarity between adjacent messages</li>
+<li>Maintains high throughput by amortizing compression costs</li>
+</ul>
+<h2 id="Partition-Distribution-and-Replication"><a href="#Partition-Distribution-and-Replication" class="headerlink" title="Partition Distribution and Replication"></a>Partition Distribution and Replication</h2><h3 id="Replica-Placement-Strategy"><a href="#Replica-Placement-Strategy" class="headerlink" title="Replica Placement Strategy"></a>Replica Placement Strategy</h3><pre>
+<code class="mermaid">
+graph LR
+subgraph &quot;Broker 1&quot;
+    A[Topic-A-P0 Leader]
+    B[Topic-A-P1 Follower]
+    C[Topic-A-P2 Follower]
+end
+
+subgraph &quot;Broker 2&quot;
+    D[Topic-A-P0 Follower]
+    E[Topic-A-P1 Leader]
+    F[Topic-A-P2 Follower]
+end
+
+subgraph &quot;Broker 3&quot;
+    G[Topic-A-P0 Follower]
+    H[Topic-A-P1 Follower]
+    I[Topic-A-P2 Leader]
+end
+
+A -.-&gt;|Replication| D
+A -.-&gt;|Replication| G
+E -.-&gt;|Replication| B
+E -.-&gt;|Replication| H
+I -.-&gt;|Replication| C
+I -.-&gt;|Replication| F
+</code>
+</pre>
+
+<h3 id="ISR-In-Sync-Replicas-Management"><a href="#ISR-In-Sync-Replicas-Management" class="headerlink" title="ISR (In-Sync Replicas) Management"></a>ISR (In-Sync Replicas) Management</h3><p><strong>Critical Configuration Parameters:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Replica lag tolerance</span></span><br><span class="line"><span class="attr">replica.lag.time.max.ms</span>=<span class="string">30000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Minimum ISR required for writes</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Unclean leader election (data loss risk)</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Question:</strong> <em>What happens when ISR shrinks below min.insync.replicas?</em></p>
+<ul>
+<li>Producers with <code>acks=all</code> will receive <code>NotEnoughReplicasException</code></li>
+<li>Topic becomes read-only until ISR is restored</li>
+<li>This prevents data loss but reduces availability</li>
+</ul>
+<h2 id="Storage-Best-Practices"><a href="#Storage-Best-Practices" class="headerlink" title="Storage Best Practices"></a>Storage Best Practices</h2><h3 id="Disk-Configuration"><a href="#Disk-Configuration" class="headerlink" title="Disk Configuration"></a>Disk Configuration</h3><p><strong>Optimal Setup:</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">Storage Strategy:</span></span><br><span class="line">  <span class="attr">Primary:</span> <span class="string">SSD</span> <span class="string">for</span> <span class="string">active</span> <span class="string">segments</span> <span class="string">(faster</span> <span class="string">writes)</span></span><br><span class="line">  <span class="attr">Secondary:</span> <span class="string">HDD</span> <span class="string">for</span> <span class="string">older</span> <span class="string">segments</span> <span class="string">(cost-effective)</span></span><br><span class="line">  <span class="attr">RAID:</span> <span class="string">RAID-10</span> <span class="string">for</span> <span class="string">balance</span> <span class="string">of</span> <span class="string">performance</span> <span class="string">and</span> <span class="string">redundancy</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">File System:</span></span><br><span class="line">  <span class="attr">Recommended:</span> <span class="string">XFS</span> <span class="string">or</span> <span class="string">ext4</span></span><br><span class="line">  <span class="attr">Mount Options:</span> <span class="string">noatime,nodiratime</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">Directory Layout:</span></span><br><span class="line">  <span class="string">/var/kafka-logs-1/</span>  <span class="comment"># SSD</span></span><br><span class="line">  <span class="string">/var/kafka-logs-2/</span>  <span class="comment"># SSD  </span></span><br><span class="line">  <span class="string">/var/kafka-logs-3/</span>  <span class="comment"># HDD (archive)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Retention-Policies-Showcase"><a href="#Retention-Policies-Showcase" class="headerlink" title="Retention Policies Showcase"></a>Retention Policies Showcase</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Message Arrives] --&gt; B{Check Active Segment Size}
+B --&gt;|&lt; segment.bytes| C[Append to Active Segment]
+B --&gt;|&gt;&#x3D; segment.bytes| D[Roll New Segment]
+
+D --&gt; E[Close Previous Segment]
+E --&gt; F{Apply Retention Policy}
+
+F --&gt; G[Time-based: log.retention.hours]
+F --&gt; H[Size-based: log.retention.bytes]
+F --&gt; I[Compaction: log.cleanup.policy&#x3D;compact]
+
+G --&gt; J{Segment Age &gt; Retention?}
+H --&gt; K{Total Size &gt; Limit?}
+I --&gt; L[Run Log Compaction]
+
+J --&gt;|Yes| M[Delete Segment]
+K --&gt;|Yes| M
+L --&gt; N[Keep Latest Value per Key]
+</code>
+</pre>
+
+<h3 id="Performance-Tuning-Configuration"><a href="#Performance-Tuning-Configuration" class="headerlink" title="Performance Tuning Configuration"></a>Performance Tuning Configuration</h3><p><strong>Producer Optimizations:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Batching for throughput</span></span><br><span class="line"><span class="attr">batch.size</span>=<span class="string">32768</span></span><br><span class="line"><span class="attr">linger.ms</span>=<span class="string">10</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Compression</span></span><br><span class="line"><span class="attr">compression.type</span>=<span class="string">lz4</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Memory allocation</span></span><br><span class="line"><span class="attr">buffer.memory</span>=<span class="string">67108864</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Broker Storage Optimizations:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Segment settings</span></span><br><span class="line"><span class="attr">log.segment.bytes</span>=<span class="string">268435456        # 256MB segments</span></span><br><span class="line"><span class="attr">log.roll.hours</span>=<span class="string">168                 # Weekly rolls</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Flush settings (let OS handle)</span></span><br><span class="line"><span class="attr">log.flush.interval.messages</span>=<span class="string">Long.MAX_VALUE</span></span><br><span class="line"><span class="attr">log.flush.interval.ms</span>=<span class="string">Long.MAX_VALUE</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Index settings</span></span><br><span class="line"><span class="attr">log.index.interval.bytes</span>=<span class="string">4096</span></span><br><span class="line"><span class="attr">log.index.size.max.bytes</span>=<span class="string">10485760  # 10MB</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Optimization"><a href="#Performance-Optimization" class="headerlink" title="Performance Optimization"></a>Performance Optimization</h2><h3 id="Throughput-Optimization-Strategies"><a href="#Throughput-Optimization-Strategies" class="headerlink" title="Throughput Optimization Strategies"></a>Throughput Optimization Strategies</h3><p><strong>Read Path Optimization:</strong></p>
+<pre>
+<code class="mermaid">
+graph LR
+A[Consumer Request] --&gt; B[Check Page Cache]
+B --&gt;|Hit| C[Return from Memory]
+B --&gt;|Miss| D[Read from Disk]
+D --&gt; E[Zero-Copy Transfer]
+E --&gt; F[sendfile System Call]
+F --&gt; G[Direct Disk-to-Network]
+</code>
+</pre>
+
+<p><strong>Write Path Optimization:</strong></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Producer Batch] --&gt; B[Memory Buffer]
+B --&gt; C[Page Cache]
+C --&gt; D[Async Flush to Disk]
+D --&gt; E[Sequential Write]
+
+F[OS Background] --&gt; G[Periodic fsync]
+G --&gt; H[Durability Guarantee]
+</code>
+</pre>
+
+<h3 id="Capacity-Planning-Formula"><a href="#Capacity-Planning-Formula" class="headerlink" title="Capacity Planning Formula"></a>Capacity Planning Formula</h3><p><strong>Storage Requirements Calculation:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Daily Storage = (Messages/day × Avg Message Size × Replication Factor) / Compression Ratio</span><br><span class="line"></span><br><span class="line">Retention Storage = Daily Storage × Retention Days × Growth Factor</span><br><span class="line"></span><br><span class="line">Example:</span><br><span class="line">- 1M messages/day × 1KB × 3 replicas = 3GB/day</span><br><span class="line">- 7 days retention × 1.2 growth factor = 25.2GB total</span><br></pre></td></tr></table></figure>
+
+<h2 id="Monitoring-and-Troubleshooting"><a href="#Monitoring-and-Troubleshooting" class="headerlink" title="Monitoring and Troubleshooting"></a>Monitoring and Troubleshooting</h2><h3 id="Key-Metrics-Dashboard"><a href="#Key-Metrics-Dashboard" class="headerlink" title="Key Metrics Dashboard"></a>Key Metrics Dashboard</h3><table>
+<thead>
+<tr>
+<th>Metric Category</th>
+<th>Key Indicators</th>
+<th>Alert Thresholds</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Storage</strong></td>
+<td><code>kafka.log.size</code>, <code>disk.free</code></td>
+<td>&lt; 15% free space</td>
+</tr>
+<tr>
+<td><strong>Replication</strong></td>
+<td><code>UnderReplicatedPartitions</code></td>
+<td>&gt; 0</td>
+</tr>
+<tr>
+<td><strong>Performance</strong></td>
+<td><code>MessagesInPerSec</code>, <code>BytesInPerSec</code></td>
+<td>Baseline deviation</td>
+</tr>
+<tr>
+<td><strong>Lag</strong></td>
+<td><code>ConsumerLag</code>, <code>ReplicaLag</code></td>
+<td>&gt; 1000 messages</td>
+</tr>
+</tbody></table>
+<h3 id="Common-Storage-Issues-and-Solutions"><a href="#Common-Storage-Issues-and-Solutions" class="headerlink" title="Common Storage Issues and Solutions"></a>Common Storage Issues and Solutions</h3><p><strong>Issue 1: Disk Space Exhaustion</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Emergency cleanup - increase log cleanup frequency</span></span><br><span class="line">kafka-configs.sh --alter --entity-type brokers --entity-name 0 \</span><br><span class="line">  --add-config log.cleaner.min.cleanable.ratio=0.1</span><br><span class="line"></span><br><span class="line"><span class="comment"># Temporary retention reduction</span></span><br><span class="line">kafka-configs.sh --alter --entity-type topics --entity-name my-topic \</span><br><span class="line">  --add-config retention.ms=3600000  <span class="comment"># 1 hour</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Issue 2: Slow Consumer Performance</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check if issue is disk I/O or network</span></span><br><span class="line">iostat -x 1</span><br><span class="line">iftop</span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify zero-copy is working</span></span><br><span class="line">strace -p &lt;kafka-pid&gt; | grep sendfile</span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Questions-Real-World-Scenarios"><a href="#Interview-Questions-Real-World-Scenarios" class="headerlink" title="Interview Questions &amp; Real-World Scenarios"></a>Interview Questions &amp; Real-World Scenarios</h2><h3 id="Scenario-Based-Questions"><a href="#Scenario-Based-Questions" class="headerlink" title="Scenario-Based Questions"></a>Scenario-Based Questions</h3><p><strong>Q1: Design Challenge</strong><br><em>“You have a Kafka cluster handling 100GB&#x2F;day with 7-day retention. One broker is running out of disk space. Walk me through your troubleshooting and resolution strategy.”</em></p>
+<p><strong>Answer Framework:</strong></p>
+<ol>
+<li><strong>Immediate Actions</strong>: Check partition distribution, identify large partitions</li>
+<li><strong>Short-term</strong>: Reduce retention temporarily, enable log compaction if applicable</li>
+<li><strong>Long-term</strong>: Rebalance partitions, add storage capacity, implement tiered storage</li>
+</ol>
+<p><strong>Q2: Performance Analysis</strong><br><em>“Your Kafka cluster shows decreasing write throughput over time. What could be the causes and how would you investigate?”</em></p>
+<p><strong>Investigation Checklist:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check segment distribution</span></span><br><span class="line"><span class="built_in">ls</span> -la /var/kafka-logs/*/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitor I/O patterns</span></span><br><span class="line">iotop -ao</span><br><span class="line"></span><br><span class="line"><span class="comment"># Analyze JVM garbage collection</span></span><br><span class="line">jstat -gc &lt;kafka-pid&gt; 1s</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check network utilization</span></span><br><span class="line">netstat -i</span><br></pre></td></tr></table></figure>
+
+<p><strong>Q3: Data Consistency</strong><br><em>“Explain the trade-offs between <code>acks=0</code>, <code>acks=1</code>, and <code>acks=all</code> in terms of storage and durability.”</em></p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Durability</th>
+<th>Performance</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>acks=0</code></td>
+<td>Lowest</td>
+<td>Highest</td>
+<td>Metrics, logs where some loss is acceptable</td>
+</tr>
+<tr>
+<td><code>acks=1</code></td>
+<td>Medium</td>
+<td>Medium</td>
+<td>General purpose, balanced approach</td>
+</tr>
+<tr>
+<td><code>acks=all</code></td>
+<td>Highest</td>
+<td>Lowest</td>
+<td>Financial transactions, critical data</td>
+</tr>
+</tbody></table>
+<h3 id="Deep-Technical-Questions"><a href="#Deep-Technical-Questions" class="headerlink" title="Deep Technical Questions"></a>Deep Technical Questions</h3><p><strong>Q4: Memory Management</strong><br><em>“How does Kafka leverage the OS page cache, and why doesn’t it implement its own caching mechanism?”</em></p>
+<p><strong>Answer Points:</strong></p>
+<ul>
+<li>Kafka relies on OS page cache for read performance</li>
+<li>Avoids double caching (JVM heap + OS cache)</li>
+<li>Sequential access patterns work well with OS prefetching</li>
+<li>Zero-copy transfers (sendfile) possible only with OS cache</li>
+</ul>
+<p><strong>Q5: Log Compaction Deep Dive</strong><br><em>“Explain how log compaction works and when it might cause issues in production.”</em></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Original Log] --&gt; B[Compaction Process]
+B --&gt; C[Compacted Log]
+
+subgraph &quot;Before Compaction&quot;
+    D[Key1:V1] --&gt; E[Key2:V1] --&gt; F[Key1:V2] --&gt; G[Key3:V1] --&gt; H[Key1:V3]
+end
+
+subgraph &quot;After Compaction&quot;
+    I[Key2:V1] --&gt; J[Key3:V1] --&gt; K[Key1:V3]
+end
+</code>
+</pre>
+
+<p><strong>Potential Issues:</strong></p>
+<ul>
+<li>Compaction lag during high-write periods</li>
+<li>Tombstone records not cleaned up properly</li>
+<li>Consumer offset management with compacted topics</li>
+</ul>
+<h3 id="Production-Scenarios"><a href="#Production-Scenarios" class="headerlink" title="Production Scenarios"></a>Production Scenarios</h3><p><strong>Q6: Disaster Recovery</strong><br><em>“A data center hosting 2 out of 3 Kafka brokers goes offline. Describe the impact and recovery process.”</em></p>
+<p><strong>Impact Analysis:</strong></p>
+<ul>
+<li>Partitions with <code>min.insync.replicas=2</code>: Unavailable for writes</li>
+<li>Partitions with replicas in surviving broker: Continue operating</li>
+<li>Consumer lag increases rapidly</li>
+</ul>
+<p><strong>Recovery Strategy:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. Assess cluster state</span></span><br><span class="line">kafka-topics.sh --bootstrap-server localhost:9092 --describe</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. Temporarily reduce min.insync.replicas if necessary</span></span><br><span class="line">kafka-configs.sh --alter --entity-type topics --entity-name critical-topic \</span><br><span class="line">  --add-config min.insync.replicas=1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. Monitor under-replicated partitions</span></span><br><span class="line">kafka-run-class.sh kafka.tools.ClusterTool --bootstrap-server localhost:9092</span><br></pre></td></tr></table></figure>
+
+<h3 id="Best-Practices-Summary"><a href="#Best-Practices-Summary" class="headerlink" title="Best Practices Summary"></a>Best Practices Summary</h3><p><strong>Storage Design Principles:</strong></p>
+<ol>
+<li><strong>Separate data and logs</strong>: Use different disks for Kafka data and application logs</li>
+<li><strong>Monitor disk usage trends</strong>: Set up automated alerts at 80% capacity</li>
+<li><strong>Plan for growth</strong>: Account for replication factor and retention policies</li>
+<li><strong>Test disaster recovery</strong>: Regular drills for broker failures and data corruption</li>
+<li><strong>Optimize for access patterns</strong>: Hot data on SSD, cold data on HDD</li>
+</ol>
+<p><strong>Configuration Management:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Production-ready storage configuration</span></span><br><span class="line"><span class="attr">log.dirs</span>=<span class="string">/var/kafka-logs-1,/var/kafka-logs-2</span></span><br><span class="line"><span class="attr">log.segment.bytes</span>=<span class="string">536870912          # 512MB</span></span><br><span class="line"><span class="attr">log.retention.hours</span>=<span class="string">168              # 1 week</span></span><br><span class="line"><span class="attr">log.retention.check.interval.ms</span>=<span class="string">300000</span></span><br><span class="line"><span class="attr">log.cleanup.policy</span>=<span class="string">delete</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="attr">auto.create.topics.enable</span>=<span class="string">false</span></span><br></pre></td></tr></table></figure>
+
+<p>This comprehensive guide provides the foundation for understanding Kafka’s storage architecture while preparing you for both operational challenges and technical interviews. The key is to understand not just the “what” but the “why” behind each design decision.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3068,730 +3969,6 @@ style Sync2 fill:#e1f5fe
 <h3 id="Read-Write-Workload"><a href="#Read-Write-Workload" class="headerlink" title="Read-Write Workload"></a>Read-Write Workload</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Reader transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> accounts <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Non-blocking read</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Writer transaction (concurrent)</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Non-blocking write</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Reader continues with original snapshot</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> accounts <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Still sees original balance</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
 
 <p>This comprehensive understanding of MVCC explains how MySQL achieves high concurrency while maintaining data consistency, making it essential knowledge for database administrators and developers working with high-performance applications.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/01/MySQL-Notes-for-Interview/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/01/MySQL-Notes-for-Interview/" class="post-title-link" itemprop="url">MySQL Notes for Interview</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-01 16:40:22 / Modified: 16:52:36" itemprop="dateCreated datePublished" datetime="2025-06-01T16:40:22+08:00">2025-06-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <ul>
-<li><p>MySQL基础知识</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>事务隔离级别、三范式</li>
-</ul>
-</li>
-<li><p>如何理解数据库表设计的三个范式</p>
-<ul>
-<li>第一范式：1NF 是对属性的原子性约束，要求<strong>属性具有原子性</strong>，不可再分解；</li>
-<li>第二范式：2NF 是对记录的惟一性约束，要求<strong>记录有惟一标识</strong>，即实体的惟一性；</li>
-<li>第三范式：3NF 是对字段冗余性的约束，即任何字段不能由其他字段派生出来，它要求<strong>字段没有冗余</strong>。</li>
-</ul>
-</li>
-<li><p>查询SQL的执行过程</p>
-<ul>
-<li>执行<strong>连接器</strong><ul>
-<li>管理连接，包括权限认证</li>
-</ul>
-</li>
-<li>执行检索缓存（SQL语句与结果的kv存储）</li>
-<li>执行<strong>分析器</strong><ul>
-<li>词法分析</li>
-<li>语法分析</li>
-</ul>
-</li>
-<li>执行<strong>优化器</strong><ul>
-<li>执行计划，选择索引方案</li>
-</ul>
-</li>
-<li>执行<strong>执行器</strong><ul>
-<li>调用存储引擎接口</li>
-<li>表权限检查</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>数据库索引</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>B+树</li>
-<li>支持范围查询、减少磁盘IO、节约内存</li>
-</ul>
-</li>
-<li><p>为什么使用B+树</p>
-<ul>
-<li>与 B+ 树相比，<strong>跳表</strong>在极端情况下会退化为链表，平衡性差，而数据库查询需要一个可预期的查询时间，并且跳表需要更多的内存。</li>
-<li>与 B+ 树相比，<strong>B树</strong>的数据存储在全部节点中，对范围查询不友好。非叶子节点存储了数据，导致内存中难以放下全部非叶子节点。如果内存放不下非叶子节点，那么就意味着查询非叶子节点的时候都需要磁盘 IO。</li>
-<li>二叉树、红黑树等层次太深，大量磁盘IO。</li>
-<li><strong>B+树的高度一般在2-4层（500万-1000万条记录），根节点常驻内存，查找某一键值的行记录时最多只需要1-3次磁盘IO。</strong></li>
-<li>通常使用<strong>自增长的主键</strong>作为索引<ul>
-<li>自增主键是连续的，在插入数据的时候能减少<strong>页分裂</strong>，减少数据移动的频率。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>索引失效的情况</p>
-<ul>
-<li>使用like、!&#x3D;模糊查询</li>
-<li>数据区分度不大（性别等枚举字段）</li>
-<li>特殊表达式，数学运算和函数调用</li>
-<li>数据量小</li>
-</ul>
-</li>
-<li><p>最左匹配原则（本质上是由联合索引的结构决定的）</p>
-<ul>
-<li>索引下推：利用联合索引中数据检查是否满足where条件</li>
-</ul>
-</li>
-<li><p>SQL优化</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>执行计划是否使用索引</li>
-<li>索引列的选择</li>
-<li>分页查询的优化</li>
-</ul>
-</li>
-<li><p>查看执行计划</p>
-<ul>
-<li>explain的字段含义<ul>
-<li>possible key、type、rows、extra等字段值的含义</li>
-<li>全表扫描考虑优化</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>索引列的选择</p>
-<ul>
-<li>外键</li>
-<li>where中的列</li>
-<li>order by的列，减少数据库排序消耗</li>
-<li>关联条件列</li>
-<li>区分度高的列</li>
-</ul>
-</li>
-<li><p>优化方案</p>
-<ul>
-<li>覆盖索引减少回表</li>
-<li>用where替换having（先过滤数据再分组，减少分组耗时）</li>
-<li>优化分页查询中的偏移量</li>
-</ul>
-</li>
-<li><p>数据库锁</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>锁的种类、锁与索引</li>
-</ul>
-</li>
-<li><p>锁的分类</p>
-<ul>
-<li>根据锁的范围<ul>
-<li>行锁</li>
-<li>间隙锁（左开右开），工作在可重复读隔离级别</li>
-<li>临键锁（左开右闭），工作在可重复读隔离级别</li>
-<li>表锁</li>
-</ul>
-</li>
-<li>乐观锁、悲观锁</li>
-<li>互斥角度<ul>
-<li>共享锁</li>
-<li>排他锁</li>
-</ul>
-</li>
-<li>意向锁</li>
-</ul>
-</li>
-<li><p>锁与索引的关系</p>
-<ul>
-<li>InnoDB的锁是通过索引实现的，锁住一行记录就是锁住用上的索引上的一个叶子节点，没有找到索引就锁住整个表</li>
-</ul>
-</li>
-<li><p>MVCC协议</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>版本链、读写操作</li>
-</ul>
-</li>
-<li><p>为什么需要MVCC</p>
-<ul>
-<li>避免读写阻塞问题</li>
-</ul>
-</li>
-<li><p>版本链</p>
-<ul>
-<li>事务id（trx_id）：事务版本号</li>
-<li>回滚指针(roll_ptr)<br> <img src="https://uploader.shimo.im/f/pX4tjYjXIvdzRuhR.png!thumbnail?accessToken=eyJhbGciOiJIUzI1NiIsImtpZCI6ImRlZmF1bHQiLCJ0eXAiOiJKV1QifQ.eyJleHAiOjE3NDg3NjgxNzksImZpbGVHVUlEIjoiWEtxNDJ5TE54ZUY5RWRBTiIsImlhdCI6MTc0ODc2Nzg3OSwiaXNzIjoidXBsb2FkZXJfYWNjZXNzX3Jlc291cmNlIiwicGFhIjoiYWxsOmFsbDoiLCJ1c2VySWQiOjE4ODA2NDY4fQ.YXDluI8DZURAoXzZ-VQ2fc-bLD_FAb73Z1hN8_8umps" alt="回滚指针"></li>
-<li>undolog<ul>
-<li>版本链存储咋在undolog，形似链表</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>Read View</p>
-<ul>
-<li>不同的Read View，看到不同的活跃事务id列表（m_ids，未提交的事务）；</li>
-<li>Read View与事务隔离级别<ul>
-<li>已提交读：事务每次发起查询的时候，都会重新创建一个新的 Read View。</li>
-<li>可重复读：事务开始的时候，创建出 Read View，中间的多次读操作使用同一个Read View。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>数据库事务</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>ACID</li>
-<li>隔离级别</li>
-</ul>
-</li>
-<li><p>undolog</p>
-<ul>
-<li>用于事务回滚，存储了版本链</li>
-<li>具体内容<ul>
-<li>Insert操作，记录主键，回滚时根据主键删除记录</li>
-<li>Delete操作，记录主键删除标记true，回滚时标记为false</li>
-<li>Update操作<ul>
-<li>更新主键，删除原记录、插入新记录</li>
-<li>没有更新主键，记录被更新字段原始内容</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>redolog</p>
-<ul>
-<li>为什么需要redolog<ul>
-<li>顺序写，性能好</li>
-</ul>
-</li>
-<li>redolog buffer刷盘<ul>
-<li>innodb_flush_log_at_trx_commit默认是1，事务提交时写入磁盘</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>binlog</p>
-<ul>
-<li>二进制日志文件</li>
-<li>用途<ul>
-<li>主从同步</li>
-<li>数据库出现故障时恢复数据</li>
-</ul>
-</li>
-<li>刷盘（sync_binlog）<ul>
-<li>0，默认值，由操作系统决定刷盘时机</li>
-<li>N，每N次提交就刷盘，N越小性能越差</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>数据更新事务执行过程</p>
-<ul>
-<li>读取并锁住目标行到buffer pool</li>
-<li>写undo log回滚日志</li>
-<li>修改buffer pool中的数据</li>
-<li>写redo log</li>
-<li>提交事务，根据innodb_flush_log_at_trx_commit决定是否写入磁盘</li>
-<li>刷新buffer pool到磁盘（事务提交了，但buffer pool的数据不是立刻刷到磁盘）</li>
-<li>子流程：<ul>
-<li>如果在 redo log 已经刷新到磁盘，然后数据库宕机了，buffer pool 丢失了修改，那么在 MySQL 重启之后就会回放这个 redo log，从而纠正数据库里的数据。</li>
-<li>如果都没有提交，中途回滚，就可以利用 undo log 去修复 buffer pool 和磁盘上的数据。因为有时，buffer pool 脏页会在事务提交前刷新磁盘，所以 undo log 也可以用来修复磁盘数据。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>分库分表</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>分治模式</li>
-<li>数量大时分表，并发高时分库</li>
-<li>分片算法</li>
-</ul>
-</li>
-<li><p>主键生成</p>
-<ul>
-<li>数据库自增主键，每个库设置不同的步长</li>
-<li>雪花算法</li>
-</ul>
-</li>
-<li><p>分片算法</p>
-<ul>
-<li>范围分片，时间范围等</li>
-<li>hash取模分片</li>
-<li>一致性hash分片</li>
-<li>查表法<ul>
-<li>分片映射表，映射关系可以根据流量动态调整</li>
-<li>分片映射表可以使用缓存，避免本身成为热点和性能瓶颈</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>分库分表的问题</p>
-<ul>
-<li>join操作问题</li>
-<li>count计数问题</li>
-<li>事务问题</li>
-<li>成本问题</li>
-</ul>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/01/Redis-Notes-for-Interview/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/01/Redis-Notes-for-Interview/" class="post-title-link" itemprop="url">Redis Notes for Interview</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-06-01 16:20:52" itemprop="dateCreated datePublished" datetime="2025-06-01T16:20:52+08:00">2025-06-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-06-09 21:40:47" itemprop="dateModified" datetime="2025-06-09T21:40:47+08:00">2025-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <ul>
-<li><p>Redis基础知识</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>内存数据库</li>
-<li>数据结构：string、hash、set、sorted set、list、geo、hyperloglog</li>
-<li>集群模式：主从、哨兵、cluster分片</li>
-<li>使用缓存进行性能优化</li>
-</ul>
-</li>
-<li><p>为什么使用redis？</p>
-<ul>
-<li><strong>性能</strong>：我们在碰到需要执行耗时特别久，且结果不频繁变动的SQL，就特别适合将运行结果放入缓存。这样， 后面的请求就去缓存中读取，使得请求能够迅速响应。</li>
-<li><strong>并发</strong>：在大并发的情况下，所有的请求直接访问数据库，数据库会出现连接异常。这个时候，就需要使用redis 做一个缓冲操作，让请求先访问到redis，而不是直接访问数据库（<strong>MySQl支持1500QPS，而Redis支持2-5wQPS</strong>）。</li>
-</ul>
-</li>
-<li><p>redis的使用场景</p>
-<ul>
-<li>缓存</li>
-<li>秒杀</li>
-<li>分布式锁</li>
-</ul>
-</li>
-<li><p>Redis为什么使用单线程</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>线程任务：命令处理、io处理、持久化、数据同步</li>
-<li>6.0版本、配置开启多线程</li>
-<li>epoll、reactor</li>
-</ul>
-</li>
-<li><p>高性能的原因</p>
-<ul>
-<li>内存操作</li>
-<li>在Linux上采用了epoll和reactor结合的IO模型<ul>
-<li>epoll的本质是管理一堆socket文件描述符<ul>
-<li><strong>红黑树</strong>结构维护的全部监控文件描述符</li>
-<li><strong>双向链表</strong>维护的就绪列表</li>
-<li>中断机制添加就绪文件描述符</li>
-<li>关键api：<strong>epoll_create、epoll_ctl、epoll_wait</strong></li>
-<li>poll和select的区别：</li>
-</ul>
-</li>
-<li>reactor模式<ul>
-<li>Reactor（Dispatcher）调用epoll拿到可用文件描述符，分发事件</li>
-<li>Acceptor处理创建连接事件</li>
-<li>Handler处理IO读写事件，</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>Redis数据类型的底层数据结构</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>skiplist</li>
-</ul>
-</li>
-<li><p>String（字符串）</p>
-<ul>
-<li>SDS（简单动态字符串）</li>
-<li>缓存用户信息、计数器、分布式锁（setnx）</li>
-</ul>
-</li>
-<li><p>Hash（哈希表）</p>
-<ul>
-<li>ziplist（小数据） + hashtable（大数据）</li>
-<li>存储对象</li>
-</ul>
-</li>
-<li><p>List（列表）</p>
-<ul>
-<li>双向链表或ziplist</li>
-<li>消息队列、最新文章列表</li>
-</ul>
-</li>
-<li><p>Set（集合）</p>
-<ul>
-<li>intset（整数集合）或hashtable</li>
-<li>标签系统、共同好友（sinter求交集）</li>
-</ul>
-</li>
-<li><p>ZSet（有序集合）</p>
-<ul>
-<li>ziplist + skiplist（跳表）</li>
-<li>排行榜（ZADD&#x2F;ZRANGE）、延时队列</li>
-</ul>
-</li>
-<li><p>Redis怎么做数据持久化</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>AOF、RDB、混合模式</li>
-</ul>
-</li>
-<li><p>RDB</p>
-<ul>
-<li>定时生成内存数据的二进制快照文件</li>
-<li>fork子进程</li>
-<li>每个5分钟甚至更长时间执行一次bgsave，数据丢失问题</li>
-</ul>
-</li>
-<li><p>AOF</p>
-<ul>
-<li>记录所有写操作命令</li>
-<li>同步磁盘策略<ul>
-<li>每秒同步（appendfsync everysec）</li>
-<li>每次修改同步（appendfsync always）</li>
-<li>不同步（appendfsync no）</li>
-</ul>
-</li>
-<li>rewrite机制</li>
-</ul>
-</li>
-<li><p>二者比较</p>
-<ul>
-<li>RDB是每隔一段时间持久化一次, 故障时就会丢失宕机时刻与上一次持久化之间的数据，无法保证数据完整性</li>
-<li>AOF存储的是指令序列, 恢复重放时要花费很长时间并且文件更大</li>
-</ul>
-</li>
-<li><p>Redis有哪些集群部署模式</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>一主多从，读写分离</li>
-<li>哨兵</li>
-<li>Cluster分片模式</li>
-</ul>
-</li>
-<li><p>一主多从</p>
-<ul>
-<li>读操作，主库从库都可以接受</li>
-<li>写操作，首先到主库执行，然后主库将写操作同步给从库</li>
-</ul>
-</li>
-<li><p>哨兵</p>
-<ul>
-<li>主库挂了，数据不能写入，通过哨兵重新选主</li>
-<li>监控、选主、通知<ul>
-<li>哨兵集群</li>
-<li>主观下线</li>
-<li>客观下线，判断主库下线，需要大多数的哨兵都标记下线</li>
-<li>选主打分规则<ul>
-<li>从库优先级配置</li>
-<li>从库复制进度</li>
-<li>从库ID号小的</li>
-</ul>
-</li>
-<li>多个哨兵实例发布订阅连接信息，以此进行信息交换，组成哨兵集群</li>
-<li>基于info命令的从库列表，帮助哨兵与从库建立连接</li>
-<li>客户端从哨兵订阅关键事件<ul>
-<li>主库下线判断</li>
-<li>新主库选定</li>
-<li>从库重新配置</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>哨兵之间也有leader选举，决定由谁进行主从切换</li>
-</ul>
-</li>
-<li><p>cluster分片</p>
-<ul>
-<li>RDB持久化，fork子进程阻塞主线程，当数据量大时导致Redis响应变慢</li>
-<li>数据量大时使用分片集群解决单实例的问题<ul>
-<li>超过25G</li>
-</ul>
-</li>
-<li>CPU密集型任务可以通过分片集群利用多核CPU</li>
-<li>采用hash槽来处理数据与实例之间的映射关系<ul>
-<li>固定16384个槽位</li>
-<li>哈希槽与实例的关系可以灵活分配</li>
-<li>手动分配需要将16384个槽位分配完</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>缓存模式与缓存一致性</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>Cache Aside旁路缓存</li>
-<li>Read Through、Write Through、Write Back、Single Flight</li>
-<li>删除缓存、延迟双删</li>
-</ul>
-</li>
-<li><p> 如何保证缓存与数据库的一致性？</p>
-<ul>
-<li>Cache-Aside 模式：<ul>
-<li>读：缓存命中则返回，否则查数据库并回填缓存。</li>
-<li>写：先更新数据库，再删除缓存。</li>
-</ul>
-</li>
-<li>延迟双删<ul>
-<li>更新数据库后直接删除缓存，过一段时间紧后，再次删除缓存</li>
-<li>降低了缓存命中率</li>
-</ul>
-</li>
-<li>兜底方案：设置缓存过期时间、使用消息队列异步同步。</li>
-</ul>
-</li>
-<li><p>穿透、击穿、雪崩缓存问题</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>热点数据、随机过期时间</li>
-<li>布隆过滤器</li>
-</ul>
-</li>
-<li><p>缓存雪崩</p>
-<ul>
-<li>大量同时过期的key</li>
-<li>redis实例宕机</li>
-<li>应对策略<ul>
-<li>随机过期时间、服务降级</li>
-<li>熔断限流、高可靠集群部署；</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>缓存穿透</p>
-<ul>
-<li>数据既不在redis中，也不在数据库（数据误删或恶意攻击）。</li>
-<li>应对策略：<ul>
-<li>缓存空值或缺省值</li>
-<li>布隆过滤器<ul>
-<li>数据结构：位数组 + 多个哈希函数。</li>
-<li>写入：对元素进行多次哈希，将对应位设为 1。</li>
-<li>查询：若所有哈希位均为 1，则元素可能存在（可能存在误判）。</li>
-</ul>
-</li>
-<li>前端进行非法参数校验。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>缓存击穿</p>
-<ul>
-<li>单个热点数据过期失效。</li>
-<li>应对策略：<ul>
-<li>热点数据不设置过期时间；</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>怎么使用Redis实现分布式锁</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>支持排他性操作的中间件都可以实现分布式锁</li>
-<li>setNX同一个key只会有一个执行成功</li>
-<li>过期时间</li>
-<li>超时时间</li>
-<li>锁续期</li>
-</ul>
-</li>
-<li><p>加锁失败后重试</p>
-<ul>
-<li>确定等待时间：业务正常执行完毕的时间（99线或999线）</li>
-<li>实现等待：<ul>
-<li>sleep；</li>
-<li>监听锁的释放（del事件）</li>
-</ul>
-</li>
-<li>lua脚本实现超时重试</li>
-</ul>
-</li>
-<li><p>加锁成功了为什么需要设置过期时间</p>
-<ul>
-<li>加锁成功的线程，执行业务的过程中崩溃，锁未释放</li>
-<li>过期时间应该根据业务设置，99%的业务拿到锁之后，1s内完成，可以设置过期时间为2秒，或者保险起见，设置10秒设置1分钟都行。</li>
-<li>如果业务持有锁在过期时间内执行不完，需要续期<ul>
-<li>过期之前重置下过期时间</li>
-<li>启动守护线程定时检查当前线程是否持有锁，持有则重置过期时间</li>
-<li>redission看门狗机制</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>释放锁</p>
-<ul>
-<li>持有锁的机器宕机后恢复</li>
-<li>释放需要检查这个锁是否是自己的，防止释放掉其他线程持有的锁</li>
-</ul>
-</li>
-<li><p>Redlock</p>
-</li>
-<li><p>SingleFlight模式优化分布式锁</p>
-</li>
-</ul>
 
       
     </div>
