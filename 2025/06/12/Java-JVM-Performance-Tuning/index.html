@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="JVM Architecture &amp; Performance FundamentalsCore Components Overview  graph TD A[Java Application] --&gt; B[JVM] B --&gt; C[Class Loader Subsystem] B --&gt; D[Runtime Data Areas] B --&gt; E[Executi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java JVM Performance Tuning">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/12/Java-JVM-Performance-Tuning/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="JVM Architecture &amp; Performance FundamentalsCore Components Overview  graph TD A[Java Application] --&gt; B[JVM] B --&gt; C[Class Loader Subsystem] B --&gt; D[Runtime Data Areas] B --&gt; E[Executi">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-12T07:43:49.000Z">
+<meta property="article:modified_time" content="2025-06-12T07:46:52.836Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/12/Java-JVM-Performance-Tuning/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/12/Java-JVM-Performance-Tuning/","path":"2025/06/12/Java-JVM-Performance-Tuning/","title":"Java JVM Performance Tuning"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Java JVM Performance Tuning | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#JVM-Architecture-Performance-Fundamentals"><span class="nav-number">1.</span> <span class="nav-text">JVM Architecture &amp; Performance Fundamentals</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Core-Components-Overview"><span class="nav-number">1.1.</span> <span class="nav-text">Core Components Overview</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Layout-Deep-Dive"><span class="nav-number">1.2.</span> <span class="nav-text">Memory Layout Deep Dive</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Impact-Factors"><span class="nav-number">1.3.</span> <span class="nav-text">Performance Impact Factors</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Memory-Management-Garbage-Collection"><span class="nav-number">2.</span> <span class="nav-text">Memory Management &amp; Garbage Collection</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Garbage-Collection-Algorithms-Comparison"><span class="nav-number">2.1.</span> <span class="nav-text">Garbage Collection Algorithms Comparison</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G1GC-Deep-Dive-Most-Common-in-Production"><span class="nav-number">2.2.</span> <span class="nav-text">G1GC Deep Dive (Most Common in Production)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GC-Tuning-Strategies"><span class="nav-number">2.3.</span> <span class="nav-text">GC Tuning Strategies</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JIT-Compilation-Optimization"><span class="nav-number">3.</span> <span class="nav-text">JIT Compilation Optimization</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JIT-Compilation-Tiers"><span class="nav-number">3.1.</span> <span class="nav-text">JIT Compilation Tiers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JIT-Optimization-Techniques"><span class="nav-number">3.2.</span> <span class="nav-text">JIT Optimization Techniques</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JIT-Tuning-Parameters"><span class="nav-number">3.3.</span> <span class="nav-text">JIT Tuning Parameters</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Thread-Management-Concurrency"><span class="nav-number">4.</span> <span class="nav-text">Thread Management &amp; Concurrency</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Thread-States-and-Performance-Impact"><span class="nav-number">4.1.</span> <span class="nav-text">Thread States and Performance Impact</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lock-Optimization-Strategies"><span class="nav-number">4.2.</span> <span class="nav-text">Lock Optimization Strategies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Thread-Pool-Optimization"><span class="nav-number">4.3.</span> <span class="nav-text">Thread Pool Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Concurrent-Collections-Performance"><span class="nav-number">4.4.</span> <span class="nav-text">Concurrent Collections Performance</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-Profiling-Tools"><span class="nav-number">5.</span> <span class="nav-text">Monitoring &amp; Profiling Tools</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Essential-JVM-Monitoring-Metrics"><span class="nav-number">5.1.</span> <span class="nav-text">Essential JVM Monitoring Metrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Profiling-Tools-Comparison"><span class="nav-number">5.2.</span> <span class="nav-text">Profiling Tools Comparison</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Performance-Metrics"><span class="nav-number">5.3.</span> <span class="nav-text">Key Performance Metrics</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Tuning-Best-Practices"><span class="nav-number">6.</span> <span class="nav-text">Performance Tuning Best Practices</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JVM-Tuning-Methodology"><span class="nav-number">6.1.</span> <span class="nav-text">JVM Tuning Methodology</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Common-JVM-Flags-for-Production"><span class="nav-number">6.2.</span> <span class="nav-text">Common JVM Flags for Production</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Application-Level-Optimizations"><span class="nav-number">6.3.</span> <span class="nav-text">Application-Level Optimizations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Leak-Prevention"><span class="nav-number">6.4.</span> <span class="nav-text">Memory Leak Prevention</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Real-World-Case-Studies"><span class="nav-number">7.</span> <span class="nav-text">Real-World Case Studies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Case-Study-1-E-commerce-Platform-Optimization"><span class="nav-number">7.1.</span> <span class="nav-text">Case Study 1: E-commerce Platform Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Case-Study-2-Microservice-Memory-Optimization"><span class="nav-number">7.2.</span> <span class="nav-text">Case Study 2: Microservice Memory Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Case-Study-3-Batch-Processing-Optimization"><span class="nav-number">7.3.</span> <span class="nav-text">Case Study 3: Batch Processing Optimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Advanced-Interview-Questions-Answers"><span class="nav-number">8.</span> <span class="nav-text">Advanced Interview Questions &amp; Answers</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Management-Deep-Dive"><span class="nav-number">8.1.</span> <span class="nav-text">Memory Management Deep Dive</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GC-Algorithm-Selection"><span class="nav-number">8.2.</span> <span class="nav-text">GC Algorithm Selection</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Troubleshooting"><span class="nav-number">8.3.</span> <span class="nav-text">Performance Troubleshooting</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Java-JVM-Performance-Tuning/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Java JVM Performance Tuning | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java JVM Performance Tuning
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-12 15:43:49 / Modified: 15:46:52" itemprop="dateCreated datePublished" datetime="2025-06-12T15:43:49+08:00">2025-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="JVM-Architecture-Performance-Fundamentals"><a href="#JVM-Architecture-Performance-Fundamentals" class="headerlink" title="JVM Architecture &amp; Performance Fundamentals"></a>JVM Architecture &amp; Performance Fundamentals</h2><h3 id="Core-Components-Overview"><a href="#Core-Components-Overview" class="headerlink" title="Core Components Overview"></a>Core Components Overview</h3><pre>
+<code class="mermaid">
+graph TD
+A[Java Application] --&gt; B[JVM]
+B --&gt; C[Class Loader Subsystem]
+B --&gt; D[Runtime Data Areas]
+B --&gt; E[Execution Engine]
+
+C --&gt; C1[Bootstrap ClassLoader]
+C --&gt; C2[Extension ClassLoader]
+C --&gt; C3[Application ClassLoader]
+
+D --&gt; D1[Method Area]
+D --&gt; D2[Heap Memory]
+D --&gt; D3[Stack Memory]
+D --&gt; D4[PC Registers]
+D --&gt; D5[Native Method Stacks]
+
+E --&gt; E1[Interpreter]
+E --&gt; E2[JIT Compiler]
+E --&gt; E3[Garbage Collector]
+</code>
+</pre>
+
+<h3 id="Memory-Layout-Deep-Dive"><a href="#Memory-Layout-Deep-Dive" class="headerlink" title="Memory Layout Deep Dive"></a>Memory Layout Deep Dive</h3><p>The JVM memory structure directly impacts performance through allocation patterns and garbage collection behavior.</p>
+<p><strong>Heap Memory Structure:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────┐</span><br><span class="line">│                    Heap Memory                      │</span><br><span class="line">├─────────────────────┬───────────────────────────────┤</span><br><span class="line">│    Young Generation │         Old Generation        │</span><br><span class="line">├─────┬─────┬─────────┼───────────────────────────────┤</span><br><span class="line">│Eden │ S0  │   S1    │        Tenured Space          │</span><br><span class="line">│Space│     │         │                               │</span><br><span class="line">└─────┴─────┴─────────┴───────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“Can you explain the generational hypothesis and why it’s crucial for JVM performance?”</em></p>
+<p>The generational hypothesis states that most objects die young. This principle drives the JVM’s memory design:</p>
+<ul>
+<li><strong>Eden Space</strong>: Where new objects are allocated (fast allocation)</li>
+<li><strong>Survivor Spaces (S0, S1)</strong>: Temporary holding for objects that survived one GC cycle</li>
+<li><strong>Old Generation</strong>: Long-lived objects that survived multiple GC cycles</li>
+</ul>
+<h3 id="Performance-Impact-Factors"><a href="#Performance-Impact-Factors" class="headerlink" title="Performance Impact Factors"></a>Performance Impact Factors</h3><ol>
+<li><strong>Memory Allocation Speed</strong>: Eden space uses bump-the-pointer allocation</li>
+<li><strong>GC Frequency</strong>: Young generation GC is faster than full GC</li>
+<li><strong>Object Lifetime</strong>: Proper object lifecycle management reduces GC pressure</li>
+</ol>
+<hr>
+<h2 id="Memory-Management-Garbage-Collection"><a href="#Memory-Management-Garbage-Collection" class="headerlink" title="Memory Management &amp; Garbage Collection"></a>Memory Management &amp; Garbage Collection</h2><h3 id="Garbage-Collection-Algorithms-Comparison"><a href="#Garbage-Collection-Algorithms-Comparison" class="headerlink" title="Garbage Collection Algorithms Comparison"></a>Garbage Collection Algorithms Comparison</h3><pre>
+<code class="mermaid">
+graph LR
+A[GC Algorithms] --&gt; B[Serial GC]
+A --&gt; C[Parallel GC]
+A --&gt; D[G1GC]
+A --&gt; E[ZGC]
+A --&gt; F[Shenandoah]
+
+B --&gt; B1[Single Thread&lt;br&#x2F;&gt;Small Heaps&lt;br&#x2F;&gt;Client Apps]
+C --&gt; C1[Multi Thread&lt;br&#x2F;&gt;Server Apps&lt;br&#x2F;&gt;Throughput Focus]
+D --&gt; D1[Large Heaps&lt;br&#x2F;&gt;Low Latency&lt;br&#x2F;&gt;Predictable Pauses]
+E --&gt; E1[Very Large Heaps&lt;br&#x2F;&gt;Ultra Low Latency&lt;br&#x2F;&gt;Concurrent Collection]
+F --&gt; F1[Low Pause Times&lt;br&#x2F;&gt;Concurrent Collection&lt;br&#x2F;&gt;Red Hat OpenJDK]
+</code>
+</pre>
+
+<h3 id="G1GC-Deep-Dive-Most-Common-in-Production"><a href="#G1GC-Deep-Dive-Most-Common-in-Production" class="headerlink" title="G1GC Deep Dive (Most Common in Production)"></a>G1GC Deep Dive (Most Common in Production)</h3><p><strong>Interview Insight:</strong> <em>“Why would you choose G1GC over Parallel GC for a high-throughput web application?”</em></p>
+<p>G1GC (Garbage First) is designed for:</p>
+<ul>
+<li>Applications with heap sizes larger than 6GB</li>
+<li>Applications requiring predictable pause times (&lt;200ms)</li>
+<li>Applications with varying allocation rates</li>
+</ul>
+<p><strong>G1GC Memory Regions:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐</span><br><span class="line">│  E  │  E  │ S   │ O   │ O   │ H   │  E  │ O   │</span><br><span class="line">└─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘</span><br><span class="line">E = Eden, S = Survivor, O = Old, H = Humongous</span><br></pre></td></tr></table></figure>
+
+<p><strong>Key G1GC Parameters:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Basic G1GC Configuration</span></span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=200</span><br><span class="line">-XX:G1HeapRegionSize=16m</span><br><span class="line">-XX:G1NewSizePercent=30</span><br><span class="line">-XX:G1MaxNewSizePercent=40</span><br><span class="line">-XX:G1MixedGCCountTarget=8</span><br></pre></td></tr></table></figure>
+
+<h3 id="GC-Tuning-Strategies"><a href="#GC-Tuning-Strategies" class="headerlink" title="GC Tuning Strategies"></a>GC Tuning Strategies</h3><p><strong>Showcase: Production Web Application Tuning</strong></p>
+<p>Before optimization:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Application: E-commerce platform</span><br><span class="line">Heap Size: 8GB</span><br><span class="line">GC Algorithm: Parallel GC</span><br><span class="line">Average GC Pause: 2.5 seconds</span><br><span class="line">Throughput: 85%</span><br></pre></td></tr></table></figure>
+
+<p>After G1GC optimization:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-Xms8g -Xmx8g</span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=100</span><br><span class="line">-XX:G1HeapRegionSize=32m</span><br><span class="line">-XX:+G1UseAdaptiveIHOP</span><br><span class="line">-XX:G1MixedGCCountTarget=8</span><br></pre></td></tr></table></figure>
+
+<p>Results:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Average GC Pause: 45ms</span><br><span class="line">Throughput: 97%</span><br><span class="line">Response Time P99: Improved by 60%</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“How do you tune G1GC for an application with unpredictable allocation patterns?”</em></p>
+<p>Key strategies:</p>
+<ol>
+<li><strong>Adaptive IHOP</strong>: Use <code>-XX:+G1UseAdaptiveIHOP</code> to let G1 automatically adjust concurrent cycle triggers</li>
+<li><strong>Region Size Tuning</strong>: Larger regions (32m-64m) for applications with large objects</li>
+<li><strong>Mixed GC Tuning</strong>: Adjust <code>G1MixedGCCountTarget</code> based on old generation cleanup needs</li>
+</ol>
+<hr>
+<h2 id="JIT-Compilation-Optimization"><a href="#JIT-Compilation-Optimization" class="headerlink" title="JIT Compilation Optimization"></a>JIT Compilation Optimization</h2><h3 id="JIT-Compilation-Tiers"><a href="#JIT-Compilation-Tiers" class="headerlink" title="JIT Compilation Tiers"></a>JIT Compilation Tiers</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Method Invocation] --&gt; B{Invocation Count}
+B --&gt;|&lt; C1 Threshold| C[Interpreter]
+B --&gt;|&gt;&#x3D; C1 Threshold| D[C1 Compiler - Tier 3]
+D --&gt; E{Profile Data}
+E --&gt;|Hot Method| F[C2 Compiler - Tier 4]
+E --&gt;|Not Hot| G[Continue C1]
+F --&gt; H[Optimized Native Code]
+
+C --&gt; I[Profile Collection]
+I --&gt; B
+</code>
+</pre>
+
+<p><strong>Interview Insight:</strong> <em>“Explain the difference between C1 and C2 compilers and when each is used.”</em></p>
+<ul>
+<li><strong>C1 (Client Compiler)</strong>: Fast compilation, basic optimizations, suitable for short-running applications</li>
+<li><strong>C2 (Server Compiler)</strong>: Aggressive optimizations, longer compilation time, better for long-running server applications</li>
+</ul>
+<h3 id="JIT-Optimization-Techniques"><a href="#JIT-Optimization-Techniques" class="headerlink" title="JIT Optimization Techniques"></a>JIT Optimization Techniques</h3><ol>
+<li><strong>Method Inlining</strong>: Eliminates method call overhead</li>
+<li><strong>Dead Code Elimination</strong>: Removes unreachable code</li>
+<li><strong>Loop Optimization</strong>: Unrolling, vectorization</li>
+<li><strong>Escape Analysis</strong>: Stack allocation for non-escaping objects</li>
+</ol>
+<p><strong>Showcase: Method Inlining Impact</strong></p>
+<p>Before inlining:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MathUtils</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> a + b;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">calculate</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++) &#123;</span><br><span class="line">            result = add(result, i); <span class="comment">// Method call overhead</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After JIT optimization (conceptual):</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JIT inlines the add method</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">calculate</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++) &#123;</span><br><span class="line">        result = result + i; <span class="comment">// Direct operation, no call overhead</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="JIT-Tuning-Parameters"><a href="#JIT-Tuning-Parameters" class="headerlink" title="JIT Tuning Parameters"></a>JIT Tuning Parameters</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compilation Thresholds</span></span><br><span class="line">-XX:CompileThreshold=10000        <span class="comment"># C2 compilation threshold</span></span><br><span class="line">-XX:Tier3CompileThreshold=2000    <span class="comment"># C1 compilation threshold</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Compilation Control</span></span><br><span class="line">-XX:+TieredCompilation            <span class="comment"># Enable tiered compilation</span></span><br><span class="line">-XX:CICompilerCount=4             <span class="comment"># Number of compiler threads</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Optimization Control</span></span><br><span class="line">-XX:+UseStringDeduplication       <span class="comment"># Reduce memory usage for duplicate strings</span></span><br><span class="line">-XX:+AggressiveOpts               <span class="comment"># Enable experimental optimizations</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“How would you diagnose and fix a performance regression after a JVM upgrade?”</em></p>
+<p>Diagnostic approach:</p>
+<ol>
+<li>Compare JIT compilation logs (<code>-XX:+UnlockDiagnosticVMOptions -XX:+LogVMOutput</code>)</li>
+<li>Check for deoptimization events (<code>-XX:+TraceDeoptimization</code>)</li>
+<li>Profile method hotness and inlining decisions</li>
+<li>Verify optimization flags compatibility</li>
+</ol>
+<hr>
+<h2 id="Thread-Management-Concurrency"><a href="#Thread-Management-Concurrency" class="headerlink" title="Thread Management &amp; Concurrency"></a>Thread Management &amp; Concurrency</h2><h3 id="Thread-States-and-Performance-Impact"><a href="#Thread-States-and-Performance-Impact" class="headerlink" title="Thread States and Performance Impact"></a>Thread States and Performance Impact</h3><pre>
+<code class="mermaid">
+stateDiagram-v2
+[*] --&gt; NEW
+NEW --&gt; RUNNABLE: start()
+RUNNABLE --&gt; BLOCKED: synchronized block
+RUNNABLE --&gt; WAITING: wait(), join()
+RUNNABLE --&gt; TIMED_WAITING: sleep(), wait(timeout)
+BLOCKED --&gt; RUNNABLE: lock acquired
+WAITING --&gt; RUNNABLE: notify(), interrupt()
+TIMED_WAITING --&gt; RUNNABLE: timeout, notify()
+RUNNABLE --&gt; TERMINATED: execution complete
+TERMINATED --&gt; [*]
+</code>
+</pre>
+
+<h3 id="Lock-Optimization-Strategies"><a href="#Lock-Optimization-Strategies" class="headerlink" title="Lock Optimization Strategies"></a>Lock Optimization Strategies</h3><p><strong>Interview Insight:</strong> <em>“How does the JVM optimize synchronization, and what are the performance implications?”</em></p>
+<p>JVM lock optimizations include:</p>
+<ol>
+<li><strong>Biased Locking</strong>: Assumes single-threaded access pattern</li>
+<li><strong>Lightweight Locking</strong>: Uses CAS operations for low contention</li>
+<li><strong>Heavyweight Locking</strong>: OS-level locking for high contention</li>
+</ol>
+<p><strong>Lock Inflation Process:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">No Lock → Biased Lock → Lightweight Lock → Heavyweight Lock</span><br></pre></td></tr></table></figure>
+
+<h3 id="Thread-Pool-Optimization"><a href="#Thread-Pool-Optimization" class="headerlink" title="Thread Pool Optimization"></a>Thread Pool Optimization</h3><p><strong>Showcase: HTTP Server Thread Pool Tuning</strong></p>
+<p>Before optimization:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Poor configuration</span></span><br><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    <span class="number">1</span>,                      <span class="comment">// corePoolSize too small</span></span><br><span class="line">    Integer.MAX_VALUE,      <span class="comment">// maxPoolSize too large</span></span><br><span class="line">    <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">SynchronousQueue</span>&lt;&gt;() <span class="comment">// Queue can cause rejections</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>After optimization:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Optimized configuration</span></span><br><span class="line"><span class="type">int</span> <span class="variable">coreThreads</span> <span class="operator">=</span> Runtime.getRuntime().availableProcessors() * <span class="number">2</span>;</span><br><span class="line"><span class="type">int</span> <span class="variable">maxThreads</span> <span class="operator">=</span> coreThreads * <span class="number">4</span>;</span><br><span class="line"><span class="type">int</span> <span class="variable">queueCapacity</span> <span class="operator">=</span> <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    coreThreads,</span><br><span class="line">    maxThreads,</span><br><span class="line">    <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(queueCapacity),</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy() <span class="comment">// Backpressure handling</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">// JVM flags for thread optimization</span></span><br><span class="line">-XX:+UseBiasedLocking</span><br><span class="line">-XX:BiasedLockingStartupDelay=<span class="number">0</span></span><br><span class="line">-XX:+UseThreadPriorities</span><br></pre></td></tr></table></figure>
+
+<h3 id="Concurrent-Collections-Performance"><a href="#Concurrent-Collections-Performance" class="headerlink" title="Concurrent Collections Performance"></a>Concurrent Collections Performance</h3><p><strong>Interview Insight:</strong> <em>“When would you use ConcurrentHashMap vs synchronized HashMap, and what are the performance trade-offs?”</em></p>
+<p>Performance comparison:</p>
+<ul>
+<li><strong>ConcurrentHashMap</strong>: Segment-based locking, better scalability</li>
+<li><strong>synchronized HashMap</strong>: Full map locking, simpler but less scalable</li>
+<li><strong>Collections.synchronizedMap()</strong>: Method-level synchronization, worst performance</li>
+</ul>
+<hr>
+<h2 id="Monitoring-Profiling-Tools"><a href="#Monitoring-Profiling-Tools" class="headerlink" title="Monitoring &amp; Profiling Tools"></a>Monitoring &amp; Profiling Tools</h2><h3 id="Essential-JVM-Monitoring-Metrics"><a href="#Essential-JVM-Monitoring-Metrics" class="headerlink" title="Essential JVM Monitoring Metrics"></a>Essential JVM Monitoring Metrics</h3><pre>
+<code class="mermaid">
+graph TD
+A[JVM Monitoring] --&gt; B[Memory Metrics]
+A --&gt; C[GC Metrics]
+A --&gt; D[Thread Metrics]
+A --&gt; E[JIT Metrics]
+
+B --&gt; B1[Heap Usage]
+B --&gt; B2[Non-Heap Usage]
+B --&gt; B3[Memory Pool Details]
+
+C --&gt; C1[GC Time]
+C --&gt; C2[GC Frequency]
+C --&gt; C3[GC Throughput]
+
+D --&gt; D1[Thread Count]
+D --&gt; D2[Thread States]
+D --&gt; D3[Deadlock Detection]
+
+E --&gt; E1[Compilation Time]
+E --&gt; E2[Code Cache Usage]
+E --&gt; E3[Deoptimization Events]
+</code>
+</pre>
+
+<h3 id="Profiling-Tools-Comparison"><a href="#Profiling-Tools-Comparison" class="headerlink" title="Profiling Tools Comparison"></a>Profiling Tools Comparison</h3><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Use Case</th>
+<th>Overhead</th>
+<th>Real-time</th>
+<th>Production Safe</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JProfiler</td>
+<td>Development&#x2F;Testing</td>
+<td>Medium</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>YourKit</td>
+<td>Development&#x2F;Testing</td>
+<td>Medium</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Java Flight Recorder</td>
+<td>Production</td>
+<td>Very Low</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Async Profiler</td>
+<td>Production</td>
+<td>Low</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>jstack</td>
+<td>Debugging</td>
+<td>None</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>jstat</td>
+<td>Monitoring</td>
+<td>Very Low</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight:</strong> <em>“How would you profile a production application without impacting performance?”</em></p>
+<p>Production-safe profiling approach:</p>
+<ol>
+<li><strong>Java Flight Recorder (JFR)</strong>: Continuous profiling with &lt;1% overhead</li>
+<li><strong>Async Profiler</strong>: Sample-based profiling for CPU hotspots</li>
+<li><strong>Application Metrics</strong>: Custom metrics for business logic</li>
+<li><strong>JVM Flags for monitoring</strong>:</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-XX:+FlightRecorder</span><br><span class="line">-XX:StartFlightRecording=duration=60s,filename=myapp.jfr</span><br><span class="line">-XX:+UnlockCommercialFeatures  <span class="comment"># Java 8 only</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><p><strong>Showcase: Production Monitoring Dashboard</strong></p>
+<p>Critical metrics to track:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Memory:</span><br><span class="line">- Heap Utilization: &lt;80% after GC</span><br><span class="line">- Old Generation Growth Rate: &lt;10MB/minute</span><br><span class="line">- Metaspace Usage: Monitor for memory leaks</span><br><span class="line"></span><br><span class="line">GC:</span><br><span class="line">- GC Pause Time: P99 &lt;100ms</span><br><span class="line">- GC Frequency: &lt;1 per minute for major GC</span><br><span class="line">- GC Throughput: &gt;95%</span><br><span class="line"></span><br><span class="line">Application:</span><br><span class="line">- Response Time: P95, P99 percentiles</span><br><span class="line">- Throughput: Requests per second</span><br><span class="line">- Error Rate: &lt;0.1%</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Performance-Tuning-Best-Practices"><a href="#Performance-Tuning-Best-Practices" class="headerlink" title="Performance Tuning Best Practices"></a>Performance Tuning Best Practices</h2><h3 id="JVM-Tuning-Methodology"><a href="#JVM-Tuning-Methodology" class="headerlink" title="JVM Tuning Methodology"></a>JVM Tuning Methodology</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Baseline Measurement] --&gt; B[Identify Bottlenecks]
+B --&gt; C[Hypothesis Formation]
+C --&gt; D[Parameter Adjustment]
+D --&gt; E[Load Testing]
+E --&gt; F{Performance Improved?}
+F --&gt;|Yes| G[Validate in Production]
+F --&gt;|No| H[Revert Changes]
+H --&gt; B
+G --&gt; I[Monitor &amp; Document]
+</code>
+</pre>
+
+<h3 id="Common-JVM-Flags-for-Production"><a href="#Common-JVM-Flags-for-Production" class="headerlink" title="Common JVM Flags for Production"></a>Common JVM Flags for Production</h3><p><strong>Interview Insight:</strong> <em>“What JVM flags would you use for a high-throughput, low-latency web application?”</em></p>
+<p>Essential production flags:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Memory Settings</span></span><br><span class="line">-Xms8g -Xmx8g                    <span class="comment"># Set heap size (same min/max)</span></span><br><span class="line">-XX:MetaspaceSize=256m            <span class="comment"># Initial metaspace size</span></span><br><span class="line">-XX:MaxMetaspaceSize=512m         <span class="comment"># Max metaspace size</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Garbage Collection</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Use G1 collector</span></span><br><span class="line">-XX:MaxGCPauseMillis=100         <span class="comment"># Target pause time</span></span><br><span class="line">-XX:G1HeapRegionSize=32m         <span class="comment"># Region size for large heaps</span></span><br><span class="line">-XX:+G1UseAdaptiveIHOP           <span class="comment"># Adaptive concurrent cycle triggering</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># JIT Compilation</span></span><br><span class="line">-XX:+TieredCompilation           <span class="comment"># Enable tiered compilation</span></span><br><span class="line">-XX:CompileThreshold=1000        <span class="comment"># Lower threshold for faster warmup</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitoring &amp; Debugging</span></span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError  <span class="comment"># Generate heap dump on OOM</span></span><br><span class="line">-XX:HeapDumpPath=/opt/dumps/     <span class="comment"># Heap dump location</span></span><br><span class="line">-XX:+UseGCLogFileRotation        <span class="comment"># Rotate GC logs</span></span><br><span class="line">-XX:NumberOfGCLogFiles=5         <span class="comment"># Keep 5 GC log files</span></span><br><span class="line">-XX:GCLogFileSize=100M           <span class="comment"># Max size per GC log file</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Performance Optimizations</span></span><br><span class="line">-XX:+UseStringDeduplication      <span class="comment"># Reduce memory for duplicate strings</span></span><br><span class="line">-XX:+OptimizeStringConcat        <span class="comment"># Optimize string concatenation</span></span><br><span class="line">-server                          <span class="comment"># Use server JVM</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Application-Level-Optimizations"><a href="#Application-Level-Optimizations" class="headerlink" title="Application-Level Optimizations"></a>Application-Level Optimizations</h3><p><strong>Showcase: Object Pool vs New Allocation</strong></p>
+<p>Before (high allocation pressure):</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseConnection</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsers</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;User&gt; users = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(); <span class="comment">// New allocation each call</span></span><br><span class="line">        <span class="comment">// Database query logic</span></span><br><span class="line">        <span class="keyword">return</span> users;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>After (reduced allocation):</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseConnection</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadLocal&lt;List&lt;User&gt;&gt; userListCache = </span><br><span class="line">        ThreadLocal.withInitial(() -&gt; <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(<span class="number">100</span>));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsers</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;User&gt; users = userListCache.get();</span><br><span class="line">        users.clear(); <span class="comment">// Reuse existing list</span></span><br><span class="line">        <span class="comment">// Database query logic</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(users); <span class="comment">// Return defensive copy</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Memory-Leak-Prevention"><a href="#Memory-Leak-Prevention" class="headerlink" title="Memory Leak Prevention"></a>Memory Leak Prevention</h3><p><strong>Interview Insight:</strong> <em>“How do you detect and prevent memory leaks in a Java application?”</em></p>
+<p>Common memory leak patterns and solutions:</p>
+<ol>
+<li><strong>Static Collections</strong>: Use weak references or bounded caches</li>
+<li><strong>Listener Registration</strong>: Always unregister listeners</li>
+<li><strong>ThreadLocal Variables</strong>: Clear ThreadLocal in finally blocks</li>
+<li><strong>Connection Leaks</strong>: Use try-with-resources for connections</li>
+</ol>
+<p>Detection tools:</p>
+<ul>
+<li><strong>Heap Analysis</strong>: Eclipse MAT, JVisualVM</li>
+<li><strong>Profiling</strong>: Continuous monitoring of old generation growth</li>
+<li><strong>Application Metrics</strong>: Track object creation rates</li>
+</ul>
+<hr>
+<h2 id="Real-World-Case-Studies"><a href="#Real-World-Case-Studies" class="headerlink" title="Real-World Case Studies"></a>Real-World Case Studies</h2><h3 id="Case-Study-1-E-commerce-Platform-Optimization"><a href="#Case-Study-1-E-commerce-Platform-Optimization" class="headerlink" title="Case Study 1: E-commerce Platform Optimization"></a>Case Study 1: E-commerce Platform Optimization</h3><p><strong>Problem</strong>: High latency during peak traffic, frequent long GC pauses</p>
+<p><strong>Initial State</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Heap Size: 16GB</span><br><span class="line">GC Algorithm: Parallel GC</span><br><span class="line">Average GC Pause: 8 seconds</span><br><span class="line">Throughput: 60%</span><br><span class="line">Error Rate: 5% (timeouts)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Solution Applied</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Tuning approach</span></span><br><span class="line">-Xms32g -Xmx32g                  <span class="comment"># Increased heap size</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Switched to G1GC</span></span><br><span class="line">-XX:MaxGCPauseMillis=50          <span class="comment"># Aggressive pause target</span></span><br><span class="line">-XX:G1HeapRegionSize=64m         <span class="comment"># Large regions for big heap</span></span><br><span class="line">-XX:G1NewSizePercent=40          <span class="comment"># Larger young generation</span></span><br><span class="line">-XX:G1MixedGCCountTarget=4       <span class="comment"># Aggressive mixed GC</span></span><br><span class="line">-XX:+G1UseAdaptiveIHOP           <span class="comment"># Adaptive triggering</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Results</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Average GC Pause: 30ms (99.6% improvement)</span><br><span class="line">Throughput: 98%</span><br><span class="line">Error Rate: 0.1%</span><br><span class="line">Response Time P99: Improved by 80%</span><br></pre></td></tr></table></figure>
+
+<h3 id="Case-Study-2-Microservice-Memory-Optimization"><a href="#Case-Study-2-Microservice-Memory-Optimization" class="headerlink" title="Case Study 2: Microservice Memory Optimization"></a>Case Study 2: Microservice Memory Optimization</h3><p><strong>Problem</strong>: High memory usage in containerized microservices</p>
+<p><strong>Interview Insight</strong>: <em>“How do you optimize JVM memory usage for containers with limited resources?”</em></p>
+<p><strong>Original Configuration</strong> (4GB container):</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-Xmx3g    <span class="comment"># Too large for container</span></span><br><span class="line">-XX:+UseParallelGC</span><br></pre></td></tr></table></figure>
+
+<p><strong>Optimized Configuration</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Container-aware settings</span></span><br><span class="line">-XX:+UseContainerSupport         <span class="comment"># JVM 11+ container awareness</span></span><br><span class="line">-XX:InitialRAMPercentage=50      <span class="comment"># Initial heap as % of container memory</span></span><br><span class="line">-XX:MaxRAMPercentage=75          <span class="comment"># Max heap as % of container memory</span></span><br><span class="line">-XX:+UseSerialGC                 <span class="comment"># Better for small heaps</span></span><br><span class="line">-XX:TieredStopAtLevel=1          <span class="comment"># Reduce compilation overhead</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Alternative for very small containers</span></span><br><span class="line">-Xmx1536m                        <span class="comment"># Leave 512MB for non-heap</span></span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=100</span><br></pre></td></tr></table></figure>
+
+<h3 id="Case-Study-3-Batch-Processing-Optimization"><a href="#Case-Study-3-Batch-Processing-Optimization" class="headerlink" title="Case Study 3: Batch Processing Optimization"></a>Case Study 3: Batch Processing Optimization</h3><p><strong>Problem</strong>: Long-running batch job with memory growth over time</p>
+<p><strong>Solution Strategy</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Before: Memory leak in batch processing</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BatchProcessor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Map&lt;String, ProcessedData&gt; cache = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;(); <span class="comment">// Grows indefinitely</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processBatch</span><span class="params">(List&lt;RawData&gt; data)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (RawData item : data) &#123;</span><br><span class="line">            <span class="type">ProcessedData</span> <span class="variable">processed</span> <span class="operator">=</span> processItem(item);</span><br><span class="line">            cache.put(item.getId(), processed); <span class="comment">// Memory leak</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// After: Bounded cache with proper cleanup</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BatchProcessor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, ProcessedData&gt; cache = </span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicLong</span> <span class="variable">cacheHits</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicLong</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MAX_CACHE_SIZE</span> <span class="operator">=</span> <span class="number">10000</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processBatch</span><span class="params">(List&lt;RawData&gt; data)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (RawData item : data) &#123;</span><br><span class="line">            <span class="type">ProcessedData</span> <span class="variable">processed</span> <span class="operator">=</span> cache.computeIfAbsent(</span><br><span class="line">                item.getId(), </span><br><span class="line">                k -&gt; processItem(item)</span><br><span class="line">            );</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Periodic cleanup</span></span><br><span class="line">            <span class="keyword">if</span> (cacheHits.incrementAndGet() % <span class="number">1000</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                cleanupCache();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">cleanupCache</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (cache.size() &gt; MAX_CACHE_SIZE) &#123;</span><br><span class="line">            cache.clear(); <span class="comment">// Simple strategy - could use LRU</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>JVM Configuration for Batch Processing</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-Xms8g -Xmx8g                    <span class="comment"># Fixed heap size</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Handle varying allocation rates</span></span><br><span class="line">-XX:G1HeapRegionSize=32m         <span class="comment"># Optimize for large object processing</span></span><br><span class="line">-XX:+UnlockExperimentalVMOptions</span><br><span class="line">-XX:+UseEpsilonGC                <span class="comment"># For short-lived batch jobs (Java 11+)</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Advanced-Interview-Questions-Answers"><a href="#Advanced-Interview-Questions-Answers" class="headerlink" title="Advanced Interview Questions &amp; Answers"></a>Advanced Interview Questions &amp; Answers</h2><h3 id="Memory-Management-Deep-Dive"><a href="#Memory-Management-Deep-Dive" class="headerlink" title="Memory Management Deep Dive"></a>Memory Management Deep Dive</h3><p><strong>Q</strong>: <em>“Explain the difference between -Xmx, -Xms, and why you might set them to the same value.”</em></p>
+<p><strong>A</strong>: </p>
+<ul>
+<li><code>-Xmx</code>: Maximum heap size - prevents OutOfMemoryError</li>
+<li><code>-Xms</code>: Initial heap size - starting allocation</li>
+<li><strong>Setting them equal</strong>: Prevents heap expansion overhead and provides predictable memory usage, crucial for:<ul>
+<li>Container environments (prevents OS killing process)</li>
+<li>Latency-sensitive applications (avoids allocation pauses)</li>
+<li>Production predictability</li>
+</ul>
+</li>
+</ul>
+<h3 id="GC-Algorithm-Selection"><a href="#GC-Algorithm-Selection" class="headerlink" title="GC Algorithm Selection"></a>GC Algorithm Selection</h3><p><strong>Q</strong>: <em>“When would you choose ZGC over G1GC, and what are the trade-offs?”</em></p>
+<p><strong>A</strong>: Choose ZGC when:</p>
+<ul>
+<li><strong>Heap sizes &gt;32GB</strong>: ZGC scales better with large heaps</li>
+<li><strong>Ultra-low latency requirements</strong>: &lt;10ms pause times</li>
+<li><strong>Concurrent collection</strong>: Application can’t tolerate stop-the-world pauses</li>
+</ul>
+<p>Trade-offs:</p>
+<ul>
+<li><strong>Higher memory overhead</strong>: ZGC uses more memory for metadata</li>
+<li><strong>CPU overhead</strong>: More concurrent work impacts throughput</li>
+<li><strong>Maturity</strong>: G1GC has broader production adoption</li>
+</ul>
+<h3 id="Performance-Troubleshooting"><a href="#Performance-Troubleshooting" class="headerlink" title="Performance Troubleshooting"></a>Performance Troubleshooting</h3><p><strong>Q</strong>: <em>“An application shows high CPU usage but low throughput. How do you diagnose this?”</em></p>
+<p><strong>A</strong>: Systematic diagnosis approach:</p>
+<ol>
+<li><strong>Check GC activity</strong>: <code>jstat -gc</code> - excessive GC can cause high CPU</li>
+<li><strong>Profile CPU usage</strong>: Async profiler to identify hot methods</li>
+<li><strong>Check thread states</strong>: <code>jstack</code> for thread contention</li>
+<li><strong>JIT compilation</strong>: <code>-XX:+PrintCompilation</code> for compilation storms</li>
+<li><strong>Lock contention</strong>: Thread dump analysis for blocked threads</li>
+</ol>
+<p><strong>Root causes often include</strong>:</p>
+<ul>
+<li>Inefficient algorithms causing excessive GC</li>
+<li>Lock contention preventing parallel execution</li>
+<li>Memory pressure causing constant GC activity</li>
+</ul>
+<p>This comprehensive guide provides both theoretical understanding and practical expertise needed for JVM performance tuning in production environments. The integrated interview insights ensure you’re prepared for both implementation and technical discussions.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/12/Redis-Distributed-Locking-Complete-Guide/" rel="prev" title="Redis Distributed Locking: Complete Guide">
+                  <i class="fa fa-angle-left"></i> Redis Distributed Locking: Complete Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/06/12/Java-Interview-Guide-Core-Concepts/" rel="next" title="Java Interview Guide - Core Concepts">
+                  Java Interview Guide - Core Concepts <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

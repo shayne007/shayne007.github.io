@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Java FundamentalsCollection FrameworkKey Concepts: Thread safety, iterators, duplicates, ordered collections, key-value pairs List ImplementationsVector  Thread-safe with strong consistency 2x capacit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java Interview Guide - Core Concepts">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/12/Java-Interview-Guide-Core-Concepts/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Java FundamentalsCollection FrameworkKey Concepts: Thread safety, iterators, duplicates, ordered collections, key-value pairs List ImplementationsVector  Thread-safe with strong consistency 2x capacit">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-12T07:44:19.000Z">
+<meta property="article:modified_time" content="2025-06-12T07:45:36.339Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/12/Java-Interview-Guide-Core-Concepts/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/12/Java-Interview-Guide-Core-Concepts/","path":"2025/06/12/Java-Interview-Guide-Core-Concepts/","title":"Java Interview Guide - Core Concepts"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Java Interview Guide - Core Concepts | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-Fundamentals"><span class="nav-number">1.</span> <span class="nav-text">Java Fundamentals</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Collection-Framework"><span class="nav-number">1.1.</span> <span class="nav-text">Collection Framework</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#List-Implementations"><span class="nav-number">1.1.1.</span> <span class="nav-text">List Implementations</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Map-Implementations"><span class="nav-number">1.1.2.</span> <span class="nav-text">Map Implementations</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#I-O-Models"><span class="nav-number">1.2.</span> <span class="nav-text">I&#x2F;O Models</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Thread-Pool"><span class="nav-number">1.3.</span> <span class="nav-text">Thread Pool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ThreadLocal"><span class="nav-number">1.4.</span> <span class="nav-text">ThreadLocal</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JVM-Java-Virtual-Machine"><span class="nav-number">2.</span> <span class="nav-text">JVM (Java Virtual Machine)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Structure"><span class="nav-number">2.1.</span> <span class="nav-text">Memory Structure</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Class-Loading"><span class="nav-number">2.2.</span> <span class="nav-text">Class Loading</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Garbage-Collection"><span class="nav-number">2.3.</span> <span class="nav-text">Garbage Collection</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Optimization-Tips"><span class="nav-number">3.</span> <span class="nav-text">Performance Optimization Tips</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Java-Interview-Guide-Core-Concepts/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Java Interview Guide - Core Concepts | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java Interview Guide - Core Concepts
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-12 15:44:19 / Modified: 15:45:36" itemprop="dateCreated datePublished" datetime="2025-06-12T15:44:19+08:00">2025-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Java-Fundamentals"><a href="#Java-Fundamentals" class="headerlink" title="Java Fundamentals"></a>Java Fundamentals</h2><h3 id="Collection-Framework"><a href="#Collection-Framework" class="headerlink" title="Collection Framework"></a>Collection Framework</h3><p><strong>Key Concepts:</strong> Thread safety, iterators, duplicates, ordered collections, key-value pairs</p>
+<h4 id="List-Implementations"><a href="#List-Implementations" class="headerlink" title="List Implementations"></a>List Implementations</h4><p><strong>Vector</strong></p>
+<ul>
+<li>Thread-safe with strong consistency</li>
+<li>2x capacity expansion</li>
+<li><code>Collections.synchronizedList()</code> requires manual synchronization for iterators</li>
+</ul>
+<p><strong>ArrayList</strong></p>
+<ul>
+<li>Array-based implementation</li>
+<li>Inefficient head insertion, efficient tail insertion</li>
+<li>1.5x capacity expansion</li>
+<li>Pre-specify capacity to reduce expansion overhead</li>
+<li>Uses <code>transient</code> for object array to avoid serializing empty slots</li>
+</ul>
+<p><strong>LinkedList</strong></p>
+<ul>
+<li>Doubly-linked list implementation</li>
+<li>Slowest for middle insertions</li>
+<li>Use Iterator for traversal</li>
+<li><code>remove(Integer)</code> removes element, <code>remove(int)</code> removes by index</li>
+</ul>
+<p><strong>Iterator Safety</strong></p>
+<ul>
+<li>Enhanced for-loop uses iterator internally</li>
+<li>Concurrent modification throws <code>ConcurrentModificationException</code></li>
+<li>Use iterator’s <code>remove()</code> method instead of collection’s</li>
+</ul>
+<h4 id="Map-Implementations"><a href="#Map-Implementations" class="headerlink" title="Map Implementations"></a>Map Implementations</h4><p><strong>Hashtable</strong></p>
+<ul>
+<li>Thread-safe using <code>synchronized</code></li>
+<li>No null keys&#x2F;values allowed</li>
+</ul>
+<p><strong>HashMap</strong></p>
+<ul>
+<li>Not thread-safe, allows null keys&#x2F;values</li>
+<li>Array + linked list structure</li>
+<li>Hash collision resolution via chaining</li>
+<li>Default capacity: 16, load factor: 0.75</li>
+<li>JDK 1.8: Converts to red-black tree when chain length &gt; 8 and capacity &gt; 64</li>
+<li>Multi-threading can cause infinite loops during rehashing</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Hash calculation for efficient indexing</span></span><br><span class="line">index = (n - <span class="number">1</span>) &amp; hash(key)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Hash function reduces collisions</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">hash</span><span class="params">(Object key)</span> &#123;</span><br><span class="line">    <span class="type">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="literal">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>LinkedHashMap</strong></p>
+<ul>
+<li>HashMap + doubly-linked list</li>
+<li>Maintains insertion&#x2F;access order</li>
+<li>Used for LRU cache implementation</li>
+</ul>
+<p><strong>TreeMap</strong></p>
+<ul>
+<li>Red-black tree based</li>
+<li>O(log n) time complexity</li>
+<li>Sorted keys via Comparator&#x2F;Comparable</li>
+</ul>
+<h3 id="I-O-Models"><a href="#I-O-Models" class="headerlink" title="I&#x2F;O Models"></a>I&#x2F;O Models</h3><p><strong>Java I&#x2F;O Hierarchy</strong></p>
+<ul>
+<li>Base classes: <code>InputStream/Reader</code>, <code>OutputStream/Writer</code></li>
+<li>Decorator pattern implementation</li>
+</ul>
+<p><strong>BIO (Blocking I&#x2F;O)</strong></p>
+<ul>
+<li>Synchronous blocking model</li>
+<li>One thread per connection</li>
+<li>Suitable for low-concurrency scenarios</li>
+<li>Thread pool provides natural rate limiting</li>
+</ul>
+<p><strong>NIO (Non-blocking I&#x2F;O)</strong></p>
+<ul>
+<li>I&#x2F;O multiplexing model (not traditional NIO)</li>
+<li>Uses <code>select/epoll</code> system calls</li>
+<li>Single thread monitors multiple file descriptors</li>
+<li>Core components: Buffer, Channel, Selector</li>
+</ul>
+<p><strong>AIO (Asynchronous I&#x2F;O)</strong></p>
+<ul>
+<li>Event-driven with callbacks</li>
+<li>Introduced in Java 7 as NIO.2</li>
+<li>Direct return without blocking</li>
+<li>Limited adoption in practice</li>
+</ul>
+<h3 id="Thread-Pool"><a href="#Thread-Pool" class="headerlink" title="Thread Pool"></a>Thread Pool</h3><p><strong>Thread Creation Methods</strong></p>
+<ol>
+<li>Runnable interface</li>
+<li>Thread class</li>
+<li>Callable + FutureTask</li>
+<li>Thread pools (recommended)</li>
+</ol>
+<p><strong>Core Parameters</strong></p>
+<ul>
+<li><code>corePoolSize</code>: Core thread count</li>
+<li><code>maximumPoolSize</code>: Maximum thread count</li>
+<li><code>keepAliveTime</code>: Idle thread survival time</li>
+<li><code>workQueue</code>: Task queue (must be bounded)</li>
+<li><code>rejectedExecutionHandler</code>: Rejection policy</li>
+</ul>
+<p><strong>Execution Flow</strong></p>
+<ol>
+<li>Create threads up to core size</li>
+<li>Queue tasks when core threads busy</li>
+<li>Expand to max size when queue full</li>
+<li>Apply rejection policy when max reached</li>
+<li>Shrink to core size after keepAliveTime</li>
+</ol>
+<p><strong>Optimal Thread Count</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Optimal Threads = CPU Cores × [1 + (I/O Time / CPU Time)]</span><br></pre></td></tr></table></figure>
+
+<p><strong>Best Practices</strong></p>
+<ul>
+<li>Graceful shutdown</li>
+<li>Uncaught exception handling</li>
+<li>Separate pools for dependent tasks</li>
+<li>Proper rejection policy implementation</li>
+</ul>
+<h3 id="ThreadLocal"><a href="#ThreadLocal" class="headerlink" title="ThreadLocal"></a>ThreadLocal</h3><p><strong>Use Cases</strong></p>
+<ul>
+<li>Thread isolation with cross-method data sharing</li>
+<li>Database session management (Hibernate)</li>
+<li>Request context propagation (user ID, session)</li>
+<li>HTTP request instances</li>
+</ul>
+<p><strong>Implementation</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread → ThreadLocalMap&lt;ThreadLocal, Object&gt; → Entry(key, value)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Memory Management</strong></p>
+<ul>
+<li>Entry key uses weak reference</li>
+<li>Automatic cleanup of null keys</li>
+<li>Must use <code>private static final</code> modifiers</li>
+</ul>
+<p><strong>Best Practices</strong></p>
+<ul>
+<li>Always call <code>remove()</code> in finally blocks</li>
+<li>Handle thread pool reuse scenarios</li>
+<li>Use <code>afterExecute</code> hook for cleanup</li>
+</ul>
+<h2 id="JVM-Java-Virtual-Machine"><a href="#JVM-Java-Virtual-Machine" class="headerlink" title="JVM (Java Virtual Machine)"></a>JVM (Java Virtual Machine)</h2><h3 id="Memory-Structure"><a href="#Memory-Structure" class="headerlink" title="Memory Structure"></a>Memory Structure</h3><p><strong>Components</strong></p>
+<ul>
+<li>Class Loader</li>
+<li>Runtime Data Area</li>
+<li>Execution Engine</li>
+<li>Native Interface</li>
+</ul>
+<p><strong>Runtime Data Areas</strong></p>
+<p><strong>Thread-Shared</strong></p>
+<ul>
+<li><strong>Method Area</strong>: Class metadata, constants, static variables</li>
+<li><strong>Heap</strong>: Object instances, string pool (JDK 7+)</li>
+</ul>
+<p><strong>Thread-Private</strong></p>
+<ul>
+<li><strong>VM Stack</strong>: Stack frames with local variables, operand stack</li>
+<li><strong>Native Method Stack</strong>: For native method calls</li>
+<li><strong>Program Counter</strong>: Current bytecode instruction pointer</li>
+</ul>
+<p><strong>Key Changes</strong></p>
+<ul>
+<li><strong>JDK 8</strong>: Metaspace replaced PermGen (uses native memory)</li>
+<li><strong>JDK 7</strong>: String pool moved to heap for better GC efficiency</li>
+</ul>
+<h3 id="Class-Loading"><a href="#Class-Loading" class="headerlink" title="Class Loading"></a>Class Loading</h3><p><strong>Process</strong></p>
+<ol>
+<li><strong>Loading</strong>: Read .class files, create Class objects</li>
+<li><strong>Verification</strong>: Validate bytecode integrity</li>
+<li><strong>Preparation</strong>: Allocate memory, set default values for static variables</li>
+<li><strong>Resolution</strong>: Convert symbolic references to direct references</li>
+<li><strong>Initialization</strong>: Execute static blocks and variable assignments</li>
+</ol>
+<p><strong>Class Loaders</strong></p>
+<ul>
+<li><strong>Bootstrap</strong>: JDK core classes</li>
+<li><strong>Extension&#x2F;Platform</strong>: JDK extensions</li>
+<li><strong>Application</strong>: CLASSPATH classes</li>
+</ul>
+<p><strong>Parent Delegation</strong></p>
+<ul>
+<li>Child loaders delegate to parent first</li>
+<li>Prevents duplicate loading</li>
+<li>Ensures class uniqueness and security</li>
+</ul>
+<p><strong>Custom Class Loaders</strong></p>
+<ul>
+<li>Extend ClassLoader, override <code>findClass()</code></li>
+<li>Tomcat breaks delegation for web app isolation</li>
+</ul>
+<h3 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h3><p><strong>Memory Regions</strong></p>
+<ul>
+<li><strong>Young Generation</strong>: Eden + Survivor (From&#x2F;To)</li>
+<li><strong>Old Generation</strong>: Long-lived objects</li>
+<li><strong>Metaspace</strong>: Class metadata (JDK 8+)</li>
+</ul>
+<p><strong>GC Root Objects</strong></p>
+<ul>
+<li>Local variables in method stacks</li>
+<li>Static variables in loaded classes</li>
+<li>JNI references in native stacks</li>
+<li>Active Java threads</li>
+</ul>
+<p><strong>Reference Types</strong></p>
+<ul>
+<li><strong>Strong</strong>: Never collected while referenced</li>
+<li><strong>Soft</strong>: Collected before OOM</li>
+<li><strong>Weak</strong>: Collected at next GC</li>
+<li><strong>Phantom</strong>: For cleanup notification only</li>
+</ul>
+<p><strong>Collection Algorithms</strong></p>
+<ul>
+<li><strong>Young Generation</strong>: Copy algorithm (efficient, no fragmentation)</li>
+<li><strong>Old Generation</strong>: Mark-Sweep or Mark-Compact</li>
+</ul>
+<p><strong>Garbage Collectors</strong></p>
+<p><strong>Serial&#x2F;Parallel</strong></p>
+<ul>
+<li>Single&#x2F;multi-threaded</li>
+<li>Suitable for small applications or batch processing</li>
+</ul>
+<p><strong>CMS (Concurrent Mark Sweep)</strong></p>
+<ul>
+<li>Low-latency for old generation</li>
+<li>Concurrent collection with application threads</li>
+</ul>
+<p><strong>G1 (Garbage First)</strong></p>
+<ul>
+<li>Region-based collection</li>
+<li>Predictable pause times</li>
+<li>Default in JDK 9+, suitable for large heaps (&gt;8GB)</li>
+</ul>
+<p><strong>ZGC&#x2F;Shenandoah</strong></p>
+<ul>
+<li>Ultra-low latency (&lt;10ms)</li>
+<li>Supports TB-scale heaps</li>
+<li>Ideal for cloud-native applications</li>
+</ul>
+<p><strong>Tuning Parameters</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Heap sizing</span></span><br><span class="line">-Xms4g -Xmx4g                    <span class="comment"># Initial = Max heap</span></span><br><span class="line">-Xmn2g                           <span class="comment"># Young generation size</span></span><br><span class="line">-XX:SurvivorRatio=8              <span class="comment"># Eden:Survivor ratio</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># GC logging</span></span><br><span class="line">-XX:+PrintGCDetails -Xloggc:gc.log</span><br><span class="line"></span><br><span class="line"><span class="comment"># Metaspace</span></span><br><span class="line">-XX:MetaspaceSize=256M -XX:MaxMetaspaceSize=512M</span><br><span class="line"></span><br><span class="line"><span class="comment"># OOM debugging</span></span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/dump.hprof</span><br></pre></td></tr></table></figure>
+
+<p><strong>OOM Troubleshooting</strong></p>
+<ol>
+<li>Generate heap dumps on OOM</li>
+<li>Analyze with MAT (Memory Analyzer Tool) or VisualVM</li>
+<li>Common causes: memory leaks, oversized objects, insufficient heap space</li>
+<li>Tune object promotion thresholds and GC parameters</li>
+</ol>
+<h2 id="Performance-Optimization-Tips"><a href="#Performance-Optimization-Tips" class="headerlink" title="Performance Optimization Tips"></a>Performance Optimization Tips</h2><ol>
+<li><strong>Collections</strong>: Pre-size collections, use appropriate implementations</li>
+<li><strong>Strings</strong>: Use StringBuilder for concatenation, intern frequently used strings</li>
+<li><strong>Thread Pools</strong>: Tune core&#x2F;max sizes based on workload characteristics</li>
+<li><strong>GC</strong>: Choose appropriate collector, monitor GC logs, tune heap ratios</li>
+<li><strong>Memory</strong>: Avoid memory leaks, use object pools for expensive objects</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/12/Java-JVM-Performance-Tuning/" rel="prev" title="Java JVM Performance Tuning">
+                  <i class="fa fa-angle-left"></i> Java JVM Performance Tuning
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
