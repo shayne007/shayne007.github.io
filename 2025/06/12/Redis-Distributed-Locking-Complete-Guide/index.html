@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionDistributed locking is a critical mechanism for coordinating access to shared resources across multiple processes or services in a distributed system. Redis, with its atomic operations and">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis Distributed Locking: Complete Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/12/Redis-Distributed-Locking-Complete-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="IntroductionDistributed locking is a critical mechanism for coordinating access to shared resources across multiple processes or services in a distributed system. Redis, with its atomic operations and">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-12T06:38:15.000Z">
+<meta property="article:modified_time" content="2025-06-12T06:39:58.958Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/12/Redis-Distributed-Locking-Complete-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/12/Redis-Distributed-Locking-Complete-Guide/","path":"2025/06/12/Redis-Distributed-Locking-Complete-Guide/","title":"Redis Distributed Locking: Complete Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis Distributed Locking: Complete Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#When-to-Use-Distributed-Locks"><span class="nav-number">1.1.</span> <span class="nav-text">When to Use Distributed Locks</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Core-Concepts"><span class="nav-number">2.</span> <span class="nav-text">Core Concepts</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Lock-Properties"><span class="nav-number">2.1.</span> <span class="nav-text">Lock Properties</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redis-Atomic-Operations"><span class="nav-number">2.2.</span> <span class="nav-text">Redis Atomic Operations</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Single-Instance-Redis-Locking"><span class="nav-number">3.</span> <span class="nav-text">Single Instance Redis Locking</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Basic-Implementation"><span class="nav-number">3.1.</span> <span class="nav-text">Basic Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context-Manager-Implementation"><span class="nav-number">3.2.</span> <span class="nav-text">Context Manager Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Single-Instance-Limitations"><span class="nav-number">3.3.</span> <span class="nav-text">Single Instance Limitations</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#The-Redlock-Algorithm"><span class="nav-number">4.</span> <span class="nav-text">The Redlock Algorithm</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Algorithm-Steps"><span class="nav-number">4.1.</span> <span class="nav-text">Algorithm Steps</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redlock-Implementation"><span class="nav-number">4.2.</span> <span class="nav-text">Redlock Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redlock-Controversy"><span class="nav-number">4.3.</span> <span class="nav-text">Redlock Controversy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Best-Practices-and-Common-Pitfalls"><span class="nav-number">5.</span> <span class="nav-text">Best Practices and Common Pitfalls</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Appropriate-TTL-Selection"><span class="nav-number">5.1.</span> <span class="nav-text">1. Appropriate TTL Selection</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Lock-Extension-for-Long-Operations"><span class="nav-number">5.2.</span> <span class="nav-text">2. Lock Extension for Long Operations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Retry-Strategies"><span class="nav-number">5.3.</span> <span class="nav-text">3. Retry Strategies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-Common-Pitfalls"><span class="nav-number">5.4.</span> <span class="nav-text">4. Common Pitfalls</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Pitfall-1-Race-Condition-in-Release"><span class="nav-number">5.4.1.</span> <span class="nav-text">Pitfall 1: Race Condition in Release</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Pitfall-2-Clock-Drift-Issues"><span class="nav-number">5.4.2.</span> <span class="nav-text">Pitfall 2: Clock Drift Issues</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Production-Considerations"><span class="nav-number">6.</span> <span class="nav-text">Production Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitoring-and-Observability"><span class="nav-number">6.1.</span> <span class="nav-text">Monitoring and Observability</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Health-Checks-and-Circuit-Breakers"><span class="nav-number">6.2.</span> <span class="nav-text">Health Checks and Circuit Breakers</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Alternative-Approaches"><span class="nav-number">7.</span> <span class="nav-text">Alternative Approaches</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Database-Based-Locking"><span class="nav-number">7.1.</span> <span class="nav-text">Database-Based Locking</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Consensus-Based-Solutions"><span class="nav-number">7.2.</span> <span class="nav-text">Consensus-Based Solutions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Comparison-Matrix"><span class="nav-number">7.3.</span> <span class="nav-text">Comparison Matrix</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">8.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Redis-Distributed-Locking-Complete-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Redis Distributed Locking: Complete Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis Distributed Locking: Complete Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-12 14:38:15 / Modified: 14:39:58" itemprop="dateCreated datePublished" datetime="2025-06-12T14:38:15+08:00">2025-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Distributed locking is a critical mechanism for coordinating access to shared resources across multiple processes or services in a distributed system. Redis, with its atomic operations and high performance, has become a popular choice for implementing distributed locks.</p>
+<p><strong>Interview Insight</strong>: <em>Expect questions like “Why would you use Redis for distributed locking instead of database-based locks?” The key advantages are: Redis operates in memory (faster), provides atomic operations, has built-in TTL support, and offers better performance for high-frequency locking scenarios.</em></p>
+<h3 id="When-to-Use-Distributed-Locks"><a href="#When-to-Use-Distributed-Locks" class="headerlink" title="When to Use Distributed Locks"></a>When to Use Distributed Locks</h3><ul>
+<li>Preventing duplicate processing of tasks</li>
+<li>Coordinating access to external APIs with rate limits</li>
+<li>Ensuring single leader election in distributed systems</li>
+<li>Managing shared resource access across microservices</li>
+<li>Implementing distributed rate limiting</li>
+</ul>
+<h2 id="Core-Concepts"><a href="#Core-Concepts" class="headerlink" title="Core Concepts"></a>Core Concepts</h2><h3 id="Lock-Properties"><a href="#Lock-Properties" class="headerlink" title="Lock Properties"></a>Lock Properties</h3><p>A robust distributed lock must satisfy several properties:</p>
+<ol>
+<li><strong>Mutual Exclusion</strong>: Only one client can hold the lock at any time</li>
+<li><strong>Deadlock Free</strong>: Eventually, it’s always possible to acquire the lock</li>
+<li><strong>Fault Tolerance</strong>: Lock acquisition and release work even when clients fail</li>
+<li><strong>Safety</strong>: Lock is not granted to multiple clients simultaneously</li>
+<li><strong>Liveness</strong>: Requests to acquire&#x2F;release locks eventually succeed</li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>Interviewers often ask about the CAP theorem implications. Distributed locks typically favor Consistency and Partition tolerance over Availability - it’s better to fail lock acquisition than to grant locks to multiple clients.</em></p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Client Request] --&gt; B{Lock Available?}
+B --&gt;|Yes| C[Acquire Lock with TTL]
+B --&gt;|No| D[Wait&#x2F;Retry]
+C --&gt; E[Execute Critical Section]
+E --&gt; F[Release Lock]
+D --&gt; G[Timeout Check]
+G --&gt;|Continue| B
+G --&gt;|Timeout| H[Fail]
+F --&gt; I[Success]
+</code>
+</pre>
+
+<h3 id="Redis-Atomic-Operations"><a href="#Redis-Atomic-Operations" class="headerlink" title="Redis Atomic Operations"></a>Redis Atomic Operations</h3><p>Redis provides several atomic operations crucial for distributed locking:</p>
+<ul>
+<li><code>SET key value NX EX seconds</code> - Set if not exists with expiration</li>
+<li><code>EVAL</code> - Execute Lua scripts atomically</li>
+<li><code>DEL</code> - Delete keys atomically</li>
+</ul>
+<h2 id="Single-Instance-Redis-Locking"><a href="#Single-Instance-Redis-Locking" class="headerlink" title="Single Instance Redis Locking"></a>Single Instance Redis Locking</h2><h3 id="Basic-Implementation"><a href="#Basic-Implementation" class="headerlink" title="Basic Implementation"></a>Basic Implementation</h3><p>The simplest approach uses a single Redis instance with the <code>SET</code> command:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> uuid</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RedisLock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client, key, timeout=<span class="number">10</span>, retry_delay=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.key = key</span><br><span class="line">        <span class="variable language_">self</span>.timeout = timeout</span><br><span class="line">        <span class="variable language_">self</span>.retry_delay = retry_delay</span><br><span class="line">        <span class="variable language_">self</span>.identifier = <span class="built_in">str</span>(uuid.uuid4())</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire</span>(<span class="params">self, blocking=<span class="literal">True</span>, timeout=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Acquire the lock&quot;&quot;&quot;</span></span><br><span class="line">        end_time = time.time() + (timeout <span class="keyword">or</span> <span class="variable language_">self</span>.timeout)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            <span class="comment"># Try to set the key with our identifier and TTL</span></span><br><span class="line">            <span class="keyword">if</span> <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(<span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier, nx=<span class="literal">True</span>, ex=<span class="variable language_">self</span>.timeout):</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> blocking <span class="keyword">or</span> time.time() &gt; end_time:</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">            </span><br><span class="line">            time.sleep(<span class="variable language_">self</span>.retry_delay)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">release</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Release the lock using Lua script for atomicity&quot;&quot;&quot;</span></span><br><span class="line">        lua_script = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">            return redis.call(&quot;DEL&quot;, KEYS[1])</span></span><br><span class="line"><span class="string">        else</span></span><br><span class="line"><span class="string">            return 0</span></span><br><span class="line"><span class="string">        end</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.redis.<span class="built_in">eval</span>(lua_script, <span class="number">1</span>, <span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">redis_client = redis.Redis(host=<span class="string">&#x27;localhost&#x27;</span>, port=<span class="number">6379</span>, db=<span class="number">0</span>)</span><br><span class="line">lock = RedisLock(redis_client, <span class="string">&quot;my_resource_lock&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> lock.acquire():</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># Critical section</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Lock acquired, executing critical section&quot;</span>)</span><br><span class="line">        time.sleep(<span class="number">5</span>)  <span class="comment"># Simulate work</span></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        lock.release()</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Lock released&quot;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Failed to acquire lock&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>A common question is “Why do you need a unique identifier for each lock holder?” The identifier prevents a client from accidentally releasing another client’s lock, especially important when dealing with timeouts and retries.</em></p>
+<h3 id="Context-Manager-Implementation"><a href="#Context-Manager-Implementation" class="headerlink" title="Context Manager Implementation"></a>Context Manager Implementation</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> contextlib <span class="keyword">import</span> contextmanager</span><br><span class="line"></span><br><span class="line"><span class="meta">@contextmanager</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">redis_lock</span>(<span class="params">redis_client, key, timeout=<span class="number">10</span></span>):</span><br><span class="line">    lock = RedisLock(redis_client, key, timeout)</span><br><span class="line">    acquired = lock.acquire()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> acquired:</span><br><span class="line">        <span class="keyword">raise</span> Exception(<span class="string">f&quot;Could not acquire lock for <span class="subst">&#123;key&#125;</span>&quot;</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">yield</span></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        lock.release()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage</span></span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">with</span> redis_lock(redis_client, <span class="string">&quot;my_resource&quot;</span>):</span><br><span class="line">        <span class="comment"># Critical section code here</span></span><br><span class="line">        process_shared_resource()</span><br><span class="line"><span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Lock acquisition failed: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Single-Instance-Limitations"><a href="#Single-Instance-Limitations" class="headerlink" title="Single Instance Limitations"></a>Single Instance Limitations</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Client A] --&gt; B[Redis Master]
+C[Client B] --&gt; B
+B --&gt; D[Redis Slave]
+B --&gt;|Fails| E[Data Loss]
+E --&gt; F[Both Clients Think They Have Lock]
+
+style E fill:#ff9999
+style F fill:#ff9999
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Interviewers will ask about single points of failure. The main issues are: Redis instance failure loses all locks, replication lag can cause multiple clients to acquire the same lock, and network partitions can lead to split-brain scenarios.</em></p>
+<h2 id="The-Redlock-Algorithm"><a href="#The-Redlock-Algorithm" class="headerlink" title="The Redlock Algorithm"></a>The Redlock Algorithm</h2><p>The Redlock algorithm, proposed by Redis creator Salvatore Sanfilippo, addresses single-instance limitations by using multiple independent Redis instances.</p>
+<h3 id="Algorithm-Steps"><a href="#Algorithm-Steps" class="headerlink" title="Algorithm Steps"></a>Algorithm Steps</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant C as Client
+participant R1 as Redis 1
+participant R2 as Redis 2
+participant R3 as Redis 3
+participant R4 as Redis 4
+participant R5 as Redis 5
+
+Note over C: Start timer
+C-&gt;&gt;R1: SET lock_key unique_id NX EX ttl
+C-&gt;&gt;R2: SET lock_key unique_id NX EX ttl
+C-&gt;&gt;R3: SET lock_key unique_id NX EX ttl
+C-&gt;&gt;R4: SET lock_key unique_id NX EX ttl
+C-&gt;&gt;R5: SET lock_key unique_id NX EX ttl
+
+R1--&gt;&gt;C: OK
+R2--&gt;&gt;C: OK
+R3--&gt;&gt;C: FAIL
+R4--&gt;&gt;C: OK
+R5--&gt;&gt;C: FAIL
+
+Note over C: Check: 3&#x2F;5 nodes acquired&lt;br&#x2F;&gt;Time elapsed &lt; TTL&lt;br&#x2F;&gt;Lock is valid
+</code>
+</pre>
+
+<h3 id="Redlock-Implementation"><a href="#Redlock-Implementation" class="headerlink" title="Redlock Implementation"></a>Redlock Implementation</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> uuid</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">List</span>, <span class="type">Optional</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Redlock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_instances: <span class="type">List</span>[redis.Redis], retry_count=<span class="number">3</span>, retry_delay=<span class="number">0.2</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis_instances = redis_instances</span><br><span class="line">        <span class="variable language_">self</span>.retry_count = retry_count</span><br><span class="line">        <span class="variable language_">self</span>.retry_delay = retry_delay</span><br><span class="line">        <span class="variable language_">self</span>.quorum = <span class="built_in">len</span>(redis_instances) // <span class="number">2</span> + <span class="number">1</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire</span>(<span class="params">self, resource: <span class="built_in">str</span>, ttl: <span class="built_in">int</span> = <span class="number">10000</span></span>) -&gt; <span class="type">Optional</span>[<span class="built_in">dict</span>]:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Acquire lock on resource with TTL in milliseconds</span></span><br><span class="line"><span class="string">        Returns lock info if successful, None if failed</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        identifier = <span class="built_in">str</span>(uuid.uuid4())</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="variable language_">self</span>.retry_count):</span><br><span class="line">            start_time = <span class="built_in">int</span>(time.time() * <span class="number">1000</span>)</span><br><span class="line">            successful_locks = <span class="number">0</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Try to acquire lock on all instances</span></span><br><span class="line">            <span class="keyword">for</span> redis_client <span class="keyword">in</span> <span class="variable language_">self</span>.redis_instances:</span><br><span class="line">                <span class="keyword">try</span>:</span><br><span class="line">                    <span class="keyword">if</span> redis_client.<span class="built_in">set</span>(resource, identifier, nx=<span class="literal">True</span>, px=ttl):</span><br><span class="line">                        successful_locks += <span class="number">1</span></span><br><span class="line">                <span class="keyword">except</span> Exception:</span><br><span class="line">                    <span class="comment"># Instance is down, continue with others</span></span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Calculate elapsed time</span></span><br><span class="line">            elapsed_time = <span class="built_in">int</span>(time.time() * <span class="number">1000</span>) - start_time</span><br><span class="line">            remaining_ttl = ttl - elapsed_time</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Check if we have quorum and enough time left</span></span><br><span class="line">            <span class="keyword">if</span> successful_locks &gt;= <span class="variable language_">self</span>.quorum <span class="keyword">and</span> remaining_ttl &gt; <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">return</span> &#123;</span><br><span class="line">                    <span class="string">&#x27;resource&#x27;</span>: resource,</span><br><span class="line">                    <span class="string">&#x27;identifier&#x27;</span>: identifier,</span><br><span class="line">                    <span class="string">&#x27;ttl&#x27;</span>: remaining_ttl,</span><br><span class="line">                    <span class="string">&#x27;acquired_locks&#x27;</span>: successful_locks</span><br><span class="line">                &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Failed to acquire majority, release acquired locks</span></span><br><span class="line">            <span class="variable language_">self</span>._release_locks(resource, identifier)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Random delay before retry to avoid thundering herd</span></span><br><span class="line">            time.sleep(<span class="variable language_">self</span>.retry_delay * (<span class="number">0.5</span> + <span class="number">0.5</span> * time.random()))</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">release</span>(<span class="params">self, lock_info: <span class="built_in">dict</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Release the distributed lock&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>._release_locks(lock_info[<span class="string">&#x27;resource&#x27;</span>], lock_info[<span class="string">&#x27;identifier&#x27;</span>])</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_release_locks</span>(<span class="params">self, resource: <span class="built_in">str</span>, identifier: <span class="built_in">str</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Release locks on all instances&quot;&quot;&quot;</span></span><br><span class="line">        lua_script = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">            return redis.call(&quot;DEL&quot;, KEYS[1])</span></span><br><span class="line"><span class="string">        else</span></span><br><span class="line"><span class="string">            return 0</span></span><br><span class="line"><span class="string">        end</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        </span><br><span class="line">        released_count = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> redis_client <span class="keyword">in</span> <span class="variable language_">self</span>.redis_instances:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="keyword">if</span> redis_client.<span class="built_in">eval</span>(lua_script, <span class="number">1</span>, resource, identifier):</span><br><span class="line">                    released_count += <span class="number">1</span></span><br><span class="line">            <span class="keyword">except</span> Exception:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> released_count &gt;= <span class="variable language_">self</span>.quorum</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">redis_nodes = [</span><br><span class="line">    redis.Redis(host=<span class="string">&#x27;redis1.example.com&#x27;</span>, port=<span class="number">6379</span>),</span><br><span class="line">    redis.Redis(host=<span class="string">&#x27;redis2.example.com&#x27;</span>, port=<span class="number">6379</span>),</span><br><span class="line">    redis.Redis(host=<span class="string">&#x27;redis3.example.com&#x27;</span>, port=<span class="number">6379</span>),</span><br><span class="line">    redis.Redis(host=<span class="string">&#x27;redis4.example.com&#x27;</span>, port=<span class="number">6379</span>),</span><br><span class="line">    redis.Redis(host=<span class="string">&#x27;redis5.example.com&#x27;</span>, port=<span class="number">6379</span>),</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">redlock = Redlock(redis_nodes)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Acquire lock</span></span><br><span class="line">lock_info = redlock.acquire(<span class="string">&quot;shared_resource&quot;</span>, ttl=<span class="number">30000</span>)  <span class="comment"># 30 seconds</span></span><br><span class="line"><span class="keyword">if</span> lock_info:</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># Critical section</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Lock acquired with <span class="subst">&#123;lock_info[<span class="string">&#x27;acquired_locks&#x27;</span>]&#125;</span> nodes&quot;</span>)</span><br><span class="line">        <span class="comment"># Do work...</span></span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        redlock.release(lock_info)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Lock released&quot;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Failed to acquire distributed lock&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Common question: “What’s the minimum number of Redis instances needed for Redlock?” Answer: Minimum 3 for meaningful fault tolerance, typically 5 is recommended. The formula is N &#x3D; 2F + 1, where N is total instances and F is the number of failures you want to tolerate.</em></p>
+<h3 id="Redlock-Controversy"><a href="#Redlock-Controversy" class="headerlink" title="Redlock Controversy"></a>Redlock Controversy</h3><p>Martin Kleppmann’s criticism of Redlock highlights important considerations:</p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Client Acquires Lock] --&gt; B[GC Pause&#x2F;Network Delay]
+B --&gt; C[Lock Expires]
+C --&gt; D[Another Client Acquires Same Lock]
+D --&gt; E[Two Clients in Critical Section]
+
+style E fill:#ff9999
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Be prepared to discuss the “Redlock controversy.” Kleppmann argued that Redlock doesn’t provide the safety guarantees it claims due to timing assumptions. The key issues are: clock synchronization requirements, GC pauses can cause timing issues, and fencing tokens provide better safety.</em></p>
+<h2 id="Best-Practices-and-Common-Pitfalls"><a href="#Best-Practices-and-Common-Pitfalls" class="headerlink" title="Best Practices and Common Pitfalls"></a>Best Practices and Common Pitfalls</h2><h3 id="1-Appropriate-TTL-Selection"><a href="#1-Appropriate-TTL-Selection" class="headerlink" title="1. Appropriate TTL Selection"></a>1. Appropriate TTL Selection</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">AdaptiveLock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client, base_ttl=<span class="number">10</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.base_ttl = base_ttl</span><br><span class="line">        <span class="variable language_">self</span>.execution_times = []</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire_with_adaptive_ttl</span>(<span class="params">self, key, expected_execution_time=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Acquire lock with TTL based on expected execution time&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> expected_execution_time:</span><br><span class="line">            <span class="comment"># TTL should be significantly longer than expected execution</span></span><br><span class="line">            ttl = <span class="built_in">max</span>(expected_execution_time * <span class="number">3</span>, <span class="variable language_">self</span>.base_ttl)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># Use historical data to estimate</span></span><br><span class="line">            <span class="keyword">if</span> <span class="variable language_">self</span>.execution_times:</span><br><span class="line">                avg_time = <span class="built_in">sum</span>(<span class="variable language_">self</span>.execution_times) / <span class="built_in">len</span>(<span class="variable language_">self</span>.execution_times)</span><br><span class="line">                ttl = <span class="built_in">max</span>(avg_time * <span class="number">2</span>, <span class="variable language_">self</span>.base_ttl)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                ttl = <span class="variable language_">self</span>.base_ttl</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(key, <span class="built_in">str</span>(uuid.uuid4()), nx=<span class="literal">True</span>, ex=<span class="built_in">int</span>(ttl))</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>TTL selection is a classic interview topic. Too short &#x3D; risk of premature expiration; too long &#x3D; delayed recovery from failures. Best practice: TTL should be 2-3x your expected critical section execution time.</em></p>
+<h3 id="2-Lock-Extension-for-Long-Operations"><a href="#2-Lock-Extension-for-Long-Operations" class="headerlink" title="2. Lock Extension for Long Operations"></a>2. Lock Extension for Long Operations</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ExtendableLock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client, key, initial_ttl=<span class="number">30</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.key = key</span><br><span class="line">        <span class="variable language_">self</span>.ttl = initial_ttl</span><br><span class="line">        <span class="variable language_">self</span>.identifier = <span class="built_in">str</span>(uuid.uuid4())</span><br><span class="line">        <span class="variable language_">self</span>.extend_timer = <span class="literal">None</span></span><br><span class="line">        <span class="variable language_">self</span>.acquired = <span class="literal">False</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Acquire lock and start auto-extension&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(<span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier, nx=<span class="literal">True</span>, ex=<span class="variable language_">self</span>.ttl):</span><br><span class="line">            <span class="variable language_">self</span>.acquired = <span class="literal">True</span></span><br><span class="line">            <span class="variable language_">self</span>._start_extension_timer()</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_start_extension_timer</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Start timer to extend lock before expiration&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.acquired:</span><br><span class="line">            <span class="comment"># Extend at 1/3 of TTL interval</span></span><br><span class="line">            extend_interval = <span class="variable language_">self</span>.ttl / <span class="number">3</span></span><br><span class="line">            <span class="variable language_">self</span>.extend_timer = threading.Timer(extend_interval, <span class="variable language_">self</span>._extend_lock)</span><br><span class="line">            <span class="variable language_">self</span>.extend_timer.start()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_extend_lock</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Extend lock TTL if still held by us&quot;&quot;&quot;</span></span><br><span class="line">        lua_script = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">            redis.call(&quot;EXPIRE&quot;, KEYS[1], ARGV[2])</span></span><br><span class="line"><span class="string">            return 1</span></span><br><span class="line"><span class="string">        else</span></span><br><span class="line"><span class="string">            return 0</span></span><br><span class="line"><span class="string">        end</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.redis.<span class="built_in">eval</span>(lua_script, <span class="number">1</span>, <span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier, <span class="variable language_">self</span>.ttl):</span><br><span class="line">            <span class="variable language_">self</span>._start_extension_timer()  <span class="comment"># Schedule next extension</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="variable language_">self</span>.acquired = <span class="literal">False</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">release</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Release lock and stop extensions&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.extend_timer:</span><br><span class="line">            <span class="variable language_">self</span>.extend_timer.cancel()</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.acquired:</span><br><span class="line">            lua_script = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">            if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">                return redis.call(&quot;DEL&quot;, KEYS[1])</span></span><br><span class="line"><span class="string">            else</span></span><br><span class="line"><span class="string">                return 0</span></span><br><span class="line"><span class="string">            end</span></span><br><span class="line"><span class="string">            &quot;&quot;&quot;</span></span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">self</span>.redis.<span class="built_in">eval</span>(lua_script, <span class="number">1</span>, <span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Retry-Strategies"><a href="#3-Retry-Strategies" class="headerlink" title="3. Retry Strategies"></a>3. Retry Strategies</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RetryStrategy</span>:</span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">exponential_backoff</span>(<span class="params">attempt, base_delay=<span class="number">0.1</span>, max_delay=<span class="number">60</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Exponential backoff with jitter&quot;&quot;&quot;</span></span><br><span class="line">        delay = <span class="built_in">min</span>(base_delay * (<span class="number">2</span> ** attempt), max_delay)</span><br><span class="line">        <span class="comment"># Add jitter to prevent thundering herd</span></span><br><span class="line">        jitter = delay * <span class="number">0.1</span> * random.random()</span><br><span class="line">        <span class="keyword">return</span> delay + jitter</span><br><span class="line">    </span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">linear_backoff</span>(<span class="params">attempt, base_delay=<span class="number">0.1</span>, increment=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Linear backoff&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">return</span> base_delay + (attempt * increment)</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RobustRedisLock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client, key, max_retries=<span class="number">10</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.key = key</span><br><span class="line">        <span class="variable language_">self</span>.max_retries = max_retries</span><br><span class="line">        <span class="variable language_">self</span>.identifier = <span class="built_in">str</span>(uuid.uuid4())</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire</span>(<span class="params">self, timeout=<span class="number">30</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Acquire lock with retry strategy&quot;&quot;&quot;</span></span><br><span class="line">        start_time = time.time()</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> attempt <span class="keyword">in</span> <span class="built_in">range</span>(<span class="variable language_">self</span>.max_retries):</span><br><span class="line">            <span class="keyword">if</span> time.time() - start_time &gt; timeout:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">                </span><br><span class="line">            <span class="keyword">if</span> <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(<span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier, nx=<span class="literal">True</span>, ex=<span class="number">30</span>):</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Wait before retry</span></span><br><span class="line">            delay = RetryStrategy.exponential_backoff(attempt)</span><br><span class="line">            time.sleep(delay)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Retry strategy questions are common. Key points: exponential backoff prevents overwhelming the system, jitter prevents thundering herd, and you need maximum retry limits to avoid infinite loops.</em></p>
+<h3 id="4-Common-Pitfalls"><a href="#4-Common-Pitfalls" class="headerlink" title="4. Common Pitfalls"></a>4. Common Pitfalls</h3><h4 id="Pitfall-1-Race-Condition-in-Release"><a href="#Pitfall-1-Race-Condition-in-Release" class="headerlink" title="Pitfall 1: Race Condition in Release"></a>Pitfall 1: Race Condition in Release</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># WRONG - Race condition</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bad_release</span>(<span class="params">redis_client, key, identifier</span>):</span><br><span class="line">    <span class="keyword">if</span> redis_client.get(key) == identifier:</span><br><span class="line">        <span class="comment"># Another process could acquire the lock here!</span></span><br><span class="line">        redis_client.delete(key)</span><br><span class="line"></span><br><span class="line"><span class="comment"># CORRECT - Atomic release using Lua script</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">good_release</span>(<span class="params">redis_client, key, identifier</span>):</span><br><span class="line">    lua_script = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">        return redis.call(&quot;DEL&quot;, KEYS[1])</span></span><br><span class="line"><span class="string">    else</span></span><br><span class="line"><span class="string">        return 0</span></span><br><span class="line"><span class="string">    end</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> redis_client.<span class="built_in">eval</span>(lua_script, <span class="number">1</span>, key, identifier)</span><br></pre></td></tr></table></figure>
+
+<h4 id="Pitfall-2-Clock-Drift-Issues"><a href="#Pitfall-2-Clock-Drift-Issues" class="headerlink" title="Pitfall 2: Clock Drift Issues"></a>Pitfall 2: Clock Drift Issues</h4><pre>
+<code class="mermaid">
+graph TD
+A[Server A Clock: 10:00:00] --&gt; B[Acquires Lock TTL&#x3D;10s]
+C[Server B Clock: 10:00:05] --&gt; D[Sees Lock Will Expire at 10:00:15]
+B --&gt; E[Server A Clock Drifts Behind]
+E --&gt; F[Lock Actually Expires Earlier]
+D --&gt; G[Server B Acquires Lock Prematurely]
+
+style F fill:#ff9999
+style G fill:#ff9999
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Clock drift is a subtle but important issue. Solutions include: using relative timeouts instead of absolute timestamps, implementing clock synchronization (NTP), and considering logical clocks for ordering.</em></p>
+<h2 id="Production-Considerations"><a href="#Production-Considerations" class="headerlink" title="Production Considerations"></a>Production Considerations</h2><h3 id="Monitoring-and-Observability"><a href="#Monitoring-and-Observability" class="headerlink" title="Monitoring and Observability"></a>Monitoring and Observability</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Dict</span>, <span class="type">Any</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LockMetrics</span>:</span><br><span class="line">    acquisition_time: <span class="built_in">float</span></span><br><span class="line">    hold_time: <span class="built_in">float</span></span><br><span class="line">    success: <span class="built_in">bool</span></span><br><span class="line">    retries: <span class="built_in">int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MonitoredRedisLock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client, key, metrics_collector=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.key = key</span><br><span class="line">        <span class="variable language_">self</span>.identifier = <span class="built_in">str</span>(uuid.uuid4())</span><br><span class="line">        <span class="variable language_">self</span>.metrics = metrics_collector</span><br><span class="line">        <span class="variable language_">self</span>.acquire_start_time = <span class="literal">None</span></span><br><span class="line">        <span class="variable language_">self</span>.lock_acquired_time = <span class="literal">None</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire</span>(<span class="params">self, timeout=<span class="number">30</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Acquire lock with metrics collection&quot;&quot;&quot;</span></span><br><span class="line">        <span class="variable language_">self</span>.acquire_start_time = time.time()</span><br><span class="line">        retries = <span class="number">0</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">while</span> time.time() - <span class="variable language_">self</span>.acquire_start_time &lt; timeout:</span><br><span class="line">            <span class="keyword">if</span> <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(<span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier, nx=<span class="literal">True</span>, ex=<span class="number">30</span>):</span><br><span class="line">                <span class="variable language_">self</span>.lock_acquired_time = time.time()</span><br><span class="line">                acquisition_time = <span class="variable language_">self</span>.lock_acquired_time - <span class="variable language_">self</span>.acquire_start_time</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># Log successful acquisition</span></span><br><span class="line">                logging.info(<span class="string">f&quot;Lock acquired for <span class="subst">&#123;self.key&#125;</span> after <span class="subst">&#123;acquisition_time:<span class="number">.3</span>f&#125;</span>s and <span class="subst">&#123;retries&#125;</span> retries&quot;</span>)</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span> <span class="variable language_">self</span>.metrics:</span><br><span class="line">                    <span class="variable language_">self</span>.metrics.record_acquisition(<span class="variable language_">self</span>.key, acquisition_time, retries)</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">            </span><br><span class="line">            retries += <span class="number">1</span></span><br><span class="line">            time.sleep(<span class="number">0.1</span> * retries)  <span class="comment"># Progressive backoff</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Log acquisition failure</span></span><br><span class="line">        logging.warning(<span class="string">f&quot;Failed to acquire lock for <span class="subst">&#123;self.key&#125;</span> after <span class="subst">&#123;timeout&#125;</span>s and <span class="subst">&#123;retries&#125;</span> retries&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">release</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Release lock with metrics&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.lock_acquired_time:</span><br><span class="line">            hold_time = time.time() - <span class="variable language_">self</span>.lock_acquired_time</span><br><span class="line">            </span><br><span class="line">            lua_script = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">            if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">                return redis.call(&quot;DEL&quot;, KEYS[1])</span></span><br><span class="line"><span class="string">            else</span></span><br><span class="line"><span class="string">                return 0</span></span><br><span class="line"><span class="string">            end</span></span><br><span class="line"><span class="string">            &quot;&quot;&quot;</span></span><br><span class="line">            </span><br><span class="line">            success = <span class="built_in">bool</span>(<span class="variable language_">self</span>.redis.<span class="built_in">eval</span>(lua_script, <span class="number">1</span>, <span class="variable language_">self</span>.key, <span class="variable language_">self</span>.identifier))</span><br><span class="line">            </span><br><span class="line">            logging.info(<span class="string">f&quot;Lock released for <span class="subst">&#123;self.key&#125;</span> after <span class="subst">&#123;hold_time:<span class="number">.3</span>f&#125;</span>s hold time&quot;</span>)</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> <span class="variable language_">self</span>.metrics:</span><br><span class="line">                <span class="variable language_">self</span>.metrics.record_release(<span class="variable language_">self</span>.key, hold_time, success)</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span> success</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Health-Checks-and-Circuit-Breakers"><a href="#Health-Checks-and-Circuit-Breakers" class="headerlink" title="Health Checks and Circuit Breakers"></a>Health Checks and Circuit Breakers</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> enum <span class="keyword">import</span> Enum</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CircuitState</span>(<span class="title class_ inherited__">Enum</span>):</span><br><span class="line">    CLOSED = <span class="string">&quot;closed&quot;</span></span><br><span class="line">    OPEN = <span class="string">&quot;open&quot;</span></span><br><span class="line">    HALF_OPEN = <span class="string">&quot;half_open&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CircuitBreaker</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, failure_threshold=<span class="number">5</span>, timeout=<span class="number">60</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.failure_threshold = failure_threshold</span><br><span class="line">        <span class="variable language_">self</span>.timeout = timeout</span><br><span class="line">        <span class="variable language_">self</span>.failure_count = <span class="number">0</span></span><br><span class="line">        <span class="variable language_">self</span>.last_failure_time = <span class="literal">None</span></span><br><span class="line">        <span class="variable language_">self</span>.state = CircuitState.CLOSED</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">call</span>(<span class="params">self, func, *args, **kwargs</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Execute function with circuit breaker protection&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.state == CircuitState.OPEN:</span><br><span class="line">            <span class="keyword">if</span> time.time() - <span class="variable language_">self</span>.last_failure_time &gt; <span class="variable language_">self</span>.timeout:</span><br><span class="line">                <span class="variable language_">self</span>.state = CircuitState.HALF_OPEN</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span> Exception(<span class="string">&quot;Circuit breaker is OPEN&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            result = func(*args, **kwargs)</span><br><span class="line">            <span class="variable language_">self</span>._on_success()</span><br><span class="line">            <span class="keyword">return</span> result</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="variable language_">self</span>._on_failure()</span><br><span class="line">            <span class="keyword">raise</span> e</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_on_success</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.failure_count = <span class="number">0</span></span><br><span class="line">        <span class="variable language_">self</span>.state = CircuitState.CLOSED</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_on_failure</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.failure_count += <span class="number">1</span></span><br><span class="line">        <span class="variable language_">self</span>.last_failure_time = time.time()</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.failure_count &gt;= <span class="variable language_">self</span>.failure_threshold:</span><br><span class="line">            <span class="variable language_">self</span>.state = CircuitState.OPEN</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ResilientRedisLock</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client, circuit_breaker=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.circuit_breaker = circuit_breaker <span class="keyword">or</span> CircuitBreaker()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">acquire</span>(<span class="params">self, key, timeout=<span class="number">30</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Acquire lock with circuit breaker protection&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">def</span> <span class="title function_">_acquire</span>():</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(key, <span class="built_in">str</span>(uuid.uuid4()), nx=<span class="literal">True</span>, ex=timeout)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">self</span>.circuit_breaker.call(_acquire)</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            <span class="comment"># Fallback: maybe use local locking or skip the operation</span></span><br><span class="line">            logging.error(<span class="string">f&quot;Lock acquisition failed for <span class="subst">&#123;key&#125;</span>, circuit breaker activated&quot;</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Production readiness questions often focus on: How do you monitor lock performance? What happens when Redis is down? How do you handle lock contention? Be prepared to discuss circuit breakers, fallback strategies, and metrics collection.</em></p>
+<h2 id="Alternative-Approaches"><a href="#Alternative-Approaches" class="headerlink" title="Alternative Approaches"></a>Alternative Approaches</h2><h3 id="Database-Based-Locking"><a href="#Database-Based-Locking" class="headerlink" title="Database-Based Locking"></a>Database-Based Locking</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Simple database lock table</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> distributed_locks (</span><br><span class="line">    lock_name <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    owner_id <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    acquired_at <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span>,</span><br><span class="line">    expires_at <span class="type">TIMESTAMP</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">    INDEX idx_expires_at (expires_at)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Acquire lock with timeout</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> distributed_locks (lock_name, owner_id, expires_at)</span><br><span class="line"><span class="keyword">VALUES</span> (<span class="string">&#x27;resource_lock&#x27;</span>, <span class="string">&#x27;client_123&#x27;</span>, DATE_ADD(NOW(), <span class="type">INTERVAL</span> <span class="number">30</span> <span class="keyword">SECOND</span>))</span><br><span class="line"><span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span></span><br><span class="line">    owner_id <span class="operator">=</span> <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> expires_at <span class="operator">&lt;</span> NOW() <span class="keyword">THEN</span> <span class="keyword">VALUES</span>(owner_id)</span><br><span class="line">        <span class="keyword">ELSE</span> owner_id</span><br><span class="line">    <span class="keyword">END</span>,</span><br><span class="line">    expires_at <span class="operator">=</span> <span class="keyword">CASE</span> </span><br><span class="line">        <span class="keyword">WHEN</span> expires_at <span class="operator">&lt;</span> NOW() <span class="keyword">THEN</span> <span class="keyword">VALUES</span>(expires_at)</span><br><span class="line">        <span class="keyword">ELSE</span> expires_at</span><br><span class="line">    <span class="keyword">END</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Consensus-Based-Solutions"><a href="#Consensus-Based-Solutions" class="headerlink" title="Consensus-Based Solutions"></a>Consensus-Based Solutions</h3><pre>
+<code class="mermaid">
+graph TD
+A[Client Request] --&gt; B[Raft Leader]
+B --&gt; C[Propose Lock Acquisition]
+C --&gt; D[Replicate to Majority]
+D --&gt; E[Commit Lock Entry]
+E --&gt; F[Respond to Client]
+
+G[etcd&#x2F;Consul] --&gt; H[Strong Consistency]
+H --&gt; I[Partition Tolerance]
+I --&gt; J[Higher Latency]
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>When asked about alternatives, discuss trade-offs: Database locks provide ACID guarantees but are slower; Consensus systems like etcd&#x2F;Consul provide stronger consistency but higher latency; ZooKeeper offers hierarchical locks but operational complexity.</em></p>
+<h3 id="Comparison-Matrix"><a href="#Comparison-Matrix" class="headerlink" title="Comparison Matrix"></a>Comparison Matrix</h3><table>
+<thead>
+<tr>
+<th>Solution</th>
+<th>Consistency</th>
+<th>Performance</th>
+<th>Complexity</th>
+<th>Fault Tolerance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Single Redis</td>
+<td>Weak</td>
+<td>High</td>
+<td>Low</td>
+<td>Poor</td>
+</tr>
+<tr>
+<td>Redlock</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Good</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>Strong</td>
+<td>Low</td>
+<td>Low</td>
+<td>Good</td>
+</tr>
+<tr>
+<td>etcd&#x2F;Consul</td>
+<td>Strong</td>
+<td>Medium</td>
+<td>High</td>
+<td>Excellent</td>
+</tr>
+<tr>
+<td>ZooKeeper</td>
+<td>Strong</td>
+<td>Medium</td>
+<td>High</td>
+<td>Excellent</td>
+</tr>
+</tbody></table>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Distributed locking with Redis offers a pragmatic balance between performance and consistency for many use cases. The key takeaways are:</p>
+<ol>
+<li><strong>Single Redis instance</strong> is suitable for non-critical applications where performance matters more than absolute consistency</li>
+<li><strong>Redlock algorithm</strong> provides better fault tolerance but comes with complexity and timing assumptions</li>
+<li><strong>Proper implementation</strong> requires attention to atomicity, TTL management, and retry strategies</li>
+<li><strong>Production deployment</strong> needs monitoring, circuit breakers, and fallback mechanisms</li>
+<li><strong>Alternative solutions</strong> like consensus systems may be better for critical applications requiring strong consistency</li>
+</ol>
+<p><strong>Final Interview Insight</strong>: <em>The most important interview question is often: “When would you NOT use Redis for distributed locking?” Be ready to discuss scenarios requiring strong consistency (financial transactions), long-running locks (batch processing), or hierarchical locking (resource trees) where other solutions might be more appropriate.</em></p>
+<p>Remember: distributed locking is fundamentally about trade-offs between consistency, availability, and partition tolerance. Choose the solution that best fits your specific requirements and constraints.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/10/Redis-Caching-Patterns-and-Consistency-Assurance/" rel="prev" title="Redis Caching Patterns and Consistency Assurance">
+                  <i class="fa fa-angle-left"></i> Redis Caching Patterns and Consistency Assurance
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
