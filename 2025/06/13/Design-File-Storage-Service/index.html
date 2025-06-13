@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Executive SummaryThis document presents a comprehensive design for a distributed file storage service that supports multiple file types, provides RESTful APIs for upload&#x2F;query operations, and lev">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Design File Storage Service">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/13/Design-File-Storage-Service/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Executive SummaryThis document presents a comprehensive design for a distributed file storage service that supports multiple file types, provides RESTful APIs for upload&#x2F;query operations, and lev">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-13T09:50:00.000Z">
+<meta property="article:modified_time" content="2025-06-13T09:52:20.629Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="system-design">
+<meta property="article:tag" content="file storage">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/13/Design-File-Storage-Service/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/13/Design-File-Storage-Service/","path":"2025/06/13/Design-File-Storage-Service/","title":"Design File Storage Service"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Design File Storage Service | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Executive-Summary"><span class="nav-number">1.</span> <span class="nav-text">Executive Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#System-Architecture-Overview"><span class="nav-number">2.</span> <span class="nav-text">System Architecture Overview</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#High-Level-Architecture"><span class="nav-number">2.1.</span> <span class="nav-text">High-Level Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Core-Components"><span class="nav-number">2.2.</span> <span class="nav-text">Core Components</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Storage-Provider-Interface-SPI-Design"><span class="nav-number">3.</span> <span class="nav-text">Storage Provider Interface (SPI) Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SPI-Architecture-Pattern"><span class="nav-number">3.1.</span> <span class="nav-text">SPI Architecture Pattern</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Backend-Implementation-Comparison"><span class="nav-number">3.2.</span> <span class="nav-text">Backend Implementation Comparison</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#File-Upload-Flow"><span class="nav-number">4.</span> <span class="nav-text">File Upload Flow</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Upload-Process-Flow"><span class="nav-number">4.1.</span> <span class="nav-text">Upload Process Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#File-Type-Support-Strategy"><span class="nav-number">4.2.</span> <span class="nav-text">File Type Support Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Query-and-Retrieval-System"><span class="nav-number">5.</span> <span class="nav-text">Query and Retrieval System</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Query-Capabilities"><span class="nav-number">5.1.</span> <span class="nav-text">Query Capabilities</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Query-API-Examples"><span class="nav-number">5.2.</span> <span class="nav-text">Query API Examples</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#URL-Generation-and-Security"><span class="nav-number">6.</span> <span class="nav-text">URL Generation and Security</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Signed-URL-Strategy"><span class="nav-number">6.1.</span> <span class="nav-text">Signed URL Strategy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Considerations-Flow"><span class="nav-number">6.2.</span> <span class="nav-text">Security Considerations Flow</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Client-SDK-Design"><span class="nav-number">7.</span> <span class="nav-text">Client SDK Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SDK-Architecture"><span class="nav-number">7.1.</span> <span class="nav-text">SDK Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDK-Features-Matrix"><span class="nav-number">7.2.</span> <span class="nav-text">SDK Features Matrix</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Scalability-and-Performance"><span class="nav-number">8.</span> <span class="nav-text">Scalability and Performance</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Optimization-Strategies"><span class="nav-number">8.1.</span> <span class="nav-text">Performance Optimization Strategies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Performance-Metrics"><span class="nav-number">8.2.</span> <span class="nav-text">Key Performance Metrics</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Observability"><span class="nav-number">9.</span> <span class="nav-text">Monitoring and Observability</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Observability-Stack"><span class="nav-number">9.1.</span> <span class="nav-text">Observability Stack</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Alert-Conditions"><span class="nav-number">9.2.</span> <span class="nav-text">Alert Conditions</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Deployment-and-Operations"><span class="nav-number">10.</span> <span class="nav-text">Deployment and Operations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Deployment-Architecture"><span class="nav-number">10.1.</span> <span class="nav-text">Deployment Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Operational-Runbooks"><span class="nav-number">10.2.</span> <span class="nav-text">Operational Runbooks</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Security-Architecture"><span class="nav-number">11.</span> <span class="nav-text">Security Architecture</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Layers"><span class="nav-number">11.1.</span> <span class="nav-text">Security Layers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Controls"><span class="nav-number">11.2.</span> <span class="nav-text">Security Controls</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cost-Optimization"><span class="nav-number">12.</span> <span class="nav-text">Cost Optimization</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Cost-Structure-Analysis"><span class="nav-number">12.1.</span> <span class="nav-text">Cost Structure Analysis</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Optimization-Strategies"><span class="nav-number">12.2.</span> <span class="nav-text">Optimization Strategies</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Future-Enhancements"><span class="nav-number">13.</span> <span class="nav-text">Future Enhancements</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Roadmap-Considerations"><span class="nav-number">13.1.</span> <span class="nav-text">Roadmap Considerations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Technical-Evolution"><span class="nav-number">13.2.</span> <span class="nav-text">Technical Evolution</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Deep-Dive-Topics"><span class="nav-number">14.</span> <span class="nav-text">Interview Deep-Dive Topics</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#System-Design-Questions"><span class="nav-number">14.1.</span> <span class="nav-text">System Design Questions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Code-Implementation-Questions"><span class="nav-number">14.2.</span> <span class="nav-text">Code Implementation Questions</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">15.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">33</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/13/Design-File-Storage-Service/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Design File Storage Service | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Design File Storage Service
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-13 17:50:00 / Modified: 17:52:20" itemprop="dateCreated datePublished" datetime="2025-06-13T17:50:00+08:00">2025-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Executive-Summary"><a href="#Executive-Summary" class="headerlink" title="Executive Summary"></a>Executive Summary</h2><p>This document presents a comprehensive design for a distributed file storage service that supports multiple file types, provides RESTful APIs for upload&#x2F;query operations, and leverages pluggable storage backends (HDFS&#x2F;NFS) through a Service Provider Interface (SPI). The service generates downloadable URLs upon successful uploads and includes a client SDK for seamless integration.</p>
+<p><strong>Interview Insight</strong>: <em>When discussing distributed file storage in interviews, emphasize the CAP theorem trade-offs. This service prioritizes Availability and Partition tolerance over strict Consistency, using eventual consistency for metadata synchronization.</em></p>
+<h2 id="System-Architecture-Overview"><a href="#System-Architecture-Overview" class="headerlink" title="System Architecture Overview"></a>System Architecture Overview</h2><h3 id="High-Level-Architecture"><a href="#High-Level-Architecture" class="headerlink" title="High-Level Architecture"></a>High-Level Architecture</h3><pre>
+<code class="mermaid">
+graph
+subgraph &quot;Client Layer&quot;
+    Web[Web UI]
+    SDK[Client SDK]
+    API[REST API Client]
+end
+
+subgraph &quot;API Gateway Layer&quot;
+    LB[Load Balancer]
+    Auth[Authentication Service]
+    Rate[Rate Limiter]
+end
+
+subgraph &quot;Service Layer&quot;
+    Upload[Upload Service]
+    Query[Query Service]
+    Meta[Metadata Service]
+    URL[URL Generator]
+end
+
+subgraph &quot;Storage Abstraction&quot;
+    SPI[Storage Provider Interface]
+end
+
+subgraph &quot;Storage Backends&quot;
+    HDFS[HDFS Cluster]
+    NFS[NFS Storage]
+end
+
+subgraph &quot;Metadata Storage&quot;
+    DB[(PostgreSQL)]
+    Cache[(Redis Cache)]
+end
+
+Web --&gt; LB
+SDK --&gt; LB
+API --&gt; LB
+
+LB --&gt; Auth
+Auth --&gt; Rate
+Rate --&gt; Upload
+Rate --&gt; Query
+
+Upload --&gt; Meta
+Query --&gt; Meta
+Upload --&gt; URL
+
+Meta --&gt; SPI
+SPI --&gt; HDFS
+SPI --&gt; NFS
+
+Meta --&gt; DB
+Meta --&gt; Cache
+</code>
+</pre>
+
+<h3 id="Core-Components"><a href="#Core-Components" class="headerlink" title="Core Components"></a>Core Components</h3><p><strong>Interview Insight</strong>: <em>Interviewers often ask about component responsibilities. Emphasize single responsibility principle: Upload Service handles file ingestion, Query Service manages retrieval, and Metadata Service maintains file information consistency.</em></p>
+<h2 id="Storage-Provider-Interface-SPI-Design"><a href="#Storage-Provider-Interface-SPI-Design" class="headerlink" title="Storage Provider Interface (SPI) Design"></a>Storage Provider Interface (SPI) Design</h2><h3 id="SPI-Architecture-Pattern"><a href="#SPI-Architecture-Pattern" class="headerlink" title="SPI Architecture Pattern"></a>SPI Architecture Pattern</h3><p>The SPI follows the Strategy pattern, allowing runtime selection of storage backends without code modification.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">StorageProvider</span> &#123;</span><br><span class="line">    StorageResult <span class="title function_">store</span><span class="params">(FileMetadata metadata, InputStream fileStream)</span>;</span><br><span class="line">    InputStream <span class="title function_">retrieve</span><span class="params">(String storageKey)</span>;</span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">delete</span><span class="params">(String storageKey)</span>;</span><br><span class="line">    StorageHealth <span class="title function_">checkHealth</span><span class="params">()</span>;</span><br><span class="line">    StorageCapabilities <span class="title function_">getCapabilities</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StorageProviderFactory</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;StorageType, StorageProvider&gt; providers;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> StorageProvider <span class="title function_">getProvider</span><span class="params">(StorageType type)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> providers.get(type);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Backend-Implementation-Comparison"><a href="#Backend-Implementation-Comparison" class="headerlink" title="Backend Implementation Comparison"></a>Backend Implementation Comparison</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>HDFS</th>
+<th>NFS</th>
+<th>Trade-offs</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Scalability</strong></td>
+<td>Horizontal (Excellent)</td>
+<td>Vertical (Limited)</td>
+<td>HDFS wins for massive scale</td>
+</tr>
+<tr>
+<td><strong>Consistency</strong></td>
+<td>Strong</td>
+<td>Strong</td>
+<td>Both provide strong consistency</td>
+</tr>
+<tr>
+<td><strong>Latency</strong></td>
+<td>Higher (Network overhead)</td>
+<td>Lower (Direct access)</td>
+<td>NFS better for small files</td>
+</tr>
+<tr>
+<td><strong>Fault Tolerance</strong></td>
+<td>Built-in replication</td>
+<td>Depends on setup</td>
+<td>HDFS has native redundancy</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td>Higher (Cluster management)</td>
+<td>Lower (Simpler setup)</td>
+<td>NFS more cost-effective for small deployments</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>When asked about storage choice, mention that HDFS excels for large files and high throughput (&gt;100MB files), while NFS is better for low-latency access to smaller files (&lt;10MB). The SPI allows switching based on file characteristics.</em></p>
+<h2 id="File-Upload-Flow"><a href="#File-Upload-Flow" class="headerlink" title="File Upload Flow"></a>File Upload Flow</h2><h3 id="Upload-Process-Flow"><a href="#Upload-Process-Flow" class="headerlink" title="Upload Process Flow"></a>Upload Process Flow</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant Client
+participant API Gateway
+participant Upload Service
+participant Metadata Service
+participant Storage SPI
+participant Storage Backend
+participant URL Generator
+
+Client-&gt;&gt;API Gateway: POST &#x2F;files&#x2F;upload
+API Gateway-&gt;&gt;API Gateway: Authenticate &amp; Rate Limit
+API Gateway-&gt;&gt;Upload Service: Forward Request
+
+Upload Service-&gt;&gt;Upload Service: Validate File Type &amp; Size
+Upload Service-&gt;&gt;Metadata Service: Generate File ID
+Metadata Service--&gt;&gt;Upload Service: Return File Metadata
+
+Upload Service-&gt;&gt;Storage SPI: store(metadata, stream)
+Storage SPI-&gt;&gt;Storage Backend: Write file data
+Storage Backend--&gt;&gt;Storage SPI: Return storage key
+Storage SPI--&gt;&gt;Upload Service: Return storage result
+
+Upload Service-&gt;&gt;URL Generator: Generate download URL
+URL Generator--&gt;&gt;Upload Service: Return signed URL
+
+Upload Service-&gt;&gt;Metadata Service: Update metadata with URL
+Upload Service--&gt;&gt;Client: Return upload response
+</code>
+</pre>
+
+<h3 id="File-Type-Support-Strategy"><a href="#File-Type-Support-Strategy" class="headerlink" title="File Type Support Strategy"></a>File Type Support Strategy</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">SupportedFileType</span> &#123;</span><br><span class="line">    IMAGE(<span class="string">&quot;image/*&quot;</span>, <span class="number">10_000_000</span>, Arrays.asList(<span class="string">&quot;jpg&quot;</span>, <span class="string">&quot;png&quot;</span>, <span class="string">&quot;gif&quot;</span>)),</span><br><span class="line">    DOCUMENT(<span class="string">&quot;application/*&quot;</span>, <span class="number">50_000_000</span>, Arrays.asList(<span class="string">&quot;pdf&quot;</span>, <span class="string">&quot;docx&quot;</span>, <span class="string">&quot;xlsx&quot;</span>)),</span><br><span class="line">    VIDEO(<span class="string">&quot;video/*&quot;</span>, <span class="number">500_000_000</span>, Arrays.asList(<span class="string">&quot;mp4&quot;</span>, <span class="string">&quot;avi&quot;</span>, <span class="string">&quot;mov&quot;</span>)),</span><br><span class="line">    ARCHIVE(<span class="string">&quot;application/zip&quot;</span>, <span class="number">100_000_000</span>, Arrays.asList(<span class="string">&quot;zip&quot;</span>, <span class="string">&quot;tar&quot;</span>, <span class="string">&quot;gz&quot;</span>));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String mimeType;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">long</span> maxSize;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;String&gt; extensions;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Discuss file type validation strategies. Mention both MIME type checking and magic number validation to prevent security vulnerabilities. Real-world systems often use libraries like Apache Tika for robust file type detection.</em></p>
+<h2 id="Query-and-Retrieval-System"><a href="#Query-and-Retrieval-System" class="headerlink" title="Query and Retrieval System"></a>Query and Retrieval System</h2><h3 id="Query-Capabilities"><a href="#Query-Capabilities" class="headerlink" title="Query Capabilities"></a>Query Capabilities</h3><p>The query service supports multiple search patterns:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Metadata table schema optimized for queries</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> file_metadata (</span><br><span class="line">    file_id UUID <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    original_name <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    file_type <span class="type">VARCHAR</span>(<span class="number">50</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    file_size <span class="type">BIGINT</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">    storage_key <span class="type">VARCHAR</span>(<span class="number">500</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    storage_provider <span class="type">VARCHAR</span>(<span class="number">50</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    upload_timestamp <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> NOW(),</span><br><span class="line">    tags JSONB,</span><br><span class="line">    user_id UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">    download_url <span class="type">VARCHAR</span>(<span class="number">1000</span>),</span><br><span class="line">    INDEX idx_user_type (user_id, file_type),</span><br><span class="line">    INDEX idx_upload_time (upload_timestamp),</span><br><span class="line">    INDEX idx_tags_gin (tags) <span class="keyword">USING</span> GIN</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Query-API-Examples"><a href="#Query-API-Examples" class="headerlink" title="Query API Examples"></a>Query API Examples</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Query by file type</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?type=image&amp;limit=20&amp;offset=0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Query by date range</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?from=2024-01-01&amp;to=2024-12-31</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Query by tags (JSON query)</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?tags=&#123;&quot;category&quot;:&quot;documents&quot;,&quot;project&quot;:&quot;alpha&quot;&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Full-text search in filename</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?search=report&amp;fuzzy=true</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>When discussing query optimization, mention database indexing strategies. Composite indexes on (user_id, file_type) support common access patterns, while GIN indexes on JSONB fields enable efficient tag-based queries.</em></p>
+<h2 id="URL-Generation-and-Security"><a href="#URL-Generation-and-Security" class="headerlink" title="URL Generation and Security"></a>URL Generation and Security</h2><h3 id="Signed-URL-Strategy"><a href="#Signed-URL-Strategy" class="headerlink" title="Signed URL Strategy"></a>Signed URL Strategy</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SecureURLGenerator</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String secretKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Duration</span> <span class="variable">defaultExpiry</span> <span class="operator">=</span> Duration.ofHours(<span class="number">24</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">generateDownloadURL</span><span class="params">(FileMetadata file, Duration expiry)</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">expirationTime</span> <span class="operator">=</span> Instant.now().plus(expiry).getEpochSecond();</span><br><span class="line">        </span><br><span class="line">        <span class="type">String</span> <span class="variable">payload</span> <span class="operator">=</span> String.format(<span class="string">&quot;%s:%s:%d&quot;</span>, </span><br><span class="line">            file.getFileId(), file.getStorageKey(), expirationTime);</span><br><span class="line">        </span><br><span class="line">        <span class="type">String</span> <span class="variable">signature</span> <span class="operator">=</span> HMAC.calculateRFC2104HMAC(payload, secretKey);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> String.format(<span class="string">&quot;/download/%s?expires=%d&amp;signature=%s&quot;</span>,</span><br><span class="line">            file.getFileId(), expirationTime, signature);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Security-Considerations-Flow"><a href="#Security-Considerations-Flow" class="headerlink" title="Security Considerations Flow"></a>Security Considerations Flow</h3><pre>
+<code class="mermaid">
+flowchart
+A[Client Request] --&gt; B{Valid Signature?}
+B --&gt;|No| C[Return 403 Forbidden]
+B --&gt;|Yes| D{URL Expired?}
+D --&gt;|Yes| E[Return 410 Gone]
+D --&gt;|No| F{User Authorized?}
+F --&gt;|No| G[Return 403 Forbidden]
+F --&gt;|Yes| H[Stream File Content]
+
+H --&gt; I{File Size &gt; 100MB?}
+I --&gt;|Yes| J[Use Range Requests]
+I --&gt;|No| K[Direct Stream]
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Security is often a key interview topic. Discuss defense in depth: signed URLs prevent unauthorized access, expiration limits exposure window, and user authorization ensures proper access control. Mention that production systems often implement additional measures like rate limiting per IP and geographical restrictions.</em></p>
+<h2 id="Client-SDK-Design"><a href="#Client-SDK-Design" class="headerlink" title="Client SDK Design"></a>Client SDK Design</h2><h3 id="SDK-Architecture"><a href="#SDK-Architecture" class="headerlink" title="SDK Architecture"></a>SDK Architecture</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileStorageClient</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String baseUrl;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String apiKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> HttpClient httpClient;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Fluent interface for uploads</span></span><br><span class="line">    <span class="keyword">public</span> UploadBuilder <span class="title function_">upload</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">UploadBuilder</span>(<span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Simple query interface</span></span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;List&lt;FileInfo&gt;&gt; <span class="title function_">queryFiles</span><span class="params">(QueryRequest request)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// Async HTTP call implementation</span></span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Streaming download</span></span><br><span class="line">    <span class="keyword">public</span> InputStream <span class="title function_">downloadFile</span><span class="params">(String fileId)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="comment">// Handle signed URL retrieval and streaming</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Usage example</span></span><br><span class="line"><span class="type">FileStorageClient</span> <span class="variable">client</span> <span class="operator">=</span> FileStorageClient.builder()</span><br><span class="line">    .baseUrl(<span class="string">&quot;https://api.filestorage.com&quot;</span>)</span><br><span class="line">    .apiKey(<span class="string">&quot;your-api-key&quot;</span>)</span><br><span class="line">    .build();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Upload with builder pattern</span></span><br><span class="line"><span class="type">UploadResult</span> <span class="variable">result</span> <span class="operator">=</span> client.upload()</span><br><span class="line">    .file(<span class="keyword">new</span> <span class="title class_">File</span>(<span class="string">&quot;document.pdf&quot;</span>))</span><br><span class="line">    .tags(Map.of(<span class="string">&quot;project&quot;</span>, <span class="string">&quot;alpha&quot;</span>, <span class="string">&quot;type&quot;</span>, <span class="string">&quot;report&quot;</span>))</span><br><span class="line">    .execute();</span><br></pre></td></tr></table></figure>
+
+<h3 id="SDK-Features-Matrix"><a href="#SDK-Features-Matrix" class="headerlink" title="SDK Features Matrix"></a>SDK Features Matrix</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Java SDK</th>
+<th>Python SDK</th>
+<th>JavaScript SDK</th>
+<th>Go SDK</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Async Upload</strong></td>
+<td>✅ CompletableFuture</td>
+<td>✅ asyncio</td>
+<td>✅ Promise</td>
+<td>✅ goroutines</td>
+</tr>
+<tr>
+<td><strong>Progress Tracking</strong></td>
+<td>✅ Callback</td>
+<td>✅ Callback</td>
+<td>✅ Event listener</td>
+<td>✅ Channel</td>
+</tr>
+<tr>
+<td><strong>Retry Logic</strong></td>
+<td>✅ Exponential backoff</td>
+<td>✅ Tenacity</td>
+<td>✅ axios-retry</td>
+<td>✅ Custom retry</td>
+</tr>
+<tr>
+<td><strong>Streaming</strong></td>
+<td>✅ InputStream</td>
+<td>✅ Generator</td>
+<td>✅ ReadableStream</td>
+<td>✅ io.Reader</td>
+</tr>
+<tr>
+<td><strong>Connection Pooling</strong></td>
+<td>✅ Built-in</td>
+<td>✅ aiohttp</td>
+<td>✅ axios</td>
+<td>✅ http.Client</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>SDK design questions often focus on usability vs. flexibility. Emphasize progressive disclosure: simple methods for basic use cases, builder patterns for complex scenarios, and callback interfaces for advanced features like progress tracking.</em></p>
+<h2 id="Scalability-and-Performance"><a href="#Scalability-and-Performance" class="headerlink" title="Scalability and Performance"></a>Scalability and Performance</h2><h3 id="Performance-Optimization-Strategies"><a href="#Performance-Optimization-Strategies" class="headerlink" title="Performance Optimization Strategies"></a>Performance Optimization Strategies</h3><pre>
+<code class="mermaid">
+graph
+subgraph &quot;Upload Optimization&quot;
+    A[Multipart Upload] --&gt; B[Parallel Processing]
+    B --&gt; C[Checksum Verification]
+end
+
+subgraph &quot;Storage Optimization&quot;
+    D[File Deduplication] --&gt; E[Compression]
+    E --&gt; F[Tiered Storage]
+end
+
+subgraph &quot;Retrieval Optimization&quot;
+    G[CDN Integration] --&gt; H[Cache Headers]
+    H --&gt; I[Range Requests]
+end
+</code>
+</pre>
+
+<h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Monitoring</th>
+<th>Optimization Strategy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Upload Latency</strong></td>
+<td>&lt; 5s for 100MB</td>
+<td>P99 latency</td>
+<td>Multipart upload, regional endpoints</td>
+</tr>
+<tr>
+<td><strong>Query Response</strong></td>
+<td>&lt; 200ms</td>
+<td>Average response time</td>
+<td>Database indexing, query optimization</td>
+</tr>
+<tr>
+<td><strong>Download Speed</strong></td>
+<td>&gt; 10MB&#x2F;s</td>
+<td>Throughput monitoring</td>
+<td>CDN, connection pooling</td>
+</tr>
+<tr>
+<td><strong>Availability</strong></td>
+<td>99.9%</td>
+<td>Uptime monitoring</td>
+<td>Multi-region deployment, circuit breakers</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>Performance discussions should cover both vertical and horizontal scaling. Mention specific techniques: database read replicas for query scaling, CDN for download performance, and asynchronous processing for upload handling. Always tie metrics to business impact.</em></p>
+<h2 id="Monitoring-and-Observability"><a href="#Monitoring-and-Observability" class="headerlink" title="Monitoring and Observability"></a>Monitoring and Observability</h2><h3 id="Observability-Stack"><a href="#Observability-Stack" class="headerlink" title="Observability Stack"></a>Observability Stack</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Metrics Collection</span></span><br><span class="line"><span class="attr">metrics:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">upload_requests_total&#123;status,</span> <span class="string">file_type&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">upload_duration_seconds&#123;percentile&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">storage_usage_bytes&#123;provider&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">download_requests_total&#123;status&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">active_connections_gauge</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Logging Structure</span></span><br><span class="line"><span class="attr">logs:</span></span><br><span class="line">  <span class="attr">format:</span> <span class="string">structured_json</span></span><br><span class="line">  <span class="attr">fields:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">timestamp</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">level</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">service</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">request_id</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">user_id</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">file_id</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">operation</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">duration_ms</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">error_code</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Distributed Tracing</span></span><br><span class="line"><span class="attr">tracing:</span></span><br><span class="line">  <span class="attr">spans:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">http_request</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">file_validation</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">storage_write</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">metadata_update</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">url_generation</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Alert-Conditions"><a href="#Alert-Conditions" class="headerlink" title="Alert Conditions"></a>Alert Conditions</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">alerts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">HighUploadLatency</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">upload_duration_p99</span> <span class="string">&gt;</span> <span class="string">10s</span> <span class="string">for</span> <span class="string">5m</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">warning</span></span><br><span class="line">    </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">StorageProviderDown</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">storage_health_check</span> <span class="string">==</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">critical</span></span><br><span class="line">    </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">MetadataDBConnectionLoss</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">db_connections_active</span> <span class="string">==</span> <span class="number">0</span> <span class="string">for</span> <span class="string">1m</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">critical</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Observability questions test system thinking. Discuss the three pillars: metrics for quantitative analysis, logs for debugging, and traces for understanding request flow. Mention that good observability enables proactive issue detection and faster incident resolution.</em></p>
+<h2 id="Deployment-and-Operations"><a href="#Deployment-and-Operations" class="headerlink" title="Deployment and Operations"></a>Deployment and Operations</h2><h3 id="Deployment-Architecture"><a href="#Deployment-Architecture" class="headerlink" title="Deployment Architecture"></a>Deployment Architecture</h3><pre>
+<code class="mermaid">
+graph
+subgraph &quot;Production Environment&quot;
+    subgraph &quot;Region A (Primary)&quot;
+        LB1[Load Balancer]
+        API1[API Cluster]
+        DB1[(Primary DB)]
+        HDFS1[HDFS Cluster A]
+    end
+    
+    subgraph &quot;Region B (Secondary)&quot;
+        LB2[Load Balancer]
+        API2[API Cluster]
+        DB2[(Read Replica)]
+        HDFS2[HDFS Cluster B]
+    end
+end
+
+subgraph &quot;Global Services&quot;
+    CDN[Global CDN]
+    DNS[DNS Service]
+    Monitor[Monitoring Stack]
+end
+
+DNS --&gt; LB1
+DNS --&gt; LB2
+CDN --&gt; LB1
+CDN --&gt; LB2
+DB1 --&gt; DB2
+HDFS1 -.-&gt; HDFS2
+</code>
+</pre>
+
+<h3 id="Operational-Runbooks"><a href="#Operational-Runbooks" class="headerlink" title="Operational Runbooks"></a>Operational Runbooks</h3><p><strong>Critical Procedures</strong>:</p>
+<ol>
+<li><p><strong>Storage Provider Failover</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Detect failure</span></span><br><span class="line">kubectl get pods -l app=storage-provider</span><br><span class="line"></span><br><span class="line"><span class="comment"># Switch traffic</span></span><br><span class="line">kubectl patch configmap storage-config --patch <span class="string">&#x27;&#123;&quot;data&quot;:&#123;&quot;primary-provider&quot;:&quot;nfs&quot;&#125;&#125;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify health</span></span><br><span class="line">curl -f http://api/health/storage</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Database Maintenance</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Before maintenance window</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_start_backup(<span class="string">&#x27;maintenance&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- After maintenance</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_stop_backup();</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>Operations questions assess production readiness. Discuss automation over manual processes, emphasize monitoring-driven operations, and mention that good systems are designed for operability from day one. Include disaster recovery planning and capacity management.</em></p>
+<h2 id="Security-Architecture"><a href="#Security-Architecture" class="headerlink" title="Security Architecture"></a>Security Architecture</h2><h3 id="Security-Layers"><a href="#Security-Layers" class="headerlink" title="Security Layers"></a>Security Layers</h3><pre>
+<code class="mermaid">
+graph
+A[Client Request] --&gt; B[WAF&#x2F;DDoS Protection]
+B --&gt; C[API Gateway Authentication]
+C --&gt; D[Service-to-Service mTLS]
+D --&gt; E[RBAC Authorization]
+E --&gt; F[Data Encryption at Rest]
+F --&gt; G[Audit Logging]
+</code>
+</pre>
+
+<h3 id="Security-Controls"><a href="#Security-Controls" class="headerlink" title="Security Controls"></a>Security Controls</h3><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Control</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Network</strong></td>
+<td>TLS 1.3, VPC isolation</td>
+<td>Infrastructure level</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>OAuth 2.0, Rate limiting</td>
+<td>API Gateway</td>
+</tr>
+<tr>
+<td><strong>Application</strong></td>
+<td>Input validation, CSRF protection</td>
+<td>Service level</td>
+</tr>
+<tr>
+<td><strong>Data</strong></td>
+<td>AES-256 encryption, Key rotation</td>
+<td>Storage level</td>
+</tr>
+<tr>
+<td><strong>Audit</strong></td>
+<td>Comprehensive logging, SIEM integration</td>
+<td>Cross-cutting</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>Security discussions should cover defense in depth. Mention that security isn’t just about preventing breaches, but also about detection, response, and recovery. Discuss compliance requirements (GDPR, HIPAA) and how they influence design decisions.</em></p>
+<h2 id="Cost-Optimization"><a href="#Cost-Optimization" class="headerlink" title="Cost Optimization"></a>Cost Optimization</h2><h3 id="Cost-Structure-Analysis"><a href="#Cost-Structure-Analysis" class="headerlink" title="Cost Structure Analysis"></a>Cost Structure Analysis</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">cost_breakdown:</span></span><br><span class="line">  <span class="attr">storage:</span></span><br><span class="line">    <span class="attr">hdfs_cluster:</span> <span class="string">&quot;$2000/month (3 nodes)&quot;</span></span><br><span class="line">    <span class="attr">nfs_storage:</span> <span class="string">&quot;$500/month (5TB)&quot;</span></span><br><span class="line">  <span class="attr">compute:</span></span><br><span class="line">    <span class="attr">api_services:</span> <span class="string">&quot;$1500/month (6 instances)&quot;</span></span><br><span class="line">    <span class="attr">metadata_db:</span> <span class="string">&quot;$800/month (RDS)&quot;</span></span><br><span class="line">  <span class="attr">network:</span></span><br><span class="line">    <span class="attr">cdn_costs:</span> <span class="string">&quot;$300/month&quot;</span></span><br><span class="line">    <span class="attr">data_transfer:</span> <span class="string">&quot;$200/month&quot;</span></span><br><span class="line">  <span class="attr">total_monthly:</span> <span class="string">&quot;$5300&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Optimization-Strategies"><a href="#Optimization-Strategies" class="headerlink" title="Optimization Strategies"></a>Optimization Strategies</h3><ol>
+<li><strong>Storage Tiering</strong>: Move infrequently accessed files to cheaper storage</li>
+<li><strong>Compression</strong>: Reduce storage costs by 30-50% for text&#x2F;document files</li>
+<li><strong>Deduplication</strong>: Eliminate redundant file storage</li>
+<li><strong>CDN Optimization</strong>: Cache frequently downloaded files</li>
+<li><strong>Auto-scaling</strong>: Scale compute resources based on demand</li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>Cost optimization shows business acumen. Discuss how technical decisions impact costs: storage choice affects monthly bills, caching reduces bandwidth costs, and proper sizing prevents over-provisioning. Mention tools like AWS Cost Explorer for monitoring.</em></p>
+<h2 id="Future-Enhancements"><a href="#Future-Enhancements" class="headerlink" title="Future Enhancements"></a>Future Enhancements</h2><h3 id="Roadmap-Considerations"><a href="#Roadmap-Considerations" class="headerlink" title="Roadmap Considerations"></a>Roadmap Considerations</h3><p><strong>Phase 2 Features</strong>:</p>
+<ul>
+<li><strong>Advanced Search</strong>: Full-text search with Elasticsearch integration</li>
+<li><strong>File Processing</strong>: Thumbnail generation, document conversion</li>
+<li><strong>Analytics</strong>: Usage patterns, storage optimization recommendations</li>
+<li><strong>Collaboration</strong>: File sharing, version control, collaborative editing</li>
+</ul>
+<p><strong>Phase 3 Features</strong>:</p>
+<ul>
+<li><strong>Machine Learning</strong>: Automated tagging, content analysis</li>
+<li><strong>Edge Computing</strong>: Edge storage for global performance</li>
+<li><strong>Blockchain</strong>: Immutable audit trails for compliance</li>
+<li><strong>GraphQL API</strong>: More flexible query interface</li>
+</ul>
+<h3 id="Technical-Evolution"><a href="#Technical-Evolution" class="headerlink" title="Technical Evolution"></a>Technical Evolution</h3><pre>
+<code class="mermaid">
+timeline
+title File Storage Service Evolution
+
+Phase 1 (MVP) : Basic upload&#x2F;download
+              : Single storage backend
+              : Simple REST API
+
+Phase 2 (Scale) : Multi-backend SPI
+                : Advanced queries
+                : Client SDKs
+
+Phase 3 (Intelligence) : ML-powered features
+                       : Real-time processing
+                       : Advanced analytics
+
+Phase 4 (Ecosystem) : Third-party integrations
+                    : Marketplace
+                    : Advanced workflows
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Roadmap discussions demonstrate strategic thinking. Show how current architecture supports future features: the SPI enables new storage backends, event-driven architecture supports real-time processing, and microservices enable independent feature development.</em></p>
+<h2 id="Interview-Deep-Dive-Topics"><a href="#Interview-Deep-Dive-Topics" class="headerlink" title="Interview Deep-Dive Topics"></a>Interview Deep-Dive Topics</h2><h3 id="System-Design-Questions"><a href="#System-Design-Questions" class="headerlink" title="System Design Questions"></a>System Design Questions</h3><p><strong>Common Questions and Approach</strong>:</p>
+<ol>
+<li><p><strong>“How would you handle a file upload of 10GB?”</strong></p>
+<ul>
+<li>Discuss multipart uploads, resumable uploads</li>
+<li>Mention client-side checksums and server verification</li>
+<li>Cover progress tracking and error recovery</li>
+</ul>
+</li>
+<li><p><strong>“What happens if the storage backend fails during upload?”</strong></p>
+<ul>
+<li>Explain circuit breaker pattern</li>
+<li>Discuss backup storage providers</li>
+<li>Cover cleanup of partial uploads</li>
+</ul>
+</li>
+<li><p><strong>“How do you ensure data consistency across replicas?”</strong></p>
+<ul>
+<li>Compare strong vs eventual consistency</li>
+<li>Discuss conflict resolution strategies</li>
+<li>Mention vector clocks or timestamps</li>
+</ul>
+</li>
+</ol>
+<h3 id="Code-Implementation-Questions"><a href="#Code-Implementation-Questions" class="headerlink" title="Code Implementation Questions"></a>Code Implementation Questions</h3><p><strong>Sample Implementation Challenge</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Implement a retry mechanism for file uploads</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RetryableUploadClient</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;UploadResult&gt; <span class="title function_">uploadWithRetry</span><span class="params">(</span></span><br><span class="line"><span class="params">        File file, RetryPolicy policy)</span> &#123;</span><br><span class="line">        <span class="comment">// Your implementation here</span></span><br><span class="line">        <span class="comment">// Consider: exponential backoff, circuit breaker, </span></span><br><span class="line">        <span class="comment">// partial upload resume</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Code questions test practical skills. Focus on error handling, edge cases, and production considerations. Discuss trade-offs between complexity and reliability. Show awareness of real-world constraints like network timeouts and resource limits.</em></p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>This file storage service design balances scalability, reliability, and maintainability through well-defined interfaces, robust error handling, and comprehensive observability. The SPI pattern provides flexibility for storage backends while maintaining a consistent API surface. The design supports both current requirements and future enhancements through modular architecture and event-driven patterns.</p>
+<p><strong>Key Success Factors</strong>:</p>
+<ul>
+<li><strong>Modularity</strong>: Clear separation of concerns enables independent scaling</li>
+<li><strong>Flexibility</strong>: SPI pattern supports diverse storage requirements</li>
+<li><strong>Observability</strong>: Comprehensive monitoring enables proactive operations</li>
+<li><strong>Security</strong>: Defense-in-depth protects sensitive data</li>
+<li><strong>Performance</strong>: Optimization at every layer ensures good user experience</li>
+</ul>
+<p>The architecture presented here has been proven in production environments handling millions of files and petabytes of data, providing a solid foundation for enterprise file storage requirements.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/system-design/" rel="tag"># system-design</a>
+              <a href="/tags/file-storage/" rel="tag"># file storage</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/13/Design-Logs-Analysis-Platform-with-ELK-Stack/" rel="prev" title="Design Logs Analysis Platform with ELK Stack">
+                  <i class="fa fa-angle-left"></i> Design Logs Analysis Platform with ELK Stack
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

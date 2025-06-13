@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-count">33</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -151,7 +151,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-count">11</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,535 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/13/Design-File-Storage-Service/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/13/Design-File-Storage-Service/" class="post-title-link" itemprop="url">Design File Storage Service</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-13 17:50:00 / Modified: 17:52:20" itemprop="dateCreated datePublished" datetime="2025-06-13T17:50:00+08:00">2025-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Executive-Summary"><a href="#Executive-Summary" class="headerlink" title="Executive Summary"></a>Executive Summary</h2><p>This document presents a comprehensive design for a distributed file storage service that supports multiple file types, provides RESTful APIs for upload&#x2F;query operations, and leverages pluggable storage backends (HDFS&#x2F;NFS) through a Service Provider Interface (SPI). The service generates downloadable URLs upon successful uploads and includes a client SDK for seamless integration.</p>
+<p><strong>Interview Insight</strong>: <em>When discussing distributed file storage in interviews, emphasize the CAP theorem trade-offs. This service prioritizes Availability and Partition tolerance over strict Consistency, using eventual consistency for metadata synchronization.</em></p>
+<h2 id="System-Architecture-Overview"><a href="#System-Architecture-Overview" class="headerlink" title="System Architecture Overview"></a>System Architecture Overview</h2><h3 id="High-Level-Architecture"><a href="#High-Level-Architecture" class="headerlink" title="High-Level Architecture"></a>High-Level Architecture</h3><pre>
+<code class="mermaid">
+graph
+subgraph &quot;Client Layer&quot;
+    Web[Web UI]
+    SDK[Client SDK]
+    API[REST API Client]
+end
+
+subgraph &quot;API Gateway Layer&quot;
+    LB[Load Balancer]
+    Auth[Authentication Service]
+    Rate[Rate Limiter]
+end
+
+subgraph &quot;Service Layer&quot;
+    Upload[Upload Service]
+    Query[Query Service]
+    Meta[Metadata Service]
+    URL[URL Generator]
+end
+
+subgraph &quot;Storage Abstraction&quot;
+    SPI[Storage Provider Interface]
+end
+
+subgraph &quot;Storage Backends&quot;
+    HDFS[HDFS Cluster]
+    NFS[NFS Storage]
+end
+
+subgraph &quot;Metadata Storage&quot;
+    DB[(PostgreSQL)]
+    Cache[(Redis Cache)]
+end
+
+Web --&gt; LB
+SDK --&gt; LB
+API --&gt; LB
+
+LB --&gt; Auth
+Auth --&gt; Rate
+Rate --&gt; Upload
+Rate --&gt; Query
+
+Upload --&gt; Meta
+Query --&gt; Meta
+Upload --&gt; URL
+
+Meta --&gt; SPI
+SPI --&gt; HDFS
+SPI --&gt; NFS
+
+Meta --&gt; DB
+Meta --&gt; Cache
+</code>
+</pre>
+
+<h3 id="Core-Components"><a href="#Core-Components" class="headerlink" title="Core Components"></a>Core Components</h3><p><strong>Interview Insight</strong>: <em>Interviewers often ask about component responsibilities. Emphasize single responsibility principle: Upload Service handles file ingestion, Query Service manages retrieval, and Metadata Service maintains file information consistency.</em></p>
+<h2 id="Storage-Provider-Interface-SPI-Design"><a href="#Storage-Provider-Interface-SPI-Design" class="headerlink" title="Storage Provider Interface (SPI) Design"></a>Storage Provider Interface (SPI) Design</h2><h3 id="SPI-Architecture-Pattern"><a href="#SPI-Architecture-Pattern" class="headerlink" title="SPI Architecture Pattern"></a>SPI Architecture Pattern</h3><p>The SPI follows the Strategy pattern, allowing runtime selection of storage backends without code modification.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">StorageProvider</span> &#123;</span><br><span class="line">    StorageResult <span class="title function_">store</span><span class="params">(FileMetadata metadata, InputStream fileStream)</span>;</span><br><span class="line">    InputStream <span class="title function_">retrieve</span><span class="params">(String storageKey)</span>;</span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">delete</span><span class="params">(String storageKey)</span>;</span><br><span class="line">    StorageHealth <span class="title function_">checkHealth</span><span class="params">()</span>;</span><br><span class="line">    StorageCapabilities <span class="title function_">getCapabilities</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StorageProviderFactory</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;StorageType, StorageProvider&gt; providers;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> StorageProvider <span class="title function_">getProvider</span><span class="params">(StorageType type)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> providers.get(type);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Backend-Implementation-Comparison"><a href="#Backend-Implementation-Comparison" class="headerlink" title="Backend Implementation Comparison"></a>Backend Implementation Comparison</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>HDFS</th>
+<th>NFS</th>
+<th>Trade-offs</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Scalability</strong></td>
+<td>Horizontal (Excellent)</td>
+<td>Vertical (Limited)</td>
+<td>HDFS wins for massive scale</td>
+</tr>
+<tr>
+<td><strong>Consistency</strong></td>
+<td>Strong</td>
+<td>Strong</td>
+<td>Both provide strong consistency</td>
+</tr>
+<tr>
+<td><strong>Latency</strong></td>
+<td>Higher (Network overhead)</td>
+<td>Lower (Direct access)</td>
+<td>NFS better for small files</td>
+</tr>
+<tr>
+<td><strong>Fault Tolerance</strong></td>
+<td>Built-in replication</td>
+<td>Depends on setup</td>
+<td>HDFS has native redundancy</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td>Higher (Cluster management)</td>
+<td>Lower (Simpler setup)</td>
+<td>NFS more cost-effective for small deployments</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>When asked about storage choice, mention that HDFS excels for large files and high throughput (&gt;100MB files), while NFS is better for low-latency access to smaller files (&lt;10MB). The SPI allows switching based on file characteristics.</em></p>
+<h2 id="File-Upload-Flow"><a href="#File-Upload-Flow" class="headerlink" title="File Upload Flow"></a>File Upload Flow</h2><h3 id="Upload-Process-Flow"><a href="#Upload-Process-Flow" class="headerlink" title="Upload Process Flow"></a>Upload Process Flow</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant Client
+participant API Gateway
+participant Upload Service
+participant Metadata Service
+participant Storage SPI
+participant Storage Backend
+participant URL Generator
+
+Client-&gt;&gt;API Gateway: POST &#x2F;files&#x2F;upload
+API Gateway-&gt;&gt;API Gateway: Authenticate &amp; Rate Limit
+API Gateway-&gt;&gt;Upload Service: Forward Request
+
+Upload Service-&gt;&gt;Upload Service: Validate File Type &amp; Size
+Upload Service-&gt;&gt;Metadata Service: Generate File ID
+Metadata Service--&gt;&gt;Upload Service: Return File Metadata
+
+Upload Service-&gt;&gt;Storage SPI: store(metadata, stream)
+Storage SPI-&gt;&gt;Storage Backend: Write file data
+Storage Backend--&gt;&gt;Storage SPI: Return storage key
+Storage SPI--&gt;&gt;Upload Service: Return storage result
+
+Upload Service-&gt;&gt;URL Generator: Generate download URL
+URL Generator--&gt;&gt;Upload Service: Return signed URL
+
+Upload Service-&gt;&gt;Metadata Service: Update metadata with URL
+Upload Service--&gt;&gt;Client: Return upload response
+</code>
+</pre>
+
+<h3 id="File-Type-Support-Strategy"><a href="#File-Type-Support-Strategy" class="headerlink" title="File Type Support Strategy"></a>File Type Support Strategy</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">SupportedFileType</span> &#123;</span><br><span class="line">    IMAGE(<span class="string">&quot;image/*&quot;</span>, <span class="number">10_000_000</span>, Arrays.asList(<span class="string">&quot;jpg&quot;</span>, <span class="string">&quot;png&quot;</span>, <span class="string">&quot;gif&quot;</span>)),</span><br><span class="line">    DOCUMENT(<span class="string">&quot;application/*&quot;</span>, <span class="number">50_000_000</span>, Arrays.asList(<span class="string">&quot;pdf&quot;</span>, <span class="string">&quot;docx&quot;</span>, <span class="string">&quot;xlsx&quot;</span>)),</span><br><span class="line">    VIDEO(<span class="string">&quot;video/*&quot;</span>, <span class="number">500_000_000</span>, Arrays.asList(<span class="string">&quot;mp4&quot;</span>, <span class="string">&quot;avi&quot;</span>, <span class="string">&quot;mov&quot;</span>)),</span><br><span class="line">    ARCHIVE(<span class="string">&quot;application/zip&quot;</span>, <span class="number">100_000_000</span>, Arrays.asList(<span class="string">&quot;zip&quot;</span>, <span class="string">&quot;tar&quot;</span>, <span class="string">&quot;gz&quot;</span>));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String mimeType;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">long</span> maxSize;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;String&gt; extensions;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Discuss file type validation strategies. Mention both MIME type checking and magic number validation to prevent security vulnerabilities. Real-world systems often use libraries like Apache Tika for robust file type detection.</em></p>
+<h2 id="Query-and-Retrieval-System"><a href="#Query-and-Retrieval-System" class="headerlink" title="Query and Retrieval System"></a>Query and Retrieval System</h2><h3 id="Query-Capabilities"><a href="#Query-Capabilities" class="headerlink" title="Query Capabilities"></a>Query Capabilities</h3><p>The query service supports multiple search patterns:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Metadata table schema optimized for queries</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> file_metadata (</span><br><span class="line">    file_id UUID <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    original_name <span class="type">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    file_type <span class="type">VARCHAR</span>(<span class="number">50</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    file_size <span class="type">BIGINT</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">    storage_key <span class="type">VARCHAR</span>(<span class="number">500</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    storage_provider <span class="type">VARCHAR</span>(<span class="number">50</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">    upload_timestamp <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> NOW(),</span><br><span class="line">    tags JSONB,</span><br><span class="line">    user_id UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">    download_url <span class="type">VARCHAR</span>(<span class="number">1000</span>),</span><br><span class="line">    INDEX idx_user_type (user_id, file_type),</span><br><span class="line">    INDEX idx_upload_time (upload_timestamp),</span><br><span class="line">    INDEX idx_tags_gin (tags) <span class="keyword">USING</span> GIN</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Query-API-Examples"><a href="#Query-API-Examples" class="headerlink" title="Query API Examples"></a>Query API Examples</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Query by file type</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?type=image&amp;limit=20&amp;offset=0</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Query by date range</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?from=2024-01-01&amp;to=2024-12-31</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Query by tags (JSON query)</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?tags=&#123;&quot;category&quot;:&quot;documents&quot;,&quot;project&quot;:&quot;alpha&quot;&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Full-text search in filename</span></span><br><span class="line"><span class="string">GET</span> <span class="string">/files?search=report&amp;fuzzy=true</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>When discussing query optimization, mention database indexing strategies. Composite indexes on (user_id, file_type) support common access patterns, while GIN indexes on JSONB fields enable efficient tag-based queries.</em></p>
+<h2 id="URL-Generation-and-Security"><a href="#URL-Generation-and-Security" class="headerlink" title="URL Generation and Security"></a>URL Generation and Security</h2><h3 id="Signed-URL-Strategy"><a href="#Signed-URL-Strategy" class="headerlink" title="Signed URL Strategy"></a>Signed URL Strategy</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SecureURLGenerator</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String secretKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Duration</span> <span class="variable">defaultExpiry</span> <span class="operator">=</span> Duration.ofHours(<span class="number">24</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">generateDownloadURL</span><span class="params">(FileMetadata file, Duration expiry)</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">expirationTime</span> <span class="operator">=</span> Instant.now().plus(expiry).getEpochSecond();</span><br><span class="line">        </span><br><span class="line">        <span class="type">String</span> <span class="variable">payload</span> <span class="operator">=</span> String.format(<span class="string">&quot;%s:%s:%d&quot;</span>, </span><br><span class="line">            file.getFileId(), file.getStorageKey(), expirationTime);</span><br><span class="line">        </span><br><span class="line">        <span class="type">String</span> <span class="variable">signature</span> <span class="operator">=</span> HMAC.calculateRFC2104HMAC(payload, secretKey);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> String.format(<span class="string">&quot;/download/%s?expires=%d&amp;signature=%s&quot;</span>,</span><br><span class="line">            file.getFileId(), expirationTime, signature);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Security-Considerations-Flow"><a href="#Security-Considerations-Flow" class="headerlink" title="Security Considerations Flow"></a>Security Considerations Flow</h3><pre>
+<code class="mermaid">
+flowchart
+A[Client Request] --&gt; B{Valid Signature?}
+B --&gt;|No| C[Return 403 Forbidden]
+B --&gt;|Yes| D{URL Expired?}
+D --&gt;|Yes| E[Return 410 Gone]
+D --&gt;|No| F{User Authorized?}
+F --&gt;|No| G[Return 403 Forbidden]
+F --&gt;|Yes| H[Stream File Content]
+
+H --&gt; I{File Size &gt; 100MB?}
+I --&gt;|Yes| J[Use Range Requests]
+I --&gt;|No| K[Direct Stream]
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Security is often a key interview topic. Discuss defense in depth: signed URLs prevent unauthorized access, expiration limits exposure window, and user authorization ensures proper access control. Mention that production systems often implement additional measures like rate limiting per IP and geographical restrictions.</em></p>
+<h2 id="Client-SDK-Design"><a href="#Client-SDK-Design" class="headerlink" title="Client SDK Design"></a>Client SDK Design</h2><h3 id="SDK-Architecture"><a href="#SDK-Architecture" class="headerlink" title="SDK Architecture"></a>SDK Architecture</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileStorageClient</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String baseUrl;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String apiKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> HttpClient httpClient;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Fluent interface for uploads</span></span><br><span class="line">    <span class="keyword">public</span> UploadBuilder <span class="title function_">upload</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">UploadBuilder</span>(<span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Simple query interface</span></span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;List&lt;FileInfo&gt;&gt; <span class="title function_">queryFiles</span><span class="params">(QueryRequest request)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// Async HTTP call implementation</span></span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Streaming download</span></span><br><span class="line">    <span class="keyword">public</span> InputStream <span class="title function_">downloadFile</span><span class="params">(String fileId)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="comment">// Handle signed URL retrieval and streaming</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Usage example</span></span><br><span class="line"><span class="type">FileStorageClient</span> <span class="variable">client</span> <span class="operator">=</span> FileStorageClient.builder()</span><br><span class="line">    .baseUrl(<span class="string">&quot;https://api.filestorage.com&quot;</span>)</span><br><span class="line">    .apiKey(<span class="string">&quot;your-api-key&quot;</span>)</span><br><span class="line">    .build();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Upload with builder pattern</span></span><br><span class="line"><span class="type">UploadResult</span> <span class="variable">result</span> <span class="operator">=</span> client.upload()</span><br><span class="line">    .file(<span class="keyword">new</span> <span class="title class_">File</span>(<span class="string">&quot;document.pdf&quot;</span>))</span><br><span class="line">    .tags(Map.of(<span class="string">&quot;project&quot;</span>, <span class="string">&quot;alpha&quot;</span>, <span class="string">&quot;type&quot;</span>, <span class="string">&quot;report&quot;</span>))</span><br><span class="line">    .execute();</span><br></pre></td></tr></table></figure>
+
+<h3 id="SDK-Features-Matrix"><a href="#SDK-Features-Matrix" class="headerlink" title="SDK Features Matrix"></a>SDK Features Matrix</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Java SDK</th>
+<th>Python SDK</th>
+<th>JavaScript SDK</th>
+<th>Go SDK</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Async Upload</strong></td>
+<td>✅ CompletableFuture</td>
+<td>✅ asyncio</td>
+<td>✅ Promise</td>
+<td>✅ goroutines</td>
+</tr>
+<tr>
+<td><strong>Progress Tracking</strong></td>
+<td>✅ Callback</td>
+<td>✅ Callback</td>
+<td>✅ Event listener</td>
+<td>✅ Channel</td>
+</tr>
+<tr>
+<td><strong>Retry Logic</strong></td>
+<td>✅ Exponential backoff</td>
+<td>✅ Tenacity</td>
+<td>✅ axios-retry</td>
+<td>✅ Custom retry</td>
+</tr>
+<tr>
+<td><strong>Streaming</strong></td>
+<td>✅ InputStream</td>
+<td>✅ Generator</td>
+<td>✅ ReadableStream</td>
+<td>✅ io.Reader</td>
+</tr>
+<tr>
+<td><strong>Connection Pooling</strong></td>
+<td>✅ Built-in</td>
+<td>✅ aiohttp</td>
+<td>✅ axios</td>
+<td>✅ http.Client</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>SDK design questions often focus on usability vs. flexibility. Emphasize progressive disclosure: simple methods for basic use cases, builder patterns for complex scenarios, and callback interfaces for advanced features like progress tracking.</em></p>
+<h2 id="Scalability-and-Performance"><a href="#Scalability-and-Performance" class="headerlink" title="Scalability and Performance"></a>Scalability and Performance</h2><h3 id="Performance-Optimization-Strategies"><a href="#Performance-Optimization-Strategies" class="headerlink" title="Performance Optimization Strategies"></a>Performance Optimization Strategies</h3><pre>
+<code class="mermaid">
+graph
+subgraph &quot;Upload Optimization&quot;
+    A[Multipart Upload] --&gt; B[Parallel Processing]
+    B --&gt; C[Checksum Verification]
+end
+
+subgraph &quot;Storage Optimization&quot;
+    D[File Deduplication] --&gt; E[Compression]
+    E --&gt; F[Tiered Storage]
+end
+
+subgraph &quot;Retrieval Optimization&quot;
+    G[CDN Integration] --&gt; H[Cache Headers]
+    H --&gt; I[Range Requests]
+end
+</code>
+</pre>
+
+<h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+<th>Monitoring</th>
+<th>Optimization Strategy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Upload Latency</strong></td>
+<td>&lt; 5s for 100MB</td>
+<td>P99 latency</td>
+<td>Multipart upload, regional endpoints</td>
+</tr>
+<tr>
+<td><strong>Query Response</strong></td>
+<td>&lt; 200ms</td>
+<td>Average response time</td>
+<td>Database indexing, query optimization</td>
+</tr>
+<tr>
+<td><strong>Download Speed</strong></td>
+<td>&gt; 10MB&#x2F;s</td>
+<td>Throughput monitoring</td>
+<td>CDN, connection pooling</td>
+</tr>
+<tr>
+<td><strong>Availability</strong></td>
+<td>99.9%</td>
+<td>Uptime monitoring</td>
+<td>Multi-region deployment, circuit breakers</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>Performance discussions should cover both vertical and horizontal scaling. Mention specific techniques: database read replicas for query scaling, CDN for download performance, and asynchronous processing for upload handling. Always tie metrics to business impact.</em></p>
+<h2 id="Monitoring-and-Observability"><a href="#Monitoring-and-Observability" class="headerlink" title="Monitoring and Observability"></a>Monitoring and Observability</h2><h3 id="Observability-Stack"><a href="#Observability-Stack" class="headerlink" title="Observability Stack"></a>Observability Stack</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Metrics Collection</span></span><br><span class="line"><span class="attr">metrics:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">upload_requests_total&#123;status,</span> <span class="string">file_type&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">upload_duration_seconds&#123;percentile&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">storage_usage_bytes&#123;provider&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">download_requests_total&#123;status&#125;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">active_connections_gauge</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Logging Structure</span></span><br><span class="line"><span class="attr">logs:</span></span><br><span class="line">  <span class="attr">format:</span> <span class="string">structured_json</span></span><br><span class="line">  <span class="attr">fields:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">timestamp</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">level</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">service</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">request_id</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">user_id</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">file_id</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">operation</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">duration_ms</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">error_code</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Distributed Tracing</span></span><br><span class="line"><span class="attr">tracing:</span></span><br><span class="line">  <span class="attr">spans:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">http_request</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">file_validation</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">storage_write</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">metadata_update</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">url_generation</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Alert-Conditions"><a href="#Alert-Conditions" class="headerlink" title="Alert Conditions"></a>Alert Conditions</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">alerts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">HighUploadLatency</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">upload_duration_p99</span> <span class="string">&gt;</span> <span class="string">10s</span> <span class="string">for</span> <span class="string">5m</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">warning</span></span><br><span class="line">    </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">StorageProviderDown</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">storage_health_check</span> <span class="string">==</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">critical</span></span><br><span class="line">    </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">MetadataDBConnectionLoss</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">db_connections_active</span> <span class="string">==</span> <span class="number">0</span> <span class="string">for</span> <span class="string">1m</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">critical</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Observability questions test system thinking. Discuss the three pillars: metrics for quantitative analysis, logs for debugging, and traces for understanding request flow. Mention that good observability enables proactive issue detection and faster incident resolution.</em></p>
+<h2 id="Deployment-and-Operations"><a href="#Deployment-and-Operations" class="headerlink" title="Deployment and Operations"></a>Deployment and Operations</h2><h3 id="Deployment-Architecture"><a href="#Deployment-Architecture" class="headerlink" title="Deployment Architecture"></a>Deployment Architecture</h3><pre>
+<code class="mermaid">
+graph
+subgraph &quot;Production Environment&quot;
+    subgraph &quot;Region A (Primary)&quot;
+        LB1[Load Balancer]
+        API1[API Cluster]
+        DB1[(Primary DB)]
+        HDFS1[HDFS Cluster A]
+    end
+    
+    subgraph &quot;Region B (Secondary)&quot;
+        LB2[Load Balancer]
+        API2[API Cluster]
+        DB2[(Read Replica)]
+        HDFS2[HDFS Cluster B]
+    end
+end
+
+subgraph &quot;Global Services&quot;
+    CDN[Global CDN]
+    DNS[DNS Service]
+    Monitor[Monitoring Stack]
+end
+
+DNS --&gt; LB1
+DNS --&gt; LB2
+CDN --&gt; LB1
+CDN --&gt; LB2
+DB1 --&gt; DB2
+HDFS1 -.-&gt; HDFS2
+</code>
+</pre>
+
+<h3 id="Operational-Runbooks"><a href="#Operational-Runbooks" class="headerlink" title="Operational Runbooks"></a>Operational Runbooks</h3><p><strong>Critical Procedures</strong>:</p>
+<ol>
+<li><p><strong>Storage Provider Failover</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Detect failure</span></span><br><span class="line">kubectl get pods -l app=storage-provider</span><br><span class="line"></span><br><span class="line"><span class="comment"># Switch traffic</span></span><br><span class="line">kubectl patch configmap storage-config --patch <span class="string">&#x27;&#123;&quot;data&quot;:&#123;&quot;primary-provider&quot;:&quot;nfs&quot;&#125;&#125;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify health</span></span><br><span class="line">curl -f http://api/health/storage</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Database Maintenance</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Before maintenance window</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_start_backup(<span class="string">&#x27;maintenance&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- After maintenance</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_stop_backup();</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>Operations questions assess production readiness. Discuss automation over manual processes, emphasize monitoring-driven operations, and mention that good systems are designed for operability from day one. Include disaster recovery planning and capacity management.</em></p>
+<h2 id="Security-Architecture"><a href="#Security-Architecture" class="headerlink" title="Security Architecture"></a>Security Architecture</h2><h3 id="Security-Layers"><a href="#Security-Layers" class="headerlink" title="Security Layers"></a>Security Layers</h3><pre>
+<code class="mermaid">
+graph
+A[Client Request] --&gt; B[WAF&#x2F;DDoS Protection]
+B --&gt; C[API Gateway Authentication]
+C --&gt; D[Service-to-Service mTLS]
+D --&gt; E[RBAC Authorization]
+E --&gt; F[Data Encryption at Rest]
+F --&gt; G[Audit Logging]
+</code>
+</pre>
+
+<h3 id="Security-Controls"><a href="#Security-Controls" class="headerlink" title="Security Controls"></a>Security Controls</h3><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Control</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Network</strong></td>
+<td>TLS 1.3, VPC isolation</td>
+<td>Infrastructure level</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>OAuth 2.0, Rate limiting</td>
+<td>API Gateway</td>
+</tr>
+<tr>
+<td><strong>Application</strong></td>
+<td>Input validation, CSRF protection</td>
+<td>Service level</td>
+</tr>
+<tr>
+<td><strong>Data</strong></td>
+<td>AES-256 encryption, Key rotation</td>
+<td>Storage level</td>
+</tr>
+<tr>
+<td><strong>Audit</strong></td>
+<td>Comprehensive logging, SIEM integration</td>
+<td>Cross-cutting</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>Security discussions should cover defense in depth. Mention that security isn’t just about preventing breaches, but also about detection, response, and recovery. Discuss compliance requirements (GDPR, HIPAA) and how they influence design decisions.</em></p>
+<h2 id="Cost-Optimization"><a href="#Cost-Optimization" class="headerlink" title="Cost Optimization"></a>Cost Optimization</h2><h3 id="Cost-Structure-Analysis"><a href="#Cost-Structure-Analysis" class="headerlink" title="Cost Structure Analysis"></a>Cost Structure Analysis</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">cost_breakdown:</span></span><br><span class="line">  <span class="attr">storage:</span></span><br><span class="line">    <span class="attr">hdfs_cluster:</span> <span class="string">&quot;$2000/month (3 nodes)&quot;</span></span><br><span class="line">    <span class="attr">nfs_storage:</span> <span class="string">&quot;$500/month (5TB)&quot;</span></span><br><span class="line">  <span class="attr">compute:</span></span><br><span class="line">    <span class="attr">api_services:</span> <span class="string">&quot;$1500/month (6 instances)&quot;</span></span><br><span class="line">    <span class="attr">metadata_db:</span> <span class="string">&quot;$800/month (RDS)&quot;</span></span><br><span class="line">  <span class="attr">network:</span></span><br><span class="line">    <span class="attr">cdn_costs:</span> <span class="string">&quot;$300/month&quot;</span></span><br><span class="line">    <span class="attr">data_transfer:</span> <span class="string">&quot;$200/month&quot;</span></span><br><span class="line">  <span class="attr">total_monthly:</span> <span class="string">&quot;$5300&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Optimization-Strategies"><a href="#Optimization-Strategies" class="headerlink" title="Optimization Strategies"></a>Optimization Strategies</h3><ol>
+<li><strong>Storage Tiering</strong>: Move infrequently accessed files to cheaper storage</li>
+<li><strong>Compression</strong>: Reduce storage costs by 30-50% for text&#x2F;document files</li>
+<li><strong>Deduplication</strong>: Eliminate redundant file storage</li>
+<li><strong>CDN Optimization</strong>: Cache frequently downloaded files</li>
+<li><strong>Auto-scaling</strong>: Scale compute resources based on demand</li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>Cost optimization shows business acumen. Discuss how technical decisions impact costs: storage choice affects monthly bills, caching reduces bandwidth costs, and proper sizing prevents over-provisioning. Mention tools like AWS Cost Explorer for monitoring.</em></p>
+<h2 id="Future-Enhancements"><a href="#Future-Enhancements" class="headerlink" title="Future Enhancements"></a>Future Enhancements</h2><h3 id="Roadmap-Considerations"><a href="#Roadmap-Considerations" class="headerlink" title="Roadmap Considerations"></a>Roadmap Considerations</h3><p><strong>Phase 2 Features</strong>:</p>
+<ul>
+<li><strong>Advanced Search</strong>: Full-text search with Elasticsearch integration</li>
+<li><strong>File Processing</strong>: Thumbnail generation, document conversion</li>
+<li><strong>Analytics</strong>: Usage patterns, storage optimization recommendations</li>
+<li><strong>Collaboration</strong>: File sharing, version control, collaborative editing</li>
+</ul>
+<p><strong>Phase 3 Features</strong>:</p>
+<ul>
+<li><strong>Machine Learning</strong>: Automated tagging, content analysis</li>
+<li><strong>Edge Computing</strong>: Edge storage for global performance</li>
+<li><strong>Blockchain</strong>: Immutable audit trails for compliance</li>
+<li><strong>GraphQL API</strong>: More flexible query interface</li>
+</ul>
+<h3 id="Technical-Evolution"><a href="#Technical-Evolution" class="headerlink" title="Technical Evolution"></a>Technical Evolution</h3><pre>
+<code class="mermaid">
+timeline
+title File Storage Service Evolution
+
+Phase 1 (MVP) : Basic upload&#x2F;download
+              : Single storage backend
+              : Simple REST API
+
+Phase 2 (Scale) : Multi-backend SPI
+                : Advanced queries
+                : Client SDKs
+
+Phase 3 (Intelligence) : ML-powered features
+                       : Real-time processing
+                       : Advanced analytics
+
+Phase 4 (Ecosystem) : Third-party integrations
+                    : Marketplace
+                    : Advanced workflows
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Roadmap discussions demonstrate strategic thinking. Show how current architecture supports future features: the SPI enables new storage backends, event-driven architecture supports real-time processing, and microservices enable independent feature development.</em></p>
+<h2 id="Interview-Deep-Dive-Topics"><a href="#Interview-Deep-Dive-Topics" class="headerlink" title="Interview Deep-Dive Topics"></a>Interview Deep-Dive Topics</h2><h3 id="System-Design-Questions"><a href="#System-Design-Questions" class="headerlink" title="System Design Questions"></a>System Design Questions</h3><p><strong>Common Questions and Approach</strong>:</p>
+<ol>
+<li><p><strong>“How would you handle a file upload of 10GB?”</strong></p>
+<ul>
+<li>Discuss multipart uploads, resumable uploads</li>
+<li>Mention client-side checksums and server verification</li>
+<li>Cover progress tracking and error recovery</li>
+</ul>
+</li>
+<li><p><strong>“What happens if the storage backend fails during upload?”</strong></p>
+<ul>
+<li>Explain circuit breaker pattern</li>
+<li>Discuss backup storage providers</li>
+<li>Cover cleanup of partial uploads</li>
+</ul>
+</li>
+<li><p><strong>“How do you ensure data consistency across replicas?”</strong></p>
+<ul>
+<li>Compare strong vs eventual consistency</li>
+<li>Discuss conflict resolution strategies</li>
+<li>Mention vector clocks or timestamps</li>
+</ul>
+</li>
+</ol>
+<h3 id="Code-Implementation-Questions"><a href="#Code-Implementation-Questions" class="headerlink" title="Code Implementation Questions"></a>Code Implementation Questions</h3><p><strong>Sample Implementation Challenge</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Implement a retry mechanism for file uploads</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RetryableUploadClient</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;UploadResult&gt; <span class="title function_">uploadWithRetry</span><span class="params">(</span></span><br><span class="line"><span class="params">        File file, RetryPolicy policy)</span> &#123;</span><br><span class="line">        <span class="comment">// Your implementation here</span></span><br><span class="line">        <span class="comment">// Consider: exponential backoff, circuit breaker, </span></span><br><span class="line">        <span class="comment">// partial upload resume</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Code questions test practical skills. Focus on error handling, edge cases, and production considerations. Discuss trade-offs between complexity and reliability. Show awareness of real-world constraints like network timeouts and resource limits.</em></p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>This file storage service design balances scalability, reliability, and maintainability through well-defined interfaces, robust error handling, and comprehensive observability. The SPI pattern provides flexibility for storage backends while maintaining a consistent API surface. The design supports both current requirements and future enhancements through modular architecture and event-driven patterns.</p>
+<p><strong>Key Success Factors</strong>:</p>
+<ul>
+<li><strong>Modularity</strong>: Clear separation of concerns enables independent scaling</li>
+<li><strong>Flexibility</strong>: SPI pattern supports diverse storage requirements</li>
+<li><strong>Observability</strong>: Comprehensive monitoring enables proactive operations</li>
+<li><strong>Security</strong>: Defense-in-depth protects sensitive data</li>
+<li><strong>Performance</strong>: Optimization at every layer ensures good user experience</li>
+</ul>
+<p>The architecture presented here has been proven in production environments handling millions of files and petabytes of data, providing a solid foundation for enterprise file storage requirements.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3427,633 +3956,6 @@ style K fill:#ff6b6b
 <li><strong>Test Thoroughly</strong>: Validate your solutions under realistic load conditions</li>
 </ol>
 <p>Remember that cache optimization is an ongoing process that requires continuous monitoring, analysis, and improvement based on actual usage patterns and system behavior.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/10/Redis-Deployment-Modes-Theory-Practice-and-Interview-Insights/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/10/Redis-Deployment-Modes-Theory-Practice-and-Interview-Insights/" class="post-title-link" itemprop="url">Redis Deployment Modes: Theory, Practice, and Interview Insights</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-10 16:21:06 / Modified: 17:17:39" itemprop="dateCreated datePublished" datetime="2025-06-10T16:21:06+08:00">2025-06-10</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Redis supports multiple deployment modes, each designed for different use cases, scalability requirements, and availability needs. Understanding these modes is crucial for designing robust, scalable systems.</p>
-<p><strong>🎯 Common Interview Question</strong>: <em>“How do you decide which Redis deployment mode to use for a given application?”</em></p>
-<p><strong>Answer Framework</strong>: Consider these factors:</p>
-<ul>
-<li><strong>Data size</strong>: Single instance practical limits (~25GB operational recommendation)</li>
-<li><strong>Availability requirements</strong>: RTO&#x2F;RPO expectations</li>
-<li><strong>Read&#x2F;write patterns</strong>: Read-heavy vs write-heavy workloads</li>
-<li><strong>Geographic distribution</strong>: Single vs multi-region</li>
-<li><strong>Operational complexity</strong>: Team expertise and maintenance overhead</li>
-</ul>
-<h2 id="Standalone-Redis"><a href="#Standalone-Redis" class="headerlink" title="Standalone Redis"></a>Standalone Redis</h2><h3 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h3><p>Standalone Redis is the simplest deployment mode where a single Redis instance handles all operations. It’s ideal for development, testing, and small-scale applications.</p>
-<h3 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
-<code class="mermaid">
-graph TB
-A[Client Applications] --&gt; B[Redis Instance]
-B --&gt; C[Disk Storage]
-
-style B fill:#ff9999
-style A fill:#99ccff
-style C fill:#99ff99
-</code>
-</pre>
-
-<h3 id="Configuration-Example"><a href="#Configuration-Example" class="headerlink" title="Configuration Example"></a>Configuration Example</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># redis.conf for standalone</span><br><span class="line">port 6379</span><br><span class="line">bind 127.0.0.1</span><br><span class="line">maxmemory 2gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br><span class="line">save 900 1</span><br><span class="line">save 300 10</span><br><span class="line">save 60 10000</span><br><span class="line">appendonly yes</span><br><span class="line">appendfsync everysec</span><br></pre></td></tr></table></figure>
-
-<h3 id="Best-Practices"><a href="#Best-Practices" class="headerlink" title="Best Practices"></a>Best Practices</h3><ol>
-<li><p><strong>Memory Management</strong></p>
-<ul>
-<li>Set <code>maxmemory</code> to 75% of available RAM</li>
-<li>Choose appropriate eviction policy based on use case</li>
-<li>Monitor memory fragmentation ratio</li>
-</ul>
-</li>
-<li><p><strong>Persistence Configuration</strong></p>
-<ul>
-<li>Use AOF for critical data (better durability)</li>
-<li>RDB for faster restarts and backups</li>
-<li>Consider hybrid persistence for optimal balance</li>
-</ul>
-</li>
-<li><p><strong>Security</strong></p>
-<ul>
-<li>Enable AUTH with strong passwords</li>
-<li>Use TLS for client connections</li>
-<li>Bind to specific interfaces, avoid 0.0.0.0</li>
-</ul>
-</li>
-</ol>
-<h3 id="Limitations-and-Use-Cases"><a href="#Limitations-and-Use-Cases" class="headerlink" title="Limitations and Use Cases"></a>Limitations and Use Cases</h3><p><strong>Limitations:</strong></p>
-<ul>
-<li>Single point of failure</li>
-<li>Limited by single machine resources</li>
-<li>No automatic failover</li>
-</ul>
-<p><strong>Optimal Use Cases:</strong></p>
-<ul>
-<li>Development and testing environments</li>
-<li>Applications with &lt; 25GB data (to avoid RDB performance impact)</li>
-<li>Non-critical applications where downtime is acceptable</li>
-<li>Cache-only scenarios with acceptable data loss</li>
-</ul>
-<p><strong>🎯 Interview Insight</strong>: <em>“When would you NOT use standalone Redis?”</em><br>Answer: When you need high availability (&gt;99.9% uptime), <strong>data sizes exceed 25GB</strong> (RDB operations impact performance), or when application criticality requires zero data loss guarantees.</p>
-<h3 id="RDB-Operation-Impact-Analysis"><a href="#RDB-Operation-Impact-Analysis" class="headerlink" title="RDB Operation Impact Analysis"></a>RDB Operation Impact Analysis</h3><p><strong>Critical Production Insight</strong>: The <strong>25GB threshold</strong> is where RDB operations start significantly impacting online business:</p>
-<pre>
-<code class="mermaid">
-graph LR
-A[BGSAVE Command] --&gt; B[&quot;fork() syscall&quot;]
-B --&gt; C[Copy-on-Write Memory]
-C --&gt; D[Memory Usage Spike]
-D --&gt; E[Potential OOM]
-
-F[Write Operations] --&gt; G[COW Page Copies]
-G --&gt; H[Increased Latency]
-H --&gt; I[Client Timeouts]
-
-style D fill:#ff9999
-style E fill:#ff6666
-style H fill:#ffcc99
-style I fill:#ff9999
-</code>
-</pre>
-
-<p><strong>Real-world Impact at 25GB+:</strong></p>
-<ul>
-<li><strong>Memory spike</strong>: Up to 2x memory usage during fork</li>
-<li><strong>Latency impact</strong>: P99 latencies can spike from 1ms to 100ms+</li>
-<li><strong>CPU impact</strong>: Fork operation can freeze Redis for 100ms-1s</li>
-<li><strong>I&#x2F;O saturation</strong>: Large RDB writes competing with normal operations</li>
-</ul>
-<p><strong>Mitigation Strategies:</strong></p>
-<ol>
-<li><strong>Disable automatic RDB</strong>: Use <code>save &quot;&quot;</code> and only manual BGSAVE during low traffic</li>
-<li><strong>AOF-only persistence</strong>: More predictable performance impact</li>
-<li><strong>Slave-based backups</strong>: Perform RDB operations on slave instances</li>
-<li><strong>Memory optimization</strong>: Use compression, optimize data structures</li>
-</ol>
-<h2 id="Redis-Replication-Master-Slave"><a href="#Redis-Replication-Master-Slave" class="headerlink" title="Redis Replication (Master-Slave)"></a>Redis Replication (Master-Slave)</h2><h3 id="Overview-1"><a href="#Overview-1" class="headerlink" title="Overview"></a>Overview</h3><p>Redis replication creates exact copies of the master instance on one or more slave instances. It provides read scalability and basic redundancy.</p>
-<h3 id="Architecture-1"><a href="#Architecture-1" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
-<code class="mermaid">
-graph TB
-A[Client - Writes] --&gt; B[Redis Master]
-C[Client - Reads] --&gt; D[Redis Slave 1]
-E[Client - Reads] --&gt; F[Redis Slave 2]
-
-B --&gt; D
-B --&gt; F
-
-B --&gt; G[Disk Storage Master]
-D --&gt; H[Disk Storage Slave 1]
-F --&gt; I[Disk Storage Slave 2]
-
-style B fill:#ff9999
-style D fill:#ffcc99
-style F fill:#ffcc99
-</code>
-</pre>
-
-<h3 id="Configuration"><a href="#Configuration" class="headerlink" title="Configuration"></a>Configuration</h3><p><strong>Master Configuration:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># master.conf</span><br><span class="line">port 6379</span><br><span class="line">bind 0.0.0.0</span><br><span class="line">requirepass masterpassword123</span><br><span class="line">masterauth slavepassword123</span><br></pre></td></tr></table></figure>
-
-<p><strong>Slave Configuration:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># slave.conf</span><br><span class="line">port 6380</span><br><span class="line">bind 0.0.0.0</span><br><span class="line">slaveof 192.168.1.100 6379</span><br><span class="line">masterauth masterpassword123</span><br><span class="line">requirepass slavepassword123</span><br><span class="line">slave-read-only yes</span><br></pre></td></tr></table></figure>
-
-<h3 id="Replication-Process-Flow"><a href="#Replication-Process-Flow" class="headerlink" title="Replication Process Flow"></a>Replication Process Flow</h3><pre>
-<code class="mermaid">
-sequenceDiagram
-participant M as Master
-participant S as Slave
-participant C as Client
-
-Note over S: Initial Connection
-S-&gt;&gt;M: PSYNC replicationid offset
-M-&gt;&gt;S: +FULLRESYNC runid offset
-M-&gt;&gt;S: RDB snapshot
-Note over S: Load RDB data
-M-&gt;&gt;S: Replication backlog commands
-
-Note over M,S: Ongoing Replication
-C-&gt;&gt;M: SET key value
-M-&gt;&gt;S: SET key value
-C-&gt;&gt;S: GET key
-S-&gt;&gt;C: value
-</code>
-</pre>
-
-<h3 id="Best-Practices-1"><a href="#Best-Practices-1" class="headerlink" title="Best Practices"></a>Best Practices</h3><ol>
-<li><p><strong>Network Optimization</strong></p>
-<ul>
-<li>Use <code>repl-diskless-sync yes</code> for fast networks</li>
-<li>Configure <code>repl-backlog-size</code> based on network latency</li>
-<li>Monitor replication lag with <code>INFO replication</code></li>
-</ul>
-</li>
-<li><p><strong>Slave Configuration</strong></p>
-<ul>
-<li>Set <code>slave-read-only yes</code> to prevent accidental writes</li>
-<li>Use <code>slave-priority</code> for failover preferences</li>
-<li>Configure appropriate <code>slave-serve-stale-data</code> behavior</li>
-</ul>
-</li>
-<li><p><strong>Monitoring Key Metrics</strong></p>
-<ul>
-<li>Replication offset difference</li>
-<li>Last successful sync time</li>
-<li>Number of connected slaves</li>
-</ul>
-</li>
-</ol>
-<h3 id="Production-Showcase"><a href="#Production-Showcase" class="headerlink" title="Production Showcase"></a>Production Showcase</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Production deployment script for master-slave setup</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Start master</span></span><br><span class="line">redis-server /etc/redis/master.conf --daemonize <span class="built_in">yes</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Wait for master to be ready</span></span><br><span class="line">redis-cli ping</span><br><span class="line"></span><br><span class="line"><span class="comment"># Start slaves</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..2&#125;; <span class="keyword">do</span></span><br><span class="line">    redis-server /etc/redis/slave<span class="variable">$&#123;i&#125;</span>.conf --daemonize <span class="built_in">yes</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify replication</span></span><br><span class="line">redis-cli -p 6379 INFO replication</span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Question</strong>: <em>“How do you handle slave promotion in a master-slave setup?”</em></p>
-<p><strong>Answer</strong>: Manual promotion involves:</p>
-<ol>
-<li>Stop writes to current master</li>
-<li>Ensure slave is caught up (<code>LASTSAVE</code> comparison)</li>
-<li>Execute <code>SLAVEOF NO ONE</code> on chosen slave</li>
-<li>Update application configuration to point to new master</li>
-<li>Configure other slaves to replicate from new master</li>
-</ol>
-<p><strong>Limitation</strong>: No automatic failover - requires manual intervention or external tooling.</p>
-<h2 id="Redis-Sentinel"><a href="#Redis-Sentinel" class="headerlink" title="Redis Sentinel"></a>Redis Sentinel</h2><h3 id="Overview-2"><a href="#Overview-2" class="headerlink" title="Overview"></a>Overview</h3><p>Redis Sentinel provides high availability for Redis through automatic failover, monitoring, and configuration management. It’s the recommended solution for automatic failover in non-clustered environments.</p>
-<h3 id="Architecture-2"><a href="#Architecture-2" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
-<code class="mermaid">
-graph TB
-subgraph &quot;Redis Instances&quot;
-    M[Redis Master]
-    S1[Redis Slave 1]
-    S2[Redis Slave 2]
-end
-
-subgraph &quot;Sentinel Cluster&quot;
-    SE1[Sentinel 1]
-    SE2[Sentinel 2]
-    SE3[Sentinel 3]
-end
-
-subgraph &quot;Applications&quot;
-    A1[App Instance 1]
-    A2[App Instance 2]
-end
-
-M --&gt; S1
-M --&gt; S2
-
-SE1 -.-&gt; M
-SE1 -.-&gt; S1
-SE1 -.-&gt; S2
-SE2 -.-&gt; M
-SE2 -.-&gt; S1
-SE2 -.-&gt; S2
-SE3 -.-&gt; M
-SE3 -.-&gt; S1
-SE3 -.-&gt; S2
-
-A1 --&gt; SE1
-A2 --&gt; SE2
-
-style M fill:#ff9999
-style S1 fill:#ffcc99
-style S2 fill:#ffcc99
-style SE1 fill:#99ccff
-style SE2 fill:#99ccff
-style SE3 fill:#99ccff
-</code>
-</pre>
-
-<h3 id="Sentinel-Configuration"><a href="#Sentinel-Configuration" class="headerlink" title="Sentinel Configuration"></a>Sentinel Configuration</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># sentinel.conf</span><br><span class="line">port 26379</span><br><span class="line">bind 0.0.0.0</span><br><span class="line"></span><br><span class="line"># Monitor master named &quot;mymaster&quot;</span><br><span class="line">sentinel monitor mymaster 192.168.1.100 6379 2</span><br><span class="line">sentinel auth-pass mymaster masterpassword123</span><br><span class="line"></span><br><span class="line"># Failover configuration</span><br><span class="line">sentinel down-after-milliseconds mymaster 5000</span><br><span class="line">sentinel failover-timeout mymaster 10000</span><br><span class="line">sentinel parallel-syncs mymaster 1</span><br><span class="line"></span><br><span class="line"># Notification scripts</span><br><span class="line">sentinel notification-script mymaster /path/to/notify.sh</span><br><span class="line">sentinel client-reconfig-script mymaster /path/to/reconfig.sh</span><br></pre></td></tr></table></figure>
-
-<h3 id="Failover-Process"><a href="#Failover-Process" class="headerlink" title="Failover Process"></a>Failover Process</h3><pre>
-<code class="mermaid">
-sequenceDiagram
-participant S1 as Sentinel 1
-participant S2 as Sentinel 2
-participant S3 as Sentinel 3
-participant M as Master
-participant SL as Slave
-participant A as Application
-
-Note over S1,S3: Normal Monitoring
-S1-&gt;&gt;M: PING
-M--xS1: No Response
-S1-&gt;&gt;S2: Master seems down
-S1-&gt;&gt;S3: Master seems down
-
-Note over S1,S3: Quorum Check
-S2-&gt;&gt;M: PING
-M--xS2: No Response
-S3-&gt;&gt;M: PING
-M--xS3: No Response
-
-Note over S1,S3: Failover Decision
-S1-&gt;&gt;S2: Start failover?
-S2-&gt;&gt;S1: Agreed
-S1-&gt;&gt;SL: SLAVEOF NO ONE
-S1-&gt;&gt;A: New master notification
-</code>
-</pre>
-
-<h3 id="Best-Practices-2"><a href="#Best-Practices-2" class="headerlink" title="Best Practices"></a>Best Practices</h3><ol>
-<li><p><strong>Quorum Configuration</strong></p>
-<ul>
-<li>Use odd number of sentinels (3, 5, 7)</li>
-<li>Set quorum to majority (e.g., 2 for 3 sentinels)</li>
-<li>Deploy sentinels across different failure domains</li>
-</ul>
-</li>
-<li><p><strong>Timing Parameters</strong></p>
-<ul>
-<li><code>down-after-milliseconds</code>: 5-30 seconds based on network conditions</li>
-<li><code>failover-timeout</code>: 2-3x down-after-milliseconds</li>
-<li><code>parallel-syncs</code>: Usually 1 to avoid overwhelming new master</li>
-</ul>
-</li>
-<li><p><strong>Client Integration</strong></p>
-</li>
-</ol>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis.sentinel</span><br><span class="line"></span><br><span class="line"><span class="comment"># Python client example</span></span><br><span class="line">sentinels = [(<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26379</span>), (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26380</span>), (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26381</span>)]</span><br><span class="line">sentinel = redis.sentinel.Sentinel(sentinels, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Discover master</span></span><br><span class="line">master = sentinel.master_for(<span class="string">&#x27;mymaster&#x27;</span>, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line">slave = sentinel.slave_for(<span class="string">&#x27;mymaster&#x27;</span>, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use connections</span></span><br><span class="line">master.<span class="built_in">set</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>)</span><br><span class="line">value = slave.get(<span class="string">&#x27;key&#x27;</span>)</span><br></pre></td></tr></table></figure>
-
-<h3 id="Production-Monitoring-Script"><a href="#Production-Monitoring-Script" class="headerlink" title="Production Monitoring Script"></a>Production Monitoring Script</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Sentinel health check script</span></span><br><span class="line"></span><br><span class="line">SENTINEL_PORT=26379</span><br><span class="line">MASTER_NAME=<span class="string">&quot;mymaster&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check sentinel status</span></span><br><span class="line"><span class="keyword">for</span> port <span class="keyword">in</span> 26379 26380 26381; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Checking Sentinel on port <span class="variable">$port</span>&quot;</span></span><br><span class="line">    redis-cli -p <span class="variable">$port</span> SENTINEL masters | grep -A 20 <span class="variable">$MASTER_NAME</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;---&quot;</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check master discovery</span></span><br><span class="line">redis-cli -p <span class="variable">$SENTINEL_PORT</span> SENTINEL get-master-addr-by-name <span class="variable">$MASTER_NAME</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Question</strong>: <em>“How does Redis Sentinel handle split-brain scenarios?”</em></p>
-<p><strong>Answer</strong>: Sentinel prevents split-brain through:</p>
-<ol>
-<li><strong>Quorum requirement</strong>: Only majority can initiate failover</li>
-<li><strong>Epoch mechanism</strong>: Each failover gets unique epoch number</li>
-<li><strong>Leader election</strong>: Only one sentinel leads failover process</li>
-<li><strong>Configuration propagation</strong>: All sentinels must agree on new configuration</li>
-</ol>
-<p><strong>Key Point</strong>: Even if network partitions occur, only the partition with quorum majority can perform failover, preventing multiple masters.</p>
-<h2 id="Redis-Cluster"><a href="#Redis-Cluster" class="headerlink" title="Redis Cluster"></a>Redis Cluster</h2><h3 id="Overview-3"><a href="#Overview-3" class="headerlink" title="Overview"></a>Overview</h3><p>Redis Cluster provides horizontal scaling and high availability through data sharding across multiple nodes. It’s designed for applications requiring both high performance and large data sets.</p>
-<h3 id="Architecture-3"><a href="#Architecture-3" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
-<code class="mermaid">
-graph TB
-subgraph &quot;Redis Cluster&quot;
-    subgraph &quot;Shard 1&quot;
-        M1[Master 1&lt;br&#x2F;&gt;Slots 0-5460]
-        S1[Slave 1]
-    end
-    
-    subgraph &quot;Shard 2&quot;
-        M2[Master 2&lt;br&#x2F;&gt;Slots 5461-10922]
-        S2[Slave 2]
-    end
-    
-    subgraph &quot;Shard 3&quot;
-        M3[Master 3&lt;br&#x2F;&gt;Slots 10923-16383]
-        S3[Slave 3]
-    end
-end
-
-M1 --&gt; S1
-M2 --&gt; S2
-M3 --&gt; S3
-
-M1 -.-&gt; M2
-M1 -.-&gt; M3
-M2 -.-&gt; M3
-
-A[Application] --&gt; M1
-A --&gt; M2
-A --&gt; M3
-
-style M1 fill:#ff9999
-style M2 fill:#ff9999
-style M3 fill:#ff9999
-style S1 fill:#ffcc99
-style S2 fill:#ffcc99
-style S3 fill:#ffcc99
-</code>
-</pre>
-
-<h3 id="Hash-Slot-Distribution"><a href="#Hash-Slot-Distribution" class="headerlink" title="Hash Slot Distribution"></a>Hash Slot Distribution</h3><p>Redis Cluster uses consistent hashing with 16,384 slots:</p>
-<pre>
-<code class="mermaid">
-graph LR
-A[Key] --&gt; B[CRC16]
-B --&gt; C[% 16384]
-C --&gt; D[Hash Slot]
-D --&gt; E[Node Assignment]
-
-F[Example: user:1000] --&gt; G[CRC16 &#x3D; 31949]
-G --&gt; H[31949 % 16384 &#x3D; 15565]
-H --&gt; I[Slot 15565 → Node 3]
-</code>
-</pre>
-
-<h3 id="Cluster-Configuration"><a href="#Cluster-Configuration" class="headerlink" title="Cluster Configuration"></a>Cluster Configuration</h3><p><strong>Node Configuration:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># cluster-node.conf</span><br><span class="line">port 7000</span><br><span class="line">cluster-enabled yes</span><br><span class="line">cluster-config-file nodes-7000.conf</span><br><span class="line">cluster-node-timeout 5000</span><br><span class="line">appendonly yes</span><br></pre></td></tr></table></figure>
-
-<p><strong>Cluster Setup Script:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Create 6-node cluster (3 masters, 3 slaves)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Start nodes</span></span><br><span class="line"><span class="keyword">for</span> port <span class="keyword">in</span> 7000 7001 7002 7003 7004 7005; <span class="keyword">do</span></span><br><span class="line">    redis-server --port <span class="variable">$port</span> --cluster-enabled <span class="built_in">yes</span> \</span><br><span class="line">                 --cluster-config-file nodes-<span class="variable">$&#123;port&#125;</span>.conf \</span><br><span class="line">                 --cluster-node-timeout 5000 \</span><br><span class="line">                 --appendonly <span class="built_in">yes</span> --daemonize <span class="built_in">yes</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Create cluster</span></span><br><span class="line">redis-cli --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \</span><br><span class="line">                           127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 \</span><br><span class="line">                           --cluster-replicas 1</span><br></pre></td></tr></table></figure>
-
-<h3 id="Data-Distribution-and-Client-Routing"><a href="#Data-Distribution-and-Client-Routing" class="headerlink" title="Data Distribution and Client Routing"></a>Data Distribution and Client Routing</h3><pre>
-<code class="mermaid">
-sequenceDiagram
-participant C as Client
-participant N1 as Node 1
-participant N2 as Node 2
-participant N3 as Node 3
-
-C-&gt;&gt;N1: GET user:1000
-Note over N1: Check slot ownership
-alt Key belongs to N1
-    N1-&gt;&gt;C: value
-else Key belongs to N2
-    N1-&gt;&gt;C: MOVED 15565 192.168.1.102:7001
-    C-&gt;&gt;N2: GET user:1000
-    N2-&gt;&gt;C: value
-end
-</code>
-</pre>
-
-<h3 id="Advanced-Operations"><a href="#Advanced-Operations" class="headerlink" title="Advanced Operations"></a>Advanced Operations</h3><p><strong>Resharding Example:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Move 1000 slots from node 1 to node 4</span></span><br><span class="line">redis-cli --cluster reshard 127.0.0.1:7000 \</span><br><span class="line">          --cluster-from 1a2b3c4d... \</span><br><span class="line">          --cluster-to 5e6f7g8h... \</span><br><span class="line">          --cluster-slots 1000</span><br></pre></td></tr></table></figure>
-
-<p><strong>Adding New Nodes:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add new master</span></span><br><span class="line">redis-cli --cluster add-node 127.0.0.1:7006 127.0.0.1:7000</span><br><span class="line"></span><br><span class="line"><span class="comment"># Add new slave</span></span><br><span class="line">redis-cli --cluster add-node 127.0.0.1:7007 127.0.0.1:7000 --cluster-slave</span><br></pre></td></tr></table></figure>
-
-<h3 id="Client-Implementation-Best-Practices"><a href="#Client-Implementation-Best-Practices" class="headerlink" title="Client Implementation Best Practices"></a>Client Implementation Best Practices</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis.cluster</span><br><span class="line"></span><br><span class="line"><span class="comment"># Python cluster client</span></span><br><span class="line">startup_nodes = [</span><br><span class="line">    &#123;<span class="string">&quot;host&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;port&quot;</span>: <span class="string">&quot;7000&quot;</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;host&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;port&quot;</span>: <span class="string">&quot;7001&quot;</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;host&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;port&quot;</span>: <span class="string">&quot;7002&quot;</span>&#125;</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">cluster = redis.cluster.RedisCluster(</span><br><span class="line">    startup_nodes=startup_nodes,</span><br><span class="line">    decode_responses=<span class="literal">True</span>,</span><br><span class="line">    skip_full_coverage_check=<span class="literal">True</span>,</span><br><span class="line">    health_check_interval=<span class="number">30</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Hash tags for multi-key operations</span></span><br><span class="line">cluster.mset(&#123;</span><br><span class="line">    <span class="string">&quot;user:&#123;1000&#125;:name&quot;</span>: <span class="string">&quot;Alice&quot;</span>,</span><br><span class="line">    <span class="string">&quot;user:&#123;1000&#125;:email&quot;</span>: <span class="string">&quot;alice@example.com&quot;</span>,</span><br><span class="line">    <span class="string">&quot;user:&#123;1000&#125;:age&quot;</span>: <span class="string">&quot;30&quot;</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
-
-<h3 id="Limitations-and-Considerations"><a href="#Limitations-and-Considerations" class="headerlink" title="Limitations and Considerations"></a>Limitations and Considerations</h3><ol>
-<li><strong>Multi-key Operations</strong>: Limited to same hash slot</li>
-<li><strong>Lua Scripts</strong>: All keys must be in same slot</li>
-<li><strong>Database Selection</strong>: Only database 0 supported</li>
-<li><strong>Client Complexity</strong>: Requires cluster-aware clients</li>
-</ol>
-<p><strong>🎯 Interview Question</strong>: <em>“How do you handle hotspot keys in Redis Cluster?”</em></p>
-<p><strong>Answer Strategies</strong>:</p>
-<ol>
-<li><strong>Hash tags</strong>: Distribute related hot keys across slots</li>
-<li><strong>Client-side caching</strong>: Cache frequently accessed data</li>
-<li><strong>Read replicas</strong>: Use slave nodes for read operations</li>
-<li><strong>Application-level sharding</strong>: Pre-shard at application layer</li>
-<li><strong>Monitoring</strong>: Use <code>redis-cli --hotkeys</code> to identify patterns</li>
-</ol>
-<h2 id="Deployment-Architecture-Comparison"><a href="#Deployment-Architecture-Comparison" class="headerlink" title="Deployment Architecture Comparison"></a>Deployment Architecture Comparison</h2><h3 id="Feature-Matrix"><a href="#Feature-Matrix" class="headerlink" title="Feature Matrix"></a>Feature Matrix</h3><table>
-<thead>
-<tr>
-<th>Feature</th>
-<th>Standalone</th>
-<th>Replication</th>
-<th>Sentinel</th>
-<th>Cluster</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>High Availability</strong></td>
-<td>❌</td>
-<td>❌</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td><strong>Automatic Failover</strong></td>
-<td>❌</td>
-<td>❌</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td><strong>Horizontal Scaling</strong></td>
-<td>❌</td>
-<td>❌</td>
-<td>❌</td>
-<td>✅</td>
-</tr>
-<tr>
-<td><strong>Read Scaling</strong></td>
-<td>❌</td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td><strong>Operational Complexity</strong></td>
-<td>Low</td>
-<td>Low</td>
-<td>Medium</td>
-<td>High</td>
-</tr>
-<tr>
-<td><strong>Multi-key Operations</strong></td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-<td>Limited</td>
-</tr>
-<tr>
-<td><strong>Max Data Size</strong></td>
-<td>Single Node</td>
-<td>Single Node</td>
-<td>Single Node</td>
-<td>Multi-Node</td>
-</tr>
-</tbody></table>
-<h3 id="Decision-Flow-Chart"><a href="#Decision-Flow-Chart" class="headerlink" title="Decision Flow Chart"></a>Decision Flow Chart</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[Start: Redis Deployment Decision] --&gt; B{Data Size &gt; 25GB?}
-B --&gt;|Yes| C{Can tolerate RDB impact?}
-C --&gt;|No| D[Consider Redis Cluster]
-C --&gt;|Yes| E{High Availability Required?}
-B --&gt;|No| E
-E --&gt;|No| F{Read Scaling Needed?}
-F --&gt;|Yes| G[Master-Slave Replication]
-F --&gt;|No| H[Standalone Redis]
-E --&gt;|Yes| I{Automatic Failover Needed?}
-I --&gt;|Yes| J[Redis Sentinel]
-I --&gt;|No| G
-
-style D fill:#ff6b6b
-style J fill:#4ecdc4
-style G fill:#45b7d1
-style H fill:#96ceb4
-</code>
-</pre>
-
-<h2 id="Production-Considerations"><a href="#Production-Considerations" class="headerlink" title="Production Considerations"></a>Production Considerations</h2><h3 id="Hardware-Sizing-Guidelines"><a href="#Hardware-Sizing-Guidelines" class="headerlink" title="Hardware Sizing Guidelines"></a>Hardware Sizing Guidelines</h3><p><strong>CPU Requirements:</strong></p>
-<ul>
-<li>Standalone&#x2F;Replication: 2-4 cores</li>
-<li>Sentinel: 1-2 cores per sentinel</li>
-<li>Cluster: 4-8 cores per node</li>
-</ul>
-<p><strong>Memory Guidelines:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Total RAM = (Dataset Size × 1.5) + OS overhead</span><br><span class="line">Example: 100GB dataset = 150GB + 16GB = 166GB total RAM</span><br></pre></td></tr></table></figure>
-
-<p><strong>Network Considerations:</strong></p>
-<ul>
-<li>Replication: 1Gbps minimum for large datasets</li>
-<li>Cluster: Low latency (&lt;1ms) between nodes</li>
-<li>Client connections: Plan for connection pooling</li>
-</ul>
-<h3 id="Security-Best-Practices"><a href="#Security-Best-Practices" class="headerlink" title="Security Best Practices"></a>Security Best Practices</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># Production security configuration</span><br><span class="line">bind 127.0.0.1 10.0.0.0/8</span><br><span class="line">protected-mode yes</span><br><span class="line">requirepass your-secure-password-here</span><br><span class="line">rename-command FLUSHDB &quot;&quot;</span><br><span class="line">rename-command FLUSHALL &quot;&quot;</span><br><span class="line">rename-command CONFIG &quot;CONFIG_b9f8e7a6d2c1&quot;</span><br><span class="line"></span><br><span class="line"># TLS configuration</span><br><span class="line">tls-port 6380</span><br><span class="line">tls-cert-file /path/to/redis.crt</span><br><span class="line">tls-key-file /path/to/redis.key</span><br><span class="line">tls-ca-cert-file /path/to/ca.crt</span><br></pre></td></tr></table></figure>
-
-<h3 id="Backup-and-Recovery-Strategy"><a href="#Backup-and-Recovery-Strategy" class="headerlink" title="Backup and Recovery Strategy"></a>Backup and Recovery Strategy</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Comprehensive backup script</span></span><br><span class="line"></span><br><span class="line">REDIS_HOST=<span class="string">&quot;localhost&quot;</span></span><br><span class="line">REDIS_PORT=<span class="string">&quot;6379&quot;</span></span><br><span class="line">BACKUP_DIR=<span class="string">&quot;/var/backups/redis&quot;</span></span><br><span class="line">DATE=$(<span class="built_in">date</span> +%Y%m%d_%H%M%S)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create RDB backup</span></span><br><span class="line">redis-cli -h <span class="variable">$REDIS_HOST</span> -p <span class="variable">$REDIS_PORT</span> BGSAVE</span><br><span class="line"><span class="built_in">sleep</span> 5</span><br><span class="line"></span><br><span class="line"><span class="comment"># Wait for background save to complete</span></span><br><span class="line"><span class="keyword">while</span> [ $(redis-cli -h <span class="variable">$REDIS_HOST</span> -p <span class="variable">$REDIS_PORT</span> LASTSAVE) -eq <span class="variable">$LASTSAVE</span> ]; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 1</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy files</span></span><br><span class="line"><span class="built_in">cp</span> /var/lib/redis/dump.rdb <span class="variable">$BACKUP_DIR</span>/dump_<span class="variable">$DATE</span>.rdb</span><br><span class="line"><span class="built_in">cp</span> /var/lib/redis/appendonly.aof <span class="variable">$BACKUP_DIR</span>/aof_<span class="variable">$DATE</span>.aof</span><br><span class="line"></span><br><span class="line"><span class="comment"># Compress and upload to S3</span></span><br><span class="line">tar -czf <span class="variable">$BACKUP_DIR</span>/redis_backup_<span class="variable">$DATE</span>.tar.gz <span class="variable">$BACKUP_DIR</span>/*_<span class="variable">$DATE</span>.*</span><br><span class="line">aws s3 <span class="built_in">cp</span> <span class="variable">$BACKUP_DIR</span>/redis_backup_<span class="variable">$DATE</span>.tar.gz s3://redis-backups/</span><br></pre></td></tr></table></figure>
-
-<h2 id="Monitoring-and-Operations"><a href="#Monitoring-and-Operations" class="headerlink" title="Monitoring and Operations"></a>Monitoring and Operations</h2><h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Redis monitoring script</span></span><br><span class="line"></span><br><span class="line">redis-cli INFO all | grep -E <span class="string">&quot;(used_memory_human|connected_clients|total_commands_processed|keyspace_hits|keyspace_misses|role|master_repl_offset)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Cluster-specific monitoring</span></span><br><span class="line"><span class="keyword">if</span> redis-cli CLUSTER NODES &amp;&gt;/dev/null; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;=== Cluster Status ===&quot;</span></span><br><span class="line">    redis-cli CLUSTER NODES</span><br><span class="line">    redis-cli CLUSTER INFO</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Alerting-Thresholds"><a href="#Alerting-Thresholds" class="headerlink" title="Alerting Thresholds"></a>Alerting Thresholds</h3><table>
-<thead>
-<tr>
-<th>Metric</th>
-<th>Warning</th>
-<th>Critical</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Memory Usage</strong></td>
-<td>&gt;80%</td>
-<td>&gt;90%</td>
-</tr>
-<tr>
-<td><strong>Hit Ratio</strong></td>
-<td>&lt;90%</td>
-<td>&lt;80%</td>
-</tr>
-<tr>
-<td><strong>Connected Clients</strong></td>
-<td>&gt;80% max</td>
-<td>&gt;95% max</td>
-</tr>
-<tr>
-<td><strong>Replication Lag</strong></td>
-<td>&gt;10s</td>
-<td>&gt;30s</td>
-</tr>
-<tr>
-<td><strong>Cluster State</strong></td>
-<td>degraded</td>
-<td>fail</td>
-</tr>
-</tbody></table>
-<h3 id="Troubleshooting-Common-Issues"><a href="#Troubleshooting-Common-Issues" class="headerlink" title="Troubleshooting Common Issues"></a>Troubleshooting Common Issues</h3><p><strong>Memory Fragmentation:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check fragmentation ratio</span></span><br><span class="line">redis-cli INFO memory | grep mem_fragmentation_ratio</span><br><span class="line"></span><br><span class="line"><span class="comment"># If ratio &gt; 1.5, consider:</span></span><br><span class="line"><span class="comment"># 1. Restart Redis during maintenance window</span></span><br><span class="line"><span class="comment"># 2. Enable active defragmentation</span></span><br><span class="line">CONFIG SET activedefrag <span class="built_in">yes</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Slow Queries:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Enable slow log</span></span><br><span class="line">CONFIG SET slowlog-log-slower-than 10000</span><br><span class="line">CONFIG SET slowlog-max-len 128</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check slow queries</span></span><br><span class="line">SLOWLOG GET 10</span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Question</strong>: <em>“How do you handle Redis memory pressure in production?”</em></p>
-<p><strong>Comprehensive Answer</strong>:</p>
-<ol>
-<li><strong>Immediate actions</strong>: Check <code>maxmemory-policy</code>, verify no memory leaks</li>
-<li><strong>Short-term</strong>: Scale vertically, optimize data structures, enable compression</li>
-<li><strong>Long-term</strong>: Implement data archiving, consider clustering, optimize application usage patterns</li>
-<li><strong>Monitoring</strong>: Set up alerts for memory usage, track key expiration patterns</li>
-</ol>
-<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Choosing the right Redis deployment mode depends on your specific requirements for availability, scalability, and operational complexity. Start simple with standalone or replication for smaller applications, progress to Sentinel for high availability needs, and adopt Cluster for large-scale, horizontally distributed systems.</p>
-<p><strong>Final Interview Insight</strong>: The key to Redis success in production is not just choosing the right deployment mode, but also implementing proper monitoring, backup strategies, and operational procedures. Always plan for failure scenarios and test your disaster recovery procedures regularly.</p>
-<p>Remember: <strong>“The best Redis deployment is the simplest one that meets your requirements.”</strong></p>
 
       
     </div>
