@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionA Grey Service Router is a sophisticated traffic management system that enables gradual traffic shifting between different versions of microservices. It provides intelligent routing capabi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Design Grey Service Router Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/12/Design-Grey-Service-Router-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="IntroductionA Grey Service Router is a sophisticated traffic management system that enables gradual traffic shifting between different versions of microservices. It provides intelligent routing capabi">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-12T14:04:26.000Z">
+<meta property="article:modified_time" content="2025-06-12T14:11:29.344Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="system-design">
+<meta property="article:tag" content="grey service router">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/12/Design-Grey-Service-Router-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/12/Design-Grey-Service-Router-Guide/","path":"2025/06/12/Design-Grey-Service-Router-Guide/","title":"Design Grey Service Router Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Design Grey Service Router Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Benefits"><span class="nav-number">1.1.</span> <span class="nav-text">Key Benefits</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Core-Architecture"><span class="nav-number">2.</span> <span class="nav-text">Core Architecture</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Core-Components"><span class="nav-number">2.1.</span> <span class="nav-text">Core Components</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Router-Engine"><span class="nav-number">2.1.1.</span> <span class="nav-text">1. Router Engine</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Service-Registry"><span class="nav-number">2.1.2.</span> <span class="nav-text">2. Service Registry</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-Configuration-Manager"><span class="nav-number">2.1.3.</span> <span class="nav-text">3. Configuration Manager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Service-Discovery-and-Registration"><span class="nav-number">3.</span> <span class="nav-text">Service Discovery and Registration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Registration-Process"><span class="nav-number">3.1.</span> <span class="nav-text">Registration Process</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Service-Metadata-Schema"><span class="nav-number">3.2.</span> <span class="nav-text">Service Metadata Schema</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Load-Balancing-Strategies"><span class="nav-number">4.</span> <span class="nav-text">Load Balancing Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Traffic-Distribution-Algorithms"><span class="nav-number">4.1.</span> <span class="nav-text">Traffic Distribution Algorithms</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Weighted-Round-Robin"><span class="nav-number">4.1.1.</span> <span class="nav-text">1. Weighted Round Robin</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Consistent-Hashing"><span class="nav-number">4.1.2.</span> <span class="nav-text">2. Consistent Hashing</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Traffic-Splitting-Strategies"><span class="nav-number">4.2.</span> <span class="nav-text">Traffic Splitting Strategies</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Version-Management"><span class="nav-number">5.</span> <span class="nav-text">Version Management</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Version-Compatibility-Matrix"><span class="nav-number">5.1.</span> <span class="nav-text">Version Compatibility Matrix</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deployment-Strategies"><span class="nav-number">5.2.</span> <span class="nav-text">Deployment Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Blue-Green-Deployment"><span class="nav-number">5.2.1.</span> <span class="nav-text">Blue-Green Deployment</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Canary-Deployment"><span class="nav-number">5.2.2.</span> <span class="nav-text">Canary Deployment</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Version-Routing-Rules"><span class="nav-number">5.3.</span> <span class="nav-text">Version Routing Rules</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Health-Monitoring"><span class="nav-number">6.</span> <span class="nav-text">Health Monitoring</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Multi-Level-Health-Checks"><span class="nav-number">6.1.</span> <span class="nav-text">Multi-Level Health Checks</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Health-Check-Implementation"><span class="nav-number">6.2.</span> <span class="nav-text">Health Check Implementation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Configuration-Management"><span class="nav-number">7.</span> <span class="nav-text">Configuration Management</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Dynamic-Configuration-Architecture"><span class="nav-number">7.1.</span> <span class="nav-text">Dynamic Configuration Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-Schema"><span class="nav-number">7.2.</span> <span class="nav-text">Configuration Schema</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Security-Considerations"><span class="nav-number">8.</span> <span class="nav-text">Security Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Authentication-and-Authorization-Flow"><span class="nav-number">8.1.</span> <span class="nav-text">Authentication and Authorization Flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Best-Practices"><span class="nav-number">8.2.</span> <span class="nav-text">Security Best Practices</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-and-Scalability"><span class="nav-number">9.</span> <span class="nav-text">Performance and Scalability</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Optimization-Strategies"><span class="nav-number">9.1.</span> <span class="nav-text">Performance Optimization Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Connection-Pooling"><span class="nav-number">9.1.1.</span> <span class="nav-text">Connection Pooling</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Caching-Strategy"><span class="nav-number">9.1.2.</span> <span class="nav-text">Caching Strategy</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scalability-Patterns"><span class="nav-number">9.2.</span> <span class="nav-text">Scalability Patterns</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Implementation-Examples"><span class="nav-number">10.</span> <span class="nav-text">Implementation Examples</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Core-Router-Implementation"><span class="nav-number">10.1.</span> <span class="nav-text">Core Router Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-Deployment-Example"><span class="nav-number">10.2.</span> <span class="nav-text">Docker Deployment Example</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Design-Grey-Service-Router-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Design Grey Service Router Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Design Grey Service Router Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-12 22:04:26 / Modified: 22:11:29" itemprop="dateCreated datePublished" datetime="2025-06-12T22:04:26+08:00">2025-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>A <strong>Grey Service Router</strong> is a sophisticated traffic management system that enables gradual traffic shifting between different versions of microservices. It provides intelligent routing capabilities to support blue-green deployments, canary releases, and A&#x2F;B testing while maintaining high availability and service quality.</p>
+<h3 id="Key-Benefits"><a href="#Key-Benefits" class="headerlink" title="Key Benefits"></a>Key Benefits</h3><ul>
+<li><strong>Risk Mitigation</strong>: Gradual traffic shifting reduces deployment risks</li>
+<li><strong>Zero-Downtime Deployments</strong>: Seamless version transitions</li>
+<li><strong>Performance Testing</strong>: Real-world traffic validation</li>
+<li><strong>Rollback Capability</strong>: Quick reversion to stable versions</li>
+</ul>
+<p><strong>💡 Interview Insight</strong>: <em>“What’s the difference between a grey router and a traditional load balancer?”</em></p>
+<ul>
+<li>Traditional load balancers distribute traffic based on server capacity</li>
+<li>Grey routers distribute traffic based on business logic, version compatibility, and deployment strategies</li>
+<li>Grey routers maintain state awareness of different service versions</li>
+</ul>
+<h2 id="Core-Architecture"><a href="#Core-Architecture" class="headerlink" title="Core Architecture"></a>Core Architecture</h2><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Client Layer&quot;
+    Client[Client Applications]
+    Gateway[API Gateway]
+end
+
+subgraph &quot;Grey Router Core&quot;
+    Router[Grey Service Router]
+    Registry[Service Registry]
+    ConfigMgmt[Configuration Manager]
+    HealthCheck[Health Monitor]
+end
+
+subgraph &quot;Service Instances&quot;
+    V1A[Service v1.0 - Instance A]
+    V1B[Service v1.0 - Instance B]
+    V2A[Service v2.0 - Instance A]
+    V2B[Service v2.0 - Instance B]
+end
+
+subgraph &quot;Infrastructure&quot;
+    LB[Load Balancer]
+    Monitor[Monitoring Stack]
+    Storage[(Configuration Store)]
+end
+
+Client --&gt; Gateway
+Gateway --&gt; Router
+Router --&gt; Registry
+Router --&gt; ConfigMgmt
+Router --&gt; HealthCheck
+ConfigMgmt --&gt; Storage
+HealthCheck --&gt; Monitor
+
+Router --&gt; V1A
+Router --&gt; V1B
+Router --&gt; V2A
+Router --&gt; V2B
+
+V1A --&gt; Registry
+V1B --&gt; Registry
+V2A --&gt; Registry
+V2B --&gt; Registry
+</code>
+</pre>
+
+<h3 id="Core-Components"><a href="#Core-Components" class="headerlink" title="Core Components"></a>Core Components</h3><h4 id="1-Router-Engine"><a href="#1-Router-Engine" class="headerlink" title="1. Router Engine"></a>1. Router Engine</h4><p>The central component responsible for making routing decisions based on:</p>
+<ul>
+<li>Service version compatibility</li>
+<li>Traffic splitting rules</li>
+<li>Health status</li>
+<li>Load balancing algorithms</li>
+</ul>
+<h4 id="2-Service-Registry"><a href="#2-Service-Registry" class="headerlink" title="2. Service Registry"></a>2. Service Registry</h4><p>Maintains real-time inventory of:</p>
+<ul>
+<li>Available service instances</li>
+<li>Version information</li>
+<li>Health status</li>
+<li>Metadata (tags, regions, etc.)</li>
+</ul>
+<h4 id="3-Configuration-Manager"><a href="#3-Configuration-Manager" class="headerlink" title="3. Configuration Manager"></a>3. Configuration Manager</h4><p>Handles:</p>
+<ul>
+<li>Routing rules</li>
+<li>Traffic splitting percentages</li>
+<li>Feature flags</li>
+<li>Runtime configuration updates</li>
+</ul>
+<p><strong>💡 Interview Insight</strong>: <em>“How do you handle configuration changes without restarting the router?”</em></p>
+<ul>
+<li>Implement hot-reload mechanisms using configuration watchers</li>
+<li>Use versioned configurations with atomic updates</li>
+<li>Employ circuit breakers during configuration transitions</li>
+</ul>
+<h2 id="Service-Discovery-and-Registration"><a href="#Service-Discovery-and-Registration" class="headerlink" title="Service Discovery and Registration"></a>Service Discovery and Registration</h2><h3 id="Registration-Process"><a href="#Registration-Process" class="headerlink" title="Registration Process"></a>Registration Process</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant Service as Microservice Instance
+participant Router as Grey Router
+participant Registry as Service Registry
+participant Health as Health Monitor
+
+Service-&gt;&gt;Registry: Register (ID, Version, Metadata)
+Registry-&gt;&gt;Router: Notify New Instance
+Router-&gt;&gt;Health: Schedule Health Checks
+Health-&gt;&gt;Service: Health Check Request
+Service-&gt;&gt;Health: Health Response
+Health-&gt;&gt;Router: Update Instance Status
+Router-&gt;&gt;Registry: Update Routing Table
+</code>
+</pre>
+
+<h3 id="Service-Metadata-Schema"><a href="#Service-Metadata-Schema" class="headerlink" title="Service Metadata Schema"></a>Service Metadata Schema</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;serviceId&quot;</span><span class="punctuation">:</span> <span class="string">&quot;user-service&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;instanceId&quot;</span><span class="punctuation">:</span> <span class="string">&quot;user-service-v2-1&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2.1.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;address&quot;</span><span class="punctuation">:</span> <span class="string">&quot;10.0.1.15:8080&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;metadata&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;region&quot;</span><span class="punctuation">:</span> <span class="string">&quot;us-west-2&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;environment&quot;</span><span class="punctuation">:</span> <span class="string">&quot;production&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;weight&quot;</span><span class="punctuation">:</span> <span class="number">100</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;tags&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;feature-x&quot;</span><span class="punctuation">,</span> <span class="string">&quot;canary&quot;</span><span class="punctuation">]</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;healthCheck&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;endpoint&quot;</span><span class="punctuation">:</span> <span class="string">&quot;/health&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;30s&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;timeout&quot;</span><span class="punctuation">:</span> <span class="string">&quot;5s&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;registrationTime&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-12-10T10:30:00Z&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you handle service discovery in a dynamic environment?”</em></p>
+<ul>
+<li>Implement heartbeat mechanisms with TTL (Time To Live)</li>
+<li>Use eventual consistency models for distributed registries</li>
+<li>Design graceful degradation when registry is unavailable</li>
+<li>Consider DNS-based service discovery as a fallback</li>
+</ul>
+<h2 id="Load-Balancing-Strategies"><a href="#Load-Balancing-Strategies" class="headerlink" title="Load Balancing Strategies"></a>Load Balancing Strategies</h2><h3 id="Traffic-Distribution-Algorithms"><a href="#Traffic-Distribution-Algorithms" class="headerlink" title="Traffic Distribution Algorithms"></a>Traffic Distribution Algorithms</h3><h4 id="1-Weighted-Round-Robin"><a href="#1-Weighted-Round-Robin" class="headerlink" title="1. Weighted Round Robin"></a>1. Weighted Round Robin</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">WeightedRoundRobin</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, instances</span>):</span><br><span class="line">        <span class="variable language_">self</span>.instances = instances</span><br><span class="line">        <span class="variable language_">self</span>.current_weights = [<span class="number">0</span>] * <span class="built_in">len</span>(instances)</span><br><span class="line">        <span class="variable language_">self</span>.total_weight = <span class="built_in">sum</span>(instance.weight <span class="keyword">for</span> instance <span class="keyword">in</span> instances)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">select_instance</span>(<span class="params">self</span>):</span><br><span class="line">        max_weight_index = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> i, instance <span class="keyword">in</span> <span class="built_in">enumerate</span>(<span class="variable language_">self</span>.instances):</span><br><span class="line">            <span class="variable language_">self</span>.current_weights[i] += instance.weight</span><br><span class="line">            <span class="keyword">if</span> <span class="variable language_">self</span>.current_weights[i] &gt; <span class="variable language_">self</span>.current_weights[max_weight_index]:</span><br><span class="line">                max_weight_index = i</span><br><span class="line">        </span><br><span class="line">        <span class="variable language_">self</span>.current_weights[max_weight_index] -= <span class="variable language_">self</span>.total_weight</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.instances[max_weight_index]</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-Consistent-Hashing"><a href="#2-Consistent-Hashing" class="headerlink" title="2. Consistent Hashing"></a>2. Consistent Hashing</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">from</span> bisect <span class="keyword">import</span> bisect_left</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ConsistentHash</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, instances, replicas=<span class="number">150</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.replicas = replicas</span><br><span class="line">        <span class="variable language_">self</span>.ring = &#123;&#125;</span><br><span class="line">        <span class="variable language_">self</span>.sorted_keys = []</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> instance <span class="keyword">in</span> instances:</span><br><span class="line">            <span class="variable language_">self</span>.add_instance(instance)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">add_instance</span>(<span class="params">self, instance</span>):</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="variable language_">self</span>.replicas):</span><br><span class="line">            key = <span class="variable language_">self</span>.<span class="built_in">hash</span>(<span class="string">f&quot;<span class="subst">&#123;instance.<span class="built_in">id</span>&#125;</span>:<span class="subst">&#123;i&#125;</span>&quot;</span>)</span><br><span class="line">            <span class="variable language_">self</span>.ring[key] = instance</span><br><span class="line">            <span class="variable language_">self</span>.sorted_keys.append(key)</span><br><span class="line">        <span class="variable language_">self</span>.sorted_keys.sort()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_instance</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="variable language_">self</span>.ring:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">        hash_key = <span class="variable language_">self</span>.<span class="built_in">hash</span>(key)</span><br><span class="line">        idx = bisect_left(<span class="variable language_">self</span>.sorted_keys, hash_key)</span><br><span class="line">        <span class="keyword">if</span> idx == <span class="built_in">len</span>(<span class="variable language_">self</span>.sorted_keys):</span><br><span class="line">            idx = <span class="number">0</span></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.ring[<span class="variable language_">self</span>.sorted_keys[idx]]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">hash</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">int</span>(hashlib.md5(key.encode()).hexdigest(), <span class="number">16</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Traffic-Splitting-Strategies"><a href="#Traffic-Splitting-Strategies" class="headerlink" title="Traffic Splitting Strategies"></a>Traffic Splitting Strategies</h3><pre>
+<code class="mermaid">
+graph LR
+subgraph &quot;Traffic Splitting Methods&quot;
+    A[User-Based] --&gt; A1[User ID Hash]
+    A[User-Based] --&gt; A2[User Attributes]
+    
+    B[Request-Based] --&gt; B1[Header Values]
+    B[Request-Based] --&gt; B2[Query Parameters]
+    
+    C[Percentage-Based] --&gt; C1[Random Selection]
+    C[Percentage-Based] --&gt; C2[Sticky Sessions]
+    
+    D[Geographic] --&gt; D1[Region-Based]
+    D[Geographic] --&gt; D2[DC-Based]
+end
+</code>
+</pre>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you ensure consistent user experience during canary deployments?”</em></p>
+<ul>
+<li>Use sticky routing based on user identifiers</li>
+<li>Implement session affinity for stateful services</li>
+<li>Maintain user-to-version mappings in distributed cache</li>
+<li>Consider the impact of stateful vs stateless services</li>
+</ul>
+<h2 id="Version-Management"><a href="#Version-Management" class="headerlink" title="Version Management"></a>Version Management</h2><h3 id="Version-Compatibility-Matrix"><a href="#Version-Compatibility-Matrix" class="headerlink" title="Version Compatibility Matrix"></a>Version Compatibility Matrix</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">compatibility_matrix:</span></span><br><span class="line">  <span class="attr">user-service:</span></span><br><span class="line">    <span class="attr">v1.0:</span></span><br><span class="line">      <span class="attr">compatible_with:</span> [<span class="string">&quot;v1.0&quot;</span>, <span class="string">&quot;v1.1&quot;</span>]</span><br><span class="line">      <span class="attr">breaking_changes:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">v1.1:</span></span><br><span class="line">      <span class="attr">compatible_with:</span> [<span class="string">&quot;v1.0&quot;</span>, <span class="string">&quot;v1.1&quot;</span>, <span class="string">&quot;v2.0&quot;</span>]</span><br><span class="line">      <span class="attr">breaking_changes:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">v2.0:</span></span><br><span class="line">      <span class="attr">compatible_with:</span> [<span class="string">&quot;v2.0&quot;</span>]</span><br><span class="line">      <span class="attr">breaking_changes:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">migration_required:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Deployment-Strategies"><a href="#Deployment-Strategies" class="headerlink" title="Deployment Strategies"></a>Deployment Strategies</h3><h4 id="Blue-Green-Deployment"><a href="#Blue-Green-Deployment" class="headerlink" title="Blue-Green Deployment"></a>Blue-Green Deployment</h4><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Blue-Green Deployment Flow&quot;
+    Start([Start Deployment])
+    Deploy[Deploy Green Version]
+    Test[Run Health Checks]
+    Switch{Switch Traffic?}
+    BlueActive[Blue Environment Active]
+    GreenActive[Green Environment Active]
+    Cleanup[Cleanup Old Version]
+    
+    Start --&gt; Deploy
+    Deploy --&gt; Test
+    Test --&gt; Switch
+    Switch --&gt;|Yes| GreenActive
+    Switch --&gt;|No| BlueActive
+    GreenActive --&gt; Cleanup
+end
+</code>
+</pre>
+
+<h4 id="Canary-Deployment"><a href="#Canary-Deployment" class="headerlink" title="Canary Deployment"></a>Canary Deployment</h4><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Canary Deployment Process&quot;
+    Start([Start Canary])
+    Deploy5[Deploy to 5% Traffic]
+    Monitor5[Monitor Metrics]
+    Healthy5{Metrics OK?}
+    Deploy25[Deploy to 25% Traffic]
+    Monitor25[Monitor Metrics]
+    Healthy25{Metrics OK?}
+    Deploy100[Deploy to 100% Traffic]
+    Rollback[Rollback]
+    
+    Start --&gt; Deploy5
+    Deploy5 --&gt; Monitor5
+    Monitor5 --&gt; Healthy5
+    Healthy5 --&gt;|Yes| Deploy25
+    Healthy5 --&gt;|No| Rollback
+    Deploy25 --&gt; Monitor25
+    Monitor25 --&gt; Healthy25
+    Healthy25 --&gt;|Yes| Deploy100
+    Healthy25 --&gt;|No| Rollback
+end
+</code>
+</pre>
+
+<h3 id="Version-Routing-Rules"><a href="#Version-Routing-Rules" class="headerlink" title="Version Routing Rules"></a>Version Routing Rules</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;routing_rules&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;user-service&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;default_version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;v1.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;rules&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;condition&quot;</span><span class="punctuation">:</span> <span class="string">&quot;header[&#x27;X-Beta-User&#x27;] == &#x27;true&#x27;&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;target_version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;v2.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;weight&quot;</span><span class="punctuation">:</span> <span class="number">100</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;condition&quot;</span><span class="punctuation">:</span> <span class="string">&quot;random() &lt; 0.1&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;target_version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;v2.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;weight&quot;</span><span class="punctuation">:</span> <span class="number">100</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;fallback&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;v1.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;weight&quot;</span><span class="punctuation">:</span> <span class="number">100</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you handle database schema changes during version transitions?”</em></p>
+<ul>
+<li>Implement backward-compatible schema changes first</li>
+<li>Use database migration strategies (expand-contract pattern)</li>
+<li>Maintain data consistency during dual-write periods</li>
+<li>Consider event sourcing for complex state transitions</li>
+</ul>
+<h2 id="Health-Monitoring"><a href="#Health-Monitoring" class="headerlink" title="Health Monitoring"></a>Health Monitoring</h2><h3 id="Multi-Level-Health-Checks"><a href="#Multi-Level-Health-Checks" class="headerlink" title="Multi-Level Health Checks"></a>Multi-Level Health Checks</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Health Check Hierarchy&quot;
+    L1[L1: Basic Connectivity]
+    L2[L2: Service Health]
+    L3[L3: Business Logic]
+    L4[L4: Dependency Health]
+    
+    L1 --&gt; L2
+    L2 --&gt; L3
+    L3 --&gt; L4
+end
+
+subgraph &quot;Health States&quot;
+    Healthy[Healthy]
+    Degraded[Degraded]
+    Unhealthy[Unhealthy]
+    Unknown[Unknown]
+end
+</code>
+</pre>
+
+<h3 id="Health-Check-Implementation"><a href="#Health-Check-Implementation" class="headerlink" title="Health Check Implementation"></a>Health Check Implementation</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> enum <span class="keyword">import</span> Enum</span><br><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Dict</span>, <span class="type">List</span></span><br><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"><span class="keyword">import</span> aiohttp</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">HealthStatus</span>(<span class="title class_ inherited__">Enum</span>):</span><br><span class="line">    HEALTHY = <span class="string">&quot;healthy&quot;</span></span><br><span class="line">    DEGRADED = <span class="string">&quot;degraded&quot;</span></span><br><span class="line">    UNHEALTHY = <span class="string">&quot;unhealthy&quot;</span></span><br><span class="line">    UNKNOWN = <span class="string">&quot;unknown&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">HealthCheckResult</span>:</span><br><span class="line">    status: HealthStatus</span><br><span class="line">    response_time: <span class="built_in">float</span></span><br><span class="line">    details: <span class="type">Dict</span>[<span class="built_in">str</span>, <span class="built_in">any</span>]</span><br><span class="line">    timestamp: <span class="built_in">float</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">HealthMonitor</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, instances: <span class="type">List</span>[ServiceInstance]</span>):</span><br><span class="line">        <span class="variable language_">self</span>.instances = instances</span><br><span class="line">        <span class="variable language_">self</span>.health_cache = &#123;&#125;</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">check_instance_health</span>(<span class="params">self, instance: ServiceInstance</span>) -&gt; HealthCheckResult:</span><br><span class="line">        start_time = time.time()</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="keyword">async</span> <span class="keyword">with</span> aiohttp.ClientSession() <span class="keyword">as</span> session:</span><br><span class="line">                <span class="keyword">async</span> <span class="keyword">with</span> session.get(</span><br><span class="line">                    <span class="string">f&quot;http://<span class="subst">&#123;instance.address&#125;</span><span class="subst">&#123;instance.health_endpoint&#125;</span>&quot;</span>,</span><br><span class="line">                    timeout=aiohttp.ClientTimeout(total=<span class="number">5.0</span>)</span><br><span class="line">                ) <span class="keyword">as</span> response:</span><br><span class="line">                    response_time = time.time() - start_time</span><br><span class="line">                    </span><br><span class="line">                    <span class="keyword">if</span> response.status == <span class="number">200</span>:</span><br><span class="line">                        data = <span class="keyword">await</span> response.json()</span><br><span class="line">                        <span class="keyword">return</span> HealthCheckResult(</span><br><span class="line">                            status=HealthStatus.HEALTHY,</span><br><span class="line">                            response_time=response_time,</span><br><span class="line">                            details=data,</span><br><span class="line">                            timestamp=time.time()</span><br><span class="line">                        )</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        <span class="keyword">return</span> HealthCheckResult(</span><br><span class="line">                            status=HealthStatus.DEGRADED,</span><br><span class="line">                            response_time=response_time,</span><br><span class="line">                            details=&#123;<span class="string">&quot;http_status&quot;</span>: response.status&#125;,</span><br><span class="line">                            timestamp=time.time()</span><br><span class="line">                        )</span><br><span class="line">        <span class="keyword">except</span> asyncio.TimeoutError:</span><br><span class="line">            <span class="keyword">return</span> HealthCheckResult(</span><br><span class="line">                status=HealthStatus.UNHEALTHY,</span><br><span class="line">                response_time=time.time() - start_time,</span><br><span class="line">                details=&#123;<span class="string">&quot;error&quot;</span>: <span class="string">&quot;timeout&quot;</span>&#125;,</span><br><span class="line">                timestamp=time.time()</span><br><span class="line">            )</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">return</span> HealthCheckResult(</span><br><span class="line">                status=HealthStatus.UNHEALTHY,</span><br><span class="line">                response_time=time.time() - start_time,</span><br><span class="line">                details=&#123;<span class="string">&quot;error&quot;</span>: <span class="built_in">str</span>(e)&#125;,</span><br><span class="line">                timestamp=time.time()</span><br><span class="line">            )</span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you prevent cascading failures in health checks?”</em></p>
+<ul>
+<li>Implement circuit breakers for health check requests</li>
+<li>Use exponential backoff for failed health checks</li>
+<li>Maintain health check isolation (separate thread pools)</li>
+<li>Set appropriate timeouts and retry policies</li>
+</ul>
+<h2 id="Configuration-Management"><a href="#Configuration-Management" class="headerlink" title="Configuration Management"></a>Configuration Management</h2><h3 id="Dynamic-Configuration-Architecture"><a href="#Dynamic-Configuration-Architecture" class="headerlink" title="Dynamic Configuration Architecture"></a>Dynamic Configuration Architecture</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Configuration Sources&quot;
+    File[Config Files]
+    DB[(Database)]
+    KV[Key-Value Store]
+    Env[Environment Variables]
+end
+
+subgraph &quot;Configuration Manager&quot;
+    Watcher[Config Watcher]
+    Validator[Config Validator]
+    Cache[Config Cache]
+    Notifier[Change Notifier]
+end
+
+subgraph &quot;Router Components&quot;
+    Engine[Routing Engine]
+    LB[Load Balancer]
+    Monitor[Health Monitor]
+end
+
+File --&gt; Watcher
+DB --&gt; Watcher
+KV --&gt; Watcher
+Env --&gt; Watcher
+
+Watcher --&gt; Validator
+Validator --&gt; Cache
+Cache --&gt; Notifier
+
+Notifier --&gt; Engine
+Notifier --&gt; LB
+Notifier --&gt; Monitor
+</code>
+</pre>
+
+<h3 id="Configuration-Schema"><a href="#Configuration-Schema" class="headerlink" title="Configuration Schema"></a>Configuration Schema</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># grey-router-config.yaml</span></span><br><span class="line"><span class="attr">router:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">&quot;user-service-router&quot;</span></span><br><span class="line">  <span class="attr">version:</span> <span class="string">&quot;1.0.0&quot;</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">user-service:</span></span><br><span class="line">    <span class="attr">discovery:</span></span><br><span class="line">      <span class="attr">type:</span> <span class="string">&quot;consul&quot;</span></span><br><span class="line">      <span class="attr">address:</span> <span class="string">&quot;consul.service.local:8500&quot;</span></span><br><span class="line">    </span><br><span class="line">    <span class="attr">versions:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">version:</span> <span class="string">&quot;1.0.0&quot;</span></span><br><span class="line">        <span class="attr">weight:</span> <span class="number">90</span></span><br><span class="line">        <span class="attr">health_check:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">&quot;/health&quot;</span></span><br><span class="line">          <span class="attr">interval:</span> <span class="string">30s</span></span><br><span class="line">          <span class="attr">timeout:</span> <span class="string">5s</span></span><br><span class="line">        <span class="attr">tags:</span> [<span class="string">&quot;stable&quot;</span>]</span><br><span class="line">      </span><br><span class="line">      <span class="bullet">-</span> <span class="attr">version:</span> <span class="string">&quot;2.0.0&quot;</span></span><br><span class="line">        <span class="attr">weight:</span> <span class="number">10</span></span><br><span class="line">        <span class="attr">health_check:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">&quot;/health&quot;</span></span><br><span class="line">          <span class="attr">interval:</span> <span class="string">15s</span></span><br><span class="line">          <span class="attr">timeout:</span> <span class="string">3s</span></span><br><span class="line">        <span class="attr">tags:</span> [<span class="string">&quot;canary&quot;</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="attr">routing_rules:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">&quot;beta_users&quot;</span></span><br><span class="line">        <span class="attr">condition:</span> <span class="string">&quot;header.get(&#x27;X-Beta-User&#x27;) == &#x27;true&#x27;&quot;</span></span><br><span class="line">        <span class="attr">target_version:</span> <span class="string">&quot;2.0.0&quot;</span></span><br><span class="line">        <span class="attr">priority:</span> <span class="number">100</span></span><br><span class="line">      </span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">&quot;random_canary&quot;</span></span><br><span class="line">        <span class="attr">condition:</span> <span class="string">&quot;random() &lt; 0.1&quot;</span></span><br><span class="line">        <span class="attr">target_version:</span> <span class="string">&quot;2.0.0&quot;</span></span><br><span class="line">        <span class="attr">priority:</span> <span class="number">50</span></span><br><span class="line">    </span><br><span class="line">    <span class="attr">load_balancing:</span></span><br><span class="line">      <span class="attr">algorithm:</span> <span class="string">&quot;weighted_round_robin&quot;</span></span><br><span class="line">      <span class="attr">session_affinity:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">sticky_cookie:</span> <span class="string">&quot;session_id&quot;</span></span><br><span class="line">    </span><br><span class="line">    <span class="attr">circuit_breaker:</span></span><br><span class="line">      <span class="attr">failure_threshold:</span> <span class="number">5</span></span><br><span class="line">      <span class="attr">reset_timeout:</span> <span class="string">60s</span></span><br><span class="line">      <span class="attr">half_open_max_calls:</span> <span class="number">3</span></span><br><span class="line"></span><br><span class="line"><span class="attr">monitoring:</span></span><br><span class="line">  <span class="attr">metrics:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">endpoint:</span> <span class="string">&quot;/metrics&quot;</span></span><br><span class="line">    <span class="attr">interval:</span> <span class="string">10s</span></span><br><span class="line">  </span><br><span class="line">  <span class="attr">logging:</span></span><br><span class="line">    <span class="attr">level:</span> <span class="string">&quot;info&quot;</span></span><br><span class="line">    <span class="attr">format:</span> <span class="string">&quot;json&quot;</span></span><br><span class="line">    <span class="attr">destinations:</span> [<span class="string">&quot;stdout&quot;</span>, <span class="string">&quot;file&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="attr">security:</span></span><br><span class="line">  <span class="attr">tls:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">cert_file:</span> <span class="string">&quot;/etc/ssl/certs/router.crt&quot;</span></span><br><span class="line">    <span class="attr">key_file:</span> <span class="string">&quot;/etc/ssl/private/router.key&quot;</span></span><br><span class="line">  </span><br><span class="line">  <span class="attr">rate_limiting:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">requests_per_second:</span> <span class="number">1000</span></span><br><span class="line">    <span class="attr">burst_size:</span> <span class="number">2000</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you ensure configuration consistency across multiple router instances?”</em></p>
+<ul>
+<li>Use distributed configuration stores (etcd, Consul)</li>
+<li>Implement configuration versioning and rollback mechanisms</li>
+<li>Use configuration validation and pre-deployment testing</li>
+<li>Consider eventual consistency vs strong consistency trade-offs</li>
+</ul>
+<h2 id="Security-Considerations"><a href="#Security-Considerations" class="headerlink" title="Security Considerations"></a>Security Considerations</h2><h3 id="Authentication-and-Authorization-Flow"><a href="#Authentication-and-Authorization-Flow" class="headerlink" title="Authentication and Authorization Flow"></a>Authentication and Authorization Flow</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant Client
+participant Router as Grey Router
+participant Auth as Auth Service
+participant Service as Target Service
+
+Client-&gt;&gt;Router: Request with Token
+Router-&gt;&gt;Auth: Validate Token
+Auth-&gt;&gt;Router: Token Valid + User Info
+Router-&gt;&gt;Router: Apply Routing Rules
+Router-&gt;&gt;Service: Forward Request + User Context
+Service-&gt;&gt;Router: Response
+Router-&gt;&gt;Client: Response
+</code>
+</pre>
+
+<h3 id="Security-Best-Practices"><a href="#Security-Best-Practices" class="headerlink" title="Security Best Practices"></a>Security Best Practices</h3><ol>
+<li><p><strong>Token Validation</strong></p>
+<ul>
+<li>JWT validation with proper signature verification</li>
+<li>Token expiration and refresh handling</li>
+<li>Rate limiting per user&#x2F;token</li>
+</ul>
+</li>
+<li><p><strong>Network Security</strong></p>
+<ul>
+<li>TLS termination and encryption</li>
+<li>IP whitelisting and blacklisting</li>
+<li>DDoS protection mechanisms</li>
+</ul>
+</li>
+<li><p><strong>Service-to-Service Communication</strong></p>
+<ul>
+<li>Mutual TLS (mTLS) for internal communication</li>
+<li>Service mesh integration (Istio, Linkerd)</li>
+<li>Certificate rotation and management</li>
+</ul>
+</li>
+</ol>
+<p><strong>💡 Interview Insight</strong>: <em>“How do you handle security in a multi-tenant environment?”</em></p>
+<ul>
+<li>Implement tenant isolation at the routing level</li>
+<li>Use namespace-based service discovery</li>
+<li>Apply tenant-specific security policies</li>
+<li>Consider data residency and compliance requirements</li>
+</ul>
+<h2 id="Performance-and-Scalability"><a href="#Performance-and-Scalability" class="headerlink" title="Performance and Scalability"></a>Performance and Scalability</h2><h3 id="Performance-Optimization-Strategies"><a href="#Performance-Optimization-Strategies" class="headerlink" title="Performance Optimization Strategies"></a>Performance Optimization Strategies</h3><h4 id="Connection-Pooling"><a href="#Connection-Pooling" class="headerlink" title="Connection Pooling"></a>Connection Pooling</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> aiohttp</span><br><span class="line"><span class="keyword">from</span> aiohttp_connection_pool <span class="keyword">import</span> ConnectionPool</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">OptimizedHttpClient</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.pools = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_pool</span>(<span class="params">self, service_address</span>):</span><br><span class="line">        <span class="keyword">if</span> service_address <span class="keyword">not</span> <span class="keyword">in</span> <span class="variable language_">self</span>.pools:</span><br><span class="line">            connector = aiohttp.TCPConnector(</span><br><span class="line">                limit=<span class="number">100</span>,  <span class="comment"># Total connection pool size</span></span><br><span class="line">                limit_per_host=<span class="number">20</span>,  <span class="comment"># Per-host connection limit</span></span><br><span class="line">                keepalive_timeout=<span class="number">60</span>,</span><br><span class="line">                enable_cleanup_closed=<span class="literal">True</span></span><br><span class="line">            )</span><br><span class="line">            <span class="variable language_">self</span>.pools[service_address] = aiohttp.ClientSession(</span><br><span class="line">                connector=connector,</span><br><span class="line">                timeout=aiohttp.ClientTimeout(total=<span class="number">30</span>)</span><br><span class="line">            )</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.pools[service_address]</span><br></pre></td></tr></table></figure>
+
+<h4 id="Caching-Strategy"><a href="#Caching-Strategy" class="headerlink" title="Caching Strategy"></a>Caching Strategy</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> functools <span class="keyword">import</span> lru_cache</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Optional</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RouteCache</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, ttl: <span class="built_in">int</span> = <span class="number">300</span></span>):  <span class="comment"># 5 minutes TTL</span></span><br><span class="line">        <span class="variable language_">self</span>.cache = &#123;&#125;</span><br><span class="line">        <span class="variable language_">self</span>.ttl = ttl</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_route</span>(<span class="params">self, service_name: <span class="built_in">str</span>, user_context: <span class="built_in">dict</span></span>) -&gt; <span class="type">Optional</span>[<span class="built_in">str</span>]:</span><br><span class="line">        cache_key = <span class="variable language_">self</span>._generate_key(service_name, user_context)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> cache_key <span class="keyword">in</span> <span class="variable language_">self</span>.cache:</span><br><span class="line">            cached_data, timestamp = <span class="variable language_">self</span>.cache[cache_key]</span><br><span class="line">            <span class="keyword">if</span> time.time() - timestamp &lt; <span class="variable language_">self</span>.ttl:</span><br><span class="line">                <span class="keyword">return</span> cached_data</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">del</span> <span class="variable language_">self</span>.cache[cache_key]</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_route</span>(<span class="params">self, service_name: <span class="built_in">str</span>, user_context: <span class="built_in">dict</span>, route: <span class="built_in">str</span></span>):</span><br><span class="line">        cache_key = <span class="variable language_">self</span>._generate_key(service_name, user_context)</span><br><span class="line">        <span class="variable language_">self</span>.cache[cache_key] = (route, time.time())</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_generate_key</span>(<span class="params">self, service_name: <span class="built_in">str</span>, user_context: <span class="built_in">dict</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">        <span class="comment"># Create deterministic cache key</span></span><br><span class="line">        context_str = <span class="string">&quot;|&quot;</span>.join(<span class="string">f&quot;<span class="subst">&#123;k&#125;</span>:<span class="subst">&#123;v&#125;</span>&quot;</span> <span class="keyword">for</span> k, v <span class="keyword">in</span> <span class="built_in">sorted</span>(user_context.items()))</span><br><span class="line">        <span class="keyword">return</span> <span class="string">f&quot;<span class="subst">&#123;service_name&#125;</span>|<span class="subst">&#123;context_str&#125;</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Scalability-Patterns"><a href="#Scalability-Patterns" class="headerlink" title="Scalability Patterns"></a>Scalability Patterns</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Horizontal Scaling&quot;
+    LB[Load Balancer]
+    R1[Router Instance 1]
+    R2[Router Instance 2]
+    R3[Router Instance 3]
+    
+    LB --&gt; R1
+    LB --&gt; R2
+    LB --&gt; R3
+end
+
+subgraph &quot;Shared State&quot;
+    Registry[(Service Registry)]
+    Config[(Configuration Store)]
+    Cache[(Distributed Cache)]
+end
+
+R1 --&gt; Registry
+R2 --&gt; Registry
+R3 --&gt; Registry
+
+R1 --&gt; Config
+R2 --&gt; Config
+R3 --&gt; Config
+
+R1 --&gt; Cache
+R2 --&gt; Cache
+R3 --&gt; Cache
+</code>
+</pre>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you handle router performance under high load?”</em></p>
+<ul>
+<li>Implement async&#x2F;non-blocking request processing</li>
+<li>Use connection pooling and keep-alive connections</li>
+<li>Apply intelligent caching strategies</li>
+<li>Consider request batching for backend calls</li>
+<li>Monitor and optimize garbage collection</li>
+</ul>
+<h2 id="Implementation-Examples"><a href="#Implementation-Examples" class="headerlink" title="Implementation Examples"></a>Implementation Examples</h2><h3 id="Core-Router-Implementation"><a href="#Core-Router-Implementation" class="headerlink" title="Core Router Implementation"></a>Core Router Implementation</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> <span class="type">Dict</span>, <span class="type">List</span>, <span class="type">Optional</span></span><br><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"><span class="keyword">from</span> enum <span class="keyword">import</span> Enum</span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ServiceInstance</span>:</span><br><span class="line">    <span class="built_in">id</span>: <span class="built_in">str</span></span><br><span class="line">    version: <span class="built_in">str</span></span><br><span class="line">    address: <span class="built_in">str</span></span><br><span class="line">    weight: <span class="built_in">int</span></span><br><span class="line">    health_status: HealthStatus</span><br><span class="line">    metadata: <span class="type">Dict</span>[<span class="built_in">str</span>, <span class="built_in">any</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RoutingStrategy</span>(<span class="title class_ inherited__">Enum</span>):</span><br><span class="line">    ROUND_ROBIN = <span class="string">&quot;round_robin&quot;</span></span><br><span class="line">    WEIGHTED_ROUND_ROBIN = <span class="string">&quot;weighted_round_robin&quot;</span></span><br><span class="line">    RANDOM = <span class="string">&quot;random&quot;</span></span><br><span class="line">    CONSISTENT_HASH = <span class="string">&quot;consistent_hash&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">GreyRouter</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, config: <span class="type">Dict</span></span>):</span><br><span class="line">        <span class="variable language_">self</span>.config = config</span><br><span class="line">        <span class="variable language_">self</span>.service_registry = ServiceRegistry()</span><br><span class="line">        <span class="variable language_">self</span>.health_monitor = HealthMonitor()</span><br><span class="line">        <span class="variable language_">self</span>.load_balancer = LoadBalancer()</span><br><span class="line">        <span class="variable language_">self</span>.route_cache = RouteCache()</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">route_request</span>(<span class="params">self, service_name: <span class="built_in">str</span>, request_context: <span class="type">Dict</span></span>) -&gt; ServiceInstance:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Main routing logic&quot;&quot;&quot;</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 1. Get available instances</span></span><br><span class="line">        instances = <span class="keyword">await</span> <span class="variable language_">self</span>.service_registry.get_instances(service_name)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> instances:</span><br><span class="line">            <span class="keyword">raise</span> NoAvailableInstancesError(<span class="string">f&quot;No instances available for <span class="subst">&#123;service_name&#125;</span>&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 2. Filter healthy instances</span></span><br><span class="line">        healthy_instances = [</span><br><span class="line">            instance <span class="keyword">for</span> instance <span class="keyword">in</span> instances </span><br><span class="line">            <span class="keyword">if</span> instance.health_status == HealthStatus.HEALTHY</span><br><span class="line">        ]</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> healthy_instances:</span><br><span class="line">            <span class="comment"># Fallback to degraded instances if no healthy ones</span></span><br><span class="line">            healthy_instances = [</span><br><span class="line">                instance <span class="keyword">for</span> instance <span class="keyword">in</span> instances </span><br><span class="line">                <span class="keyword">if</span> instance.health_status == HealthStatus.DEGRADED</span><br><span class="line">            ]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 3. Apply routing rules</span></span><br><span class="line">        target_instances = <span class="keyword">await</span> <span class="variable language_">self</span>._apply_routing_rules(</span><br><span class="line">            service_name, healthy_instances, request_context</span><br><span class="line">        )</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 4. Load balance among target instances</span></span><br><span class="line">        selected_instance = <span class="keyword">await</span> <span class="variable language_">self</span>.load_balancer.select_instance(</span><br><span class="line">            target_instances, request_context</span><br><span class="line">        )</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> selected_instance</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">_apply_routing_rules</span>(<span class="params"></span></span><br><span class="line"><span class="params">        self, </span></span><br><span class="line"><span class="params">        service_name: <span class="built_in">str</span>, </span></span><br><span class="line"><span class="params">        instances: <span class="type">List</span>[ServiceInstance], </span></span><br><span class="line"><span class="params">        request_context: <span class="type">Dict</span></span></span><br><span class="line"><span class="params">    </span>) -&gt; <span class="type">List</span>[ServiceInstance]:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Apply version-specific routing rules&quot;&quot;&quot;</span></span><br><span class="line">        </span><br><span class="line">        service_config = <span class="variable language_">self</span>.config.get(<span class="string">&#x27;services&#x27;</span>, &#123;&#125;).get(service_name, &#123;&#125;)</span><br><span class="line">        routing_rules = service_config.get(<span class="string">&#x27;routing_rules&#x27;</span>, [])</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> rule <span class="keyword">in</span> <span class="built_in">sorted</span>(routing_rules, key=<span class="keyword">lambda</span> x: x.get(<span class="string">&#x27;priority&#x27;</span>, <span class="number">0</span>), reverse=<span class="literal">True</span>):</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">await</span> <span class="variable language_">self</span>._evaluate_condition(rule[<span class="string">&#x27;condition&#x27;</span>], request_context):</span><br><span class="line">                target_version = rule[<span class="string">&#x27;target_version&#x27;</span>]</span><br><span class="line">                <span class="keyword">return</span> [</span><br><span class="line">                    instance <span class="keyword">for</span> instance <span class="keyword">in</span> instances </span><br><span class="line">                    <span class="keyword">if</span> instance.version == target_version</span><br><span class="line">                ]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Default routing - return all instances</span></span><br><span class="line">        <span class="keyword">return</span> instances</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">_evaluate_condition</span>(<span class="params">self, condition: <span class="built_in">str</span>, context: <span class="type">Dict</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Evaluate routing condition&quot;&quot;&quot;</span></span><br><span class="line">        <span class="comment"># This is a simplified condition evaluator</span></span><br><span class="line">        <span class="comment"># In production, use a proper expression evaluator</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;header.get(&#x27;X-Beta-User&#x27;)&quot;</span> <span class="keyword">in</span> condition:</span><br><span class="line">            <span class="keyword">return</span> context.get(<span class="string">&#x27;headers&#x27;</span>, &#123;&#125;).get(<span class="string">&#x27;X-Beta-User&#x27;</span>) == <span class="string">&#x27;true&#x27;</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;random()&quot;</span> <span class="keyword">in</span> condition:</span><br><span class="line">            <span class="keyword">import</span> random</span><br><span class="line">            threshold = <span class="built_in">float</span>(condition.split(<span class="string">&#x27;&lt;&#x27;</span>)[<span class="number">1</span>].strip())</span><br><span class="line">            <span class="keyword">return</span> random.random() &lt; threshold</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage Example</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    config = &#123;</span><br><span class="line">        <span class="string">&#x27;services&#x27;</span>: &#123;</span><br><span class="line">            <span class="string">&#x27;user-service&#x27;</span>: &#123;</span><br><span class="line">                <span class="string">&#x27;routing_rules&#x27;</span>: [</span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="string">&#x27;name&#x27;</span>: <span class="string">&#x27;beta_users&#x27;</span>,</span><br><span class="line">                        <span class="string">&#x27;condition&#x27;</span>: <span class="string">&quot;header.get(&#x27;X-Beta-User&#x27;) == &#x27;true&#x27;&quot;</span>,</span><br><span class="line">                        <span class="string">&#x27;target_version&#x27;</span>: <span class="string">&#x27;2.0.0&#x27;</span>,</span><br><span class="line">                        <span class="string">&#x27;priority&#x27;</span>: <span class="number">100</span></span><br><span class="line">                    &#125;</span><br><span class="line">                ]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    router = GreyRouter(config)</span><br><span class="line">    </span><br><span class="line">    request_context = &#123;</span><br><span class="line">        <span class="string">&#x27;headers&#x27;</span>: &#123;<span class="string">&#x27;X-Beta-User&#x27;</span>: <span class="string">&#x27;true&#x27;</span>&#125;,</span><br><span class="line">        <span class="string">&#x27;user_id&#x27;</span>: <span class="string">&#x27;12345&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        instance = <span class="keyword">await</span> router.route_request(<span class="string">&#x27;user-service&#x27;</span>, request_context)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Routed to: <span class="subst">&#123;instance.address&#125;</span> (version: <span class="subst">&#123;instance.version&#125;</span>)&quot;</span>)</span><br><span class="line">    <span class="keyword">except</span> NoAvailableInstancesError <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Routing failed: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    asyncio.run(main())</span><br></pre></td></tr></table></figure>
+
+<h3 id="Docker-Deployment-Example"><a href="#Docker-Deployment-Example" class="headerlink" title="Docker Deployment Example"></a>Docker Deployment Example</h3><figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Dockerfile for Grey Router</span></span><br><span class="line"><span class="keyword">FROM</span> python:<span class="number">3.11</span>-slim</span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> /app</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Install dependencies</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> requirements.txt .</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> pip install --no-cache-dir -r requirements.txt</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy application code</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> src/ ./src/</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> config/ ./config/</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Health check</span></span><br><span class="line"><span class="keyword">HEALTHCHECK</span><span class="language-bash"> --interval=30s --<span class="built_in">timeout</span>=10s --start-period=5s --retries=3 \</span></span><br><span class="line"><span class="language-bash">    CMD curl -f http://localhost:8080/health || <span class="built_in">exit</span> 1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Run the application</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> [<span class="string">&quot;python&quot;</span>, <span class="string">&quot;-m&quot;</span>, <span class="string">&quot;src.main&quot;</span>]</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># docker-compose.yml</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.8&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">grey-router:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">.</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8080:8080&quot;</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONFIG_PATH=/app/config/router.yaml</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">LOG_LEVEL=info</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config:/app/config</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">redis</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">router-network</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">consul:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">consul:1.15</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8500:8500&quot;</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">consul</span> <span class="string">agent</span> <span class="string">-dev</span> <span class="string">-ui</span> <span class="string">-client=0.0.0.0</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">router-network</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">redis:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">redis:7-alpine</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;6379:6379&quot;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">router-network</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">router-network:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: <em>“How do you test a grey router in a complex microservices environment?”</em></p>
+<ul>
+<li>Use contract testing for service interfaces</li>
+<li>Implement chaos engineering practices</li>
+<li>Create synthetic traffic for load testing</li>
+<li>Use feature flags for gradual rollouts</li>
+<li>Monitor business metrics during deployments</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/system-design/" rel="tag"># system-design</a>
+              <a href="/tags/grey-service-router/" rel="tag"># grey service router</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/12/Design-Modern-Privilege-Systems-RBAC-ABAC-Integration-Guide/" rel="prev" title="Design Modern Privilege Systems: RBAC + ABAC Integration Guide">
+                  <i class="fa fa-angle-left"></i> Design Modern Privilege Systems: RBAC + ABAC Integration Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/06/12/Design-User-Login-Systems-with-SSO-Feature/" rel="next" title="Design User Login Systems with SSO Feature">
+                  Design User Login Systems with SSO Feature <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
