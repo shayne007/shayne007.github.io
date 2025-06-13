@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Executive SummaryThe General Async Invoke SDK is a unified framework that abstracts asynchronous method invocation and message-driven communication. It provides a consistent API for developers while s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Design Async Invocation SDK">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/13/Design-Async-Invocation-SDK/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Executive SummaryThe General Async Invoke SDK is a unified framework that abstracts asynchronous method invocation and message-driven communication. It provides a consistent API for developers while s">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-13T10:12:54.000Z">
+<meta property="article:modified_time" content="2025-06-13T10:40:11.825Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="system-design">
+<meta property="article:tag" content="async invocation">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/13/Design-Async-Invocation-SDK/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/13/Design-Async-Invocation-SDK/","path":"2025/06/13/Design-Async-Invocation-SDK/","title":"Design Async Invocation SDK"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Design Async Invocation SDK | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Executive-Summary"><span class="nav-number">1.</span> <span class="nav-text">Executive Summary</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Features"><span class="nav-number">1.1.</span> <span class="nav-text">Key Features</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Architecture-Overview"><span class="nav-number">2.</span> <span class="nav-text">Architecture Overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Core-Components"><span class="nav-number">3.</span> <span class="nav-text">Core Components</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-AsyncInvoker-Interface"><span class="nav-number">3.1.</span> <span class="nav-text">1. AsyncInvoker Interface</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Message-Flow-Architecture"><span class="nav-number">3.2.</span> <span class="nav-text">2. Message Flow Architecture</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SPI-Mechanism-Design"><span class="nav-number">4.</span> <span class="nav-text">SPI Mechanism Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Service-Provider-Interface-Structure"><span class="nav-number">4.1.</span> <span class="nav-text">Service Provider Interface Structure</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Provider-Loading-Mechanism"><span class="nav-number">4.2.</span> <span class="nav-text">Provider Loading Mechanism</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Message-Queue-Implementations"><span class="nav-number">5.</span> <span class="nav-text">Message Queue Implementations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Kafka-Implementation"><span class="nav-number">5.1.</span> <span class="nav-text">Kafka Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Comparison-Matrix"><span class="nav-number">5.2.</span> <span class="nav-text">Comparison Matrix</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Async-Method-Invocation"><span class="nav-number">6.</span> <span class="nav-text">Async Method Invocation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Request-Response-Correlation"><span class="nav-number">6.1.</span> <span class="nav-text">Request-Response Correlation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Timeout-Handling-Flow"><span class="nav-number">6.2.</span> <span class="nav-text">Timeout Handling Flow</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Callback-Management"><span class="nav-number">7.</span> <span class="nav-text">Callback Management</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Type-Safe-Callback-Interface"><span class="nav-number">7.1.</span> <span class="nav-text">Type-Safe Callback Interface</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Callback-Execution-Model"><span class="nav-number">7.2.</span> <span class="nav-text">Callback Execution Model</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Error-Handling-Resilience"><span class="nav-number">8.</span> <span class="nav-text">Error Handling &amp; Resilience</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Circuit-Breaker-Pattern"><span class="nav-number">8.1.</span> <span class="nav-text">Circuit Breaker Pattern</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Retry-Mechanism"><span class="nav-number">8.2.</span> <span class="nav-text">Retry Mechanism</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Considerations"><span class="nav-number">9.</span> <span class="nav-text">Performance Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Connection-Pooling"><span class="nav-number">9.1.</span> <span class="nav-text">Connection Pooling</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Serialization-Optimization"><span class="nav-number">9.2.</span> <span class="nav-text">Serialization Optimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Implementation-Examples"><span class="nav-number">10.</span> <span class="nav-text">Implementation Examples</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Basic-Usage"><span class="nav-number">10.1.</span> <span class="nav-text">Basic Usage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Advanced-Configuration"><span class="nav-number">10.2.</span> <span class="nav-text">Advanced Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring-Boot-Integration"><span class="nav-number">10.3.</span> <span class="nav-text">Spring Boot Integration</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Insights"><span class="nav-number">11.</span> <span class="nav-text">Interview Insights</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Common-Questions-Answers"><span class="nav-number">11.1.</span> <span class="nav-text">Common Questions &amp; Answers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Tuning-Tips"><span class="nav-number">11.2.</span> <span class="nav-text">Performance Tuning Tips</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Considerations"><span class="nav-number">11.3.</span> <span class="nav-text">Production Considerations</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">12.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/13/Design-Async-Invocation-SDK/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Design Async Invocation SDK | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Design Async Invocation SDK
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-13 18:12:54 / Modified: 18:40:11" itemprop="dateCreated datePublished" datetime="2025-06-13T18:12:54+08:00">2025-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Executive-Summary"><a href="#Executive-Summary" class="headerlink" title="Executive Summary"></a>Executive Summary</h2><p>The General Async Invoke SDK is a unified framework that abstracts asynchronous method invocation and message-driven communication. It provides a consistent API for developers while supporting multiple message queue backends (Kafka, RocketMQ, Redis) through a Service Provider Interface (SPI) mechanism.</p>
+<h3 id="Key-Features"><a href="#Key-Features" class="headerlink" title="Key Features"></a>Key Features</h3><ul>
+<li><strong>Unified API</strong>: Single interface for async operations regardless of underlying MQ</li>
+<li><strong>Multi-Protocol Support</strong>: Kafka, RocketMQ, Redis with pluggable architecture</li>
+<li><strong>Callback Management</strong>: Type-safe callback handling with timeout and retry mechanisms</li>
+<li><strong>Request-Response Pattern</strong>: Correlation ID-based async method invocation</li>
+<li><strong>Circuit Breaker</strong>: Built-in resilience patterns for production reliability</li>
+</ul>
+<h2 id="Architecture-Overview"><a href="#Architecture-Overview" class="headerlink" title="Architecture Overview"></a>Architecture Overview</h2><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Client Application&quot;
+    CA[Client App]
+    SDK[Async Invoke SDK]
+    CB[Callback Manager]
+end
+
+subgraph &quot;SDK Core&quot;
+    API[Unified API Layer]
+    SPI[SPI Framework]
+    CM[Connection Manager]
+    SM[Serialization Manager]
+end
+
+subgraph &quot;MQ Implementations&quot;
+    KI[Kafka Impl]
+    RI[RocketMQ Impl]
+    RedisI[Redis Impl]
+end
+
+subgraph &quot;Message Queues&quot;
+    K[Kafka Cluster]
+    R[RocketMQ Cluster]
+    Redis[Redis Cluster]
+end
+
+subgraph &quot;Backend Services&quot;
+    BS1[Service A]
+    BS2[Service B]
+    BS3[Service C]
+end
+
+CA --&gt; SDK
+SDK --&gt; API
+API --&gt; SPI
+SPI --&gt; KI
+SPI --&gt; RI
+SPI --&gt; RedisI
+
+KI --&gt; K
+RI --&gt; R
+RedisI --&gt; Redis
+
+K --&gt; BS1
+R --&gt; BS2
+Redis --&gt; BS3
+
+BS1 --&gt; K
+BS2 --&gt; R
+BS3 --&gt; Redis
+
+K --&gt; KI
+R --&gt; RI
+Redis --&gt; RedisI
+
+KI --&gt; CB
+RI --&gt; CB
+RedisI --&gt; CB
+
+CB --&gt; CA
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>When designing distributed systems, the abstraction layer is crucial. Interviewers often ask about trade-offs between abstraction and performance. Here, we sacrifice some performance for maintainability and flexibility.</em></p>
+<h2 id="Core-Components"><a href="#Core-Components" class="headerlink" title="Core Components"></a>Core Components</h2><h3 id="1-AsyncInvoker-Interface"><a href="#1-AsyncInvoker-Interface" class="headerlink" title="1. AsyncInvoker Interface"></a>1. AsyncInvoker Interface</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">AsyncInvoker</span> &#123;</span><br><span class="line">    &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">asyncGet</span><span class="params">(String endpoint, Class&lt;T&gt; responseType)</span>;</span><br><span class="line">    &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">asyncPost</span><span class="params">(String endpoint, Object request, Class&lt;T&gt; responseType)</span>;</span><br><span class="line">    &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">asyncPut</span><span class="params">(String endpoint, Object request, Class&lt;T&gt; responseType)</span>;</span><br><span class="line">    &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">asyncDelete</span><span class="params">(String endpoint, Class&lt;T&gt; responseType)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Callback-based methods</span></span><br><span class="line">    &lt;T&gt; <span class="keyword">void</span> <span class="title function_">asyncGet</span><span class="params">(String endpoint, Class&lt;T&gt; responseType, AsyncCallback&lt;T&gt; callback)</span>;</span><br><span class="line">    &lt;T&gt; <span class="keyword">void</span> <span class="title function_">asyncPost</span><span class="params">(String endpoint, Object request, Class&lt;T&gt; responseType, AsyncCallback&lt;T&gt; callback)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Message-Flow-Architecture"><a href="#2-Message-Flow-Architecture" class="headerlink" title="2. Message Flow Architecture"></a>2. Message Flow Architecture</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant C as Client
+participant SDK as SDK Core
+participant MQ as Message Queue
+participant S as Backend Service
+
+C-&gt;&gt;SDK: asyncPost(endpoint, data, callback)
+SDK-&gt;&gt;SDK: Generate correlationId
+SDK-&gt;&gt;MQ: Publish request message
+SDK-&gt;&gt;C: Return immediately
+
+MQ-&gt;&gt;S: Deliver message
+S-&gt;&gt;S: Process request
+S-&gt;&gt;MQ: Publish response with correlationId
+
+MQ-&gt;&gt;SDK: Deliver response
+SDK-&gt;&gt;SDK: Match correlationId
+SDK-&gt;&gt;C: Invoke callback(result)
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>This sequence diagram demonstrates the Request-Response pattern over async messaging. Interviewers often probe about correlation ID management and potential race conditions.</em></p>
+<h2 id="SPI-Mechanism-Design"><a href="#SPI-Mechanism-Design" class="headerlink" title="SPI Mechanism Design"></a>SPI Mechanism Design</h2><h3 id="Service-Provider-Interface-Structure"><a href="#Service-Provider-Interface-Structure" class="headerlink" title="Service Provider Interface Structure"></a>Service Provider Interface Structure</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">MessageQueueProvider</span> &#123;</span><br><span class="line">    String <span class="title function_">getProviderName</span><span class="params">()</span>;</span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">isAvailable</span><span class="params">()</span>;</span><br><span class="line">    MessagePublisher <span class="title function_">createPublisher</span><span class="params">(Properties config)</span>;</span><br><span class="line">    MessageSubscriber <span class="title function_">createSubscriber</span><span class="params">(Properties config)</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">initialize</span><span class="params">(Properties config)</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">shutdown</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Provider-Loading-Mechanism"><a href="#Provider-Loading-Mechanism" class="headerlink" title="Provider Loading Mechanism"></a>Provider Loading Mechanism</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[SDK Initialization] --&gt; B[Scan Classpath]
+B --&gt; C[Load META-INF&#x2F;services]
+C --&gt; D{Provider Available?}
+D --&gt;|Yes| E[Initialize Provider]
+D --&gt;|No| F[Try Next Provider]
+E --&gt; G[Register Provider]
+F --&gt; H{More Providers?}
+H --&gt;|Yes| D
+H --&gt;|No| I[Throw Exception]
+G --&gt; J[SDK Ready]
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>SPI pattern questions often focus on classloader issues and provider precedence. The key is understanding Java’s ServiceLoader mechanism and its limitations in complex deployment scenarios.</em></p>
+<h2 id="Message-Queue-Implementations"><a href="#Message-Queue-Implementations" class="headerlink" title="Message Queue Implementations"></a>Message Queue Implementations</h2><h3 id="Kafka-Implementation"><a href="#Kafka-Implementation" class="headerlink" title="Kafka Implementation"></a>Kafka Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service(&quot;kafka&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KafkaMessageQueueProvider</span> <span class="keyword">implements</span> <span class="title class_">MessageQueueProvider</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> MessagePublisher <span class="title function_">createPublisher</span><span class="params">(Properties config)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KafkaMessagePublisher</span>(</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">KafkaProducer</span>&lt;&gt;(buildKafkaConfig(config))</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> MessageSubscriber <span class="title function_">createSubscriber</span><span class="params">(Properties config)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">KafkaMessageSubscriber</span>(</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">KafkaConsumer</span>&lt;&gt;(buildKafkaConfig(config))</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Comparison-Matrix"><a href="#Comparison-Matrix" class="headerlink" title="Comparison Matrix"></a>Comparison Matrix</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Kafka</th>
+<th>RocketMQ</th>
+<th>Redis</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Throughput</strong></td>
+<td>Very High</td>
+<td>High</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td><strong>Latency</strong></td>
+<td>Low</td>
+<td>Low</td>
+<td>Very Low</td>
+</tr>
+<tr>
+<td><strong>Durability</strong></td>
+<td>Excellent</td>
+<td>Excellent</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td><strong>Ordering</strong></td>
+<td>Partition-level</td>
+<td>Global&#x2F;Partition</td>
+<td>Limited</td>
+</tr>
+<tr>
+<td><strong>Message TTL</strong></td>
+<td>Retention-based</td>
+<td>Built-in</td>
+<td>Built-in</td>
+</tr>
+<tr>
+<td><strong>Memory Usage</strong></td>
+<td>Low</td>
+<td>Medium</td>
+<td>High</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>When asked about message queue selection, discuss trade-offs. Kafka excels in throughput but has higher operational complexity. Redis offers lowest latency but limited durability guarantees.</em></p>
+<h2 id="Async-Method-Invocation"><a href="#Async-Method-Invocation" class="headerlink" title="Async Method Invocation"></a>Async Method Invocation</h2><h3 id="Request-Response-Correlation"><a href="#Request-Response-Correlation" class="headerlink" title="Request-Response Correlation"></a>Request-Response Correlation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CorrelationManager</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;String, PendingRequest&gt; pendingRequests;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ScheduledExecutorService timeoutExecutor;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">registerRequest</span><span class="params">(String correlationId, </span></span><br><span class="line"><span class="params">                                                   Class&lt;T&gt; responseType, </span></span><br><span class="line"><span class="params">                                                   Duration timeout)</span> &#123;</span><br><span class="line">        CompletableFuture&lt;T&gt; future = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">        PendingRequest&lt;T&gt; request = <span class="keyword">new</span> <span class="title class_">PendingRequest</span>&lt;&gt;(future, responseType, timeout);</span><br><span class="line">        </span><br><span class="line">        pendingRequests.put(correlationId, request);</span><br><span class="line">        scheduleTimeout(correlationId, timeout);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> future;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleResponse</span><span class="params">(String correlationId, Object response)</span> &#123;</span><br><span class="line">        <span class="type">PendingRequest</span> <span class="variable">request</span> <span class="operator">=</span> pendingRequests.remove(correlationId);</span><br><span class="line">        <span class="keyword">if</span> (request != <span class="literal">null</span>) &#123;</span><br><span class="line">            request.getFuture().complete(response);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Timeout-Handling-Flow"><a href="#Timeout-Handling-Flow" class="headerlink" title="Timeout Handling Flow"></a>Timeout Handling Flow</h3><pre>
+<code class="mermaid">
+graph LR
+A[Request Sent] --&gt; B[Start Timer]
+B --&gt; C{Response Received?}
+C --&gt;|Yes| D[Complete Future]
+C --&gt;|No| E{Timeout?}
+E --&gt;|No| C
+E --&gt;|Yes| F[Cancel Request]
+F --&gt; G[Complete Exceptionally]
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Timeout handling is a common interview topic. Discuss the importance of cleaning up resources and preventing memory leaks in long-running applications.</em></p>
+<h2 id="Callback-Management"><a href="#Callback-Management" class="headerlink" title="Callback Management"></a>Callback Management</h2><h3 id="Type-Safe-Callback-Interface"><a href="#Type-Safe-Callback-Interface" class="headerlink" title="Type-Safe Callback Interface"></a>Type-Safe Callback Interface</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">AsyncCallback</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">onSuccess</span><span class="params">(T result)</span>;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">onFailure</span><span class="params">(Throwable throwable)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">default</span> Duration <span class="title function_">getTimeout</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Duration.ofSeconds(<span class="number">30</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">default</span> <span class="type">boolean</span> <span class="title function_">shouldRetry</span><span class="params">(Throwable throwable)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> throwable <span class="keyword">instanceof</span> RetryableException;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Callback-Execution-Model"><a href="#Callback-Execution-Model" class="headerlink" title="Callback Execution Model"></a>Callback Execution Model</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CallbackExecutor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ExecutorService callbackExecutor;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CircuitBreaker circuitBreaker;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; <span class="keyword">void</span> <span class="title function_">executeCallback</span><span class="params">(AsyncCallback&lt;T&gt; callback, T result, Throwable error)</span> &#123;</span><br><span class="line">        callbackExecutor.submit(() -&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (error != <span class="literal">null</span>) &#123;</span><br><span class="line">                    callback.onFailure(error);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    callback.onSuccess(result);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                <span class="comment">// Log callback execution failure</span></span><br><span class="line">                logger.error(<span class="string">&quot;Callback execution failed&quot;</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Callback execution on separate threads prevents blocking the message processing pipeline. Discuss thread pool sizing and bounded queues to prevent resource exhaustion.</em></p>
+<h2 id="Error-Handling-Resilience"><a href="#Error-Handling-Resilience" class="headerlink" title="Error Handling &amp; Resilience"></a>Error Handling &amp; Resilience</h2><h3 id="Circuit-Breaker-Pattern"><a href="#Circuit-Breaker-Pattern" class="headerlink" title="Circuit Breaker Pattern"></a>Circuit Breaker Pattern</h3><pre>
+<code class="mermaid">
+stateDiagram-v2
+[*] --&gt; Closed
+Closed --&gt; HalfOpen : Failure threshold reached
+Closed --&gt; Closed : Success
+HalfOpen --&gt; Open : Test call fails
+HalfOpen --&gt; Closed : Test call succeeds
+Open --&gt; HalfOpen : Timeout elapsed
+Open --&gt; Open : Call rejected
+</code>
+</pre>
+
+<h3 id="Retry-Mechanism"><a href="#Retry-Mechanism" class="headerlink" title="Retry Mechanism"></a>Retry Mechanism</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RetryableInvoker</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> RetryPolicy retryPolicy;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">invoke</span><span class="params">(Supplier&lt;CompletableFuture&lt;T&gt;&gt; operation)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> retryAsync(operation, retryPolicy.getMaxAttempts())</span><br><span class="line">            .exceptionally(throwable -&gt; &#123;</span><br><span class="line">                <span class="keyword">if</span> (throwable <span class="keyword">instanceof</span> RetryExhaustedException) &#123;</span><br><span class="line">                    <span class="comment">// All retries failed</span></span><br><span class="line">                    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">InvocationException</span>(<span class="string">&quot;Request failed after retries&quot;</span>, throwable);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(throwable);</span><br><span class="line">            &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">retryAsync</span><span class="params">(Supplier&lt;CompletableFuture&lt;T&gt;&gt; operation, <span class="type">int</span> attemptsLeft)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> operation.get()</span><br><span class="line">            .exceptionally(throwable -&gt; &#123;</span><br><span class="line">                <span class="keyword">if</span> (attemptsLeft &gt; <span class="number">1</span> &amp;&amp; isRetryable(throwable)) &#123;</span><br><span class="line">                    <span class="keyword">return</span> retryAsync(operation, attemptsLeft - <span class="number">1</span>).join();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">CompletionException</span>(throwable);</span><br><span class="line">            &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Exponential backoff with jitter is crucial for preventing thundering herd problems. Interviewers often ask about retry storm scenarios and mitigation strategies.</em></p>
+<h2 id="Performance-Considerations"><a href="#Performance-Considerations" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h2><h3 id="Connection-Pooling"><a href="#Connection-Pooling" class="headerlink" title="Connection Pooling"></a>Connection Pooling</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConnectionPoolManager</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, ObjectPool&lt;Connection&gt;&gt; connectionPools;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> Connection <span class="title function_">borrowConnection</span><span class="params">(String providerName)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> connectionPools.get(providerName).borrowObject();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">returnConnection</span><span class="params">(String providerName, Connection connection)</span> &#123;</span><br><span class="line">        connectionPools.get(providerName).returnObject(connection);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Serialization-Optimization"><a href="#Serialization-Optimization" class="headerlink" title="Serialization Optimization"></a>Serialization Optimization</h3><table>
+<thead>
+<tr>
+<th>Serialization</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>JSON</strong></td>
+<td>Human readable, widely supported</td>
+<td>Verbose, slower</td>
+<td>Development, debugging</td>
+</tr>
+<tr>
+<td><strong>Protobuf</strong></td>
+<td>Compact, fast, schema evolution</td>
+<td>Complex setup</td>
+<td>High-performance production</td>
+</tr>
+<tr>
+<td><strong>Avro</strong></td>
+<td>Schema evolution, compact</td>
+<td>Requires schema registry</td>
+<td>Data pipelines</td>
+</tr>
+<tr>
+<td><strong>MessagePack</strong></td>
+<td>Compact, fast</td>
+<td>Limited language support</td>
+<td>Performance-critical</td>
+</tr>
+</tbody></table>
+<p><strong>Interview Insight</strong>: <em>Serialization choice significantly impacts performance. Discuss schema evolution challenges and backward compatibility requirements.</em></p>
+<h2 id="Implementation-Examples"><a href="#Implementation-Examples" class="headerlink" title="Implementation Examples"></a>Implementation Examples</h2><h3 id="Basic-Usage"><a href="#Basic-Usage" class="headerlink" title="Basic Usage"></a>Basic Usage</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Configuration</span></span><br><span class="line"><span class="type">Properties</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">config.setProperty(<span class="string">&quot;mq.provider&quot;</span>, <span class="string">&quot;kafka&quot;</span>);</span><br><span class="line">config.setProperty(<span class="string">&quot;kafka.bootstrap.servers&quot;</span>, <span class="string">&quot;localhost:9092&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Initialize SDK</span></span><br><span class="line"><span class="type">AsyncInvoker</span> <span class="variable">invoker</span> <span class="operator">=</span> AsyncInvokerBuilder.newBuilder()</span><br><span class="line">    .withConfig(config)</span><br><span class="line">    .build();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Async method call with CompletableFuture</span></span><br><span class="line">CompletableFuture&lt;UserProfile&gt; future = invoker.asyncGet(<span class="string">&quot;/users/123&quot;</span>, UserProfile.class);</span><br><span class="line">future.thenAccept(profile -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;User: &quot;</span> + profile.getName());</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Async method call with callback</span></span><br><span class="line">invoker.asyncPost(<span class="string">&quot;/users&quot;</span>, newUser, UserProfile.class, <span class="keyword">new</span> <span class="title class_">AsyncCallback</span>&lt;UserProfile&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onSuccess</span><span class="params">(UserProfile result)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;User created: &quot;</span> + result.getId());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onFailure</span><span class="params">(Throwable throwable)</span> &#123;</span><br><span class="line">        System.err.println(<span class="string">&quot;Failed to create user: &quot;</span> + throwable.getMessage());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Advanced-Configuration"><a href="#Advanced-Configuration" class="headerlink" title="Advanced Configuration"></a>Advanced Configuration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">AsyncInvoker</span> <span class="variable">invoker</span> <span class="operator">=</span> AsyncInvokerBuilder.newBuilder()</span><br><span class="line">    .withProvider(<span class="string">&quot;kafka&quot;</span>)</span><br><span class="line">    .withConnectionPool(<span class="number">10</span>, <span class="number">50</span>) <span class="comment">// min, max connections</span></span><br><span class="line">    .withTimeout(Duration.ofSeconds(<span class="number">30</span>))</span><br><span class="line">    .withRetryPolicy(RetryPolicy.exponentialBackoff(<span class="number">3</span>, Duration.ofSeconds(<span class="number">1</span>)))</span><br><span class="line">    .withCircuitBreaker(CircuitBreakerConfig.builder()</span><br><span class="line">        .failureThreshold(<span class="number">5</span>)</span><br><span class="line">        .timeoutDuration(Duration.ofSeconds(<span class="number">10</span>))</span><br><span class="line">        .build())</span><br><span class="line">    .withSerialization(SerializationType.PROTOBUF)</span><br><span class="line">    .build();</span><br></pre></td></tr></table></figure>
+
+<h3 id="Spring-Boot-Integration"><a href="#Spring-Boot-Integration" class="headerlink" title="Spring Boot Integration"></a>Spring Boot Integration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableAsyncInvoke</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AsyncInvokeConfig</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@ConfigurationProperties(&quot;async.invoke&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> AsyncInvokeProperties <span class="title function_">asyncInvokeProperties</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">AsyncInvokeProperties</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> AsyncInvoker <span class="title function_">asyncInvoker</span><span class="params">(AsyncInvokeProperties properties)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> AsyncInvokerBuilder.newBuilder()</span><br><span class="line">            .withProperties(properties)</span><br><span class="line">            .build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> AsyncInvoker asyncInvoker;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;User&gt; <span class="title function_">getUserAsync</span><span class="params">(Long userId)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> asyncInvoker.asyncGet(<span class="string">&quot;/users/&quot;</span> + userId, User.class);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Insights"><a href="#Interview-Insights" class="headerlink" title="Interview Insights"></a>Interview Insights</h2><h3 id="Common-Questions-Answers"><a href="#Common-Questions-Answers" class="headerlink" title="Common Questions &amp; Answers"></a>Common Questions &amp; Answers</h3><p><strong>Q: How do you handle message ordering in distributed systems?</strong><br>A: <em>Message ordering depends on the use case. Kafka provides partition-level ordering, which is sufficient for most scenarios. For global ordering, you can use a single partition (sacrificing throughput) or implement application-level sequencing with timestamp-based ordering.</em></p>
+<p><strong>Q: What happens if the callback thread pool is exhausted?</strong><br>A: <em>We use bounded queues with rejection policies. The RejectedExecutionHandler can either:</em></p>
+<ul>
+<li><em>Block the caller (risk of deadlock)</em></li>
+<li><em>Execute in the calling thread (impacts message processing)</em></li>
+<li><em>Drop the task (data loss)</em></li>
+<li><em>Use a separate overflow queue with different processing guarantees</em></li>
+</ul>
+<p><strong>Q: How do you handle duplicate messages?</strong><br>A: <em>Implement idempotency at the application level using correlation IDs or unique request identifiers. The SDK provides hooks for duplicate detection, but business logic must ensure operations are idempotent.</em></p>
+<p><strong>Q: What’s the difference between at-least-once and exactly-once delivery?</strong><br>A: <em>At-least-once guarantees message delivery but allows duplicates. Exactly-once is theoretically impossible in distributed systems but can be achieved through idempotent operations and deduplication. Our SDK supports both patterns through configuration.</em></p>
+<p><strong>Q: How do you monitor the health of async operations?</strong><br>A: <em>We expose metrics through JMX&#x2F;Micrometer:</em></p>
+<ul>
+<li><em>Request&#x2F;response rates</em></li>
+<li><em>Latency percentiles</em></li>
+<li><em>Error rates by type</em></li>
+<li><em>Circuit breaker states</em></li>
+<li><em>Queue depths and consumer lag</em></li>
+</ul>
+<h3 id="Performance-Tuning-Tips"><a href="#Performance-Tuning-Tips" class="headerlink" title="Performance Tuning Tips"></a>Performance Tuning Tips</h3><ol>
+<li><strong>Batch Operations</strong>: Group multiple requests to reduce network overhead</li>
+<li><strong>Connection Reuse</strong>: Implement proper connection pooling</li>
+<li><strong>Serialization</strong>: Choose appropriate serialization format for your use case</li>
+<li><strong>Thread Pool Sizing</strong>: Size thread pools based on I&#x2F;O vs CPU-bound operations</li>
+<li><strong>Memory Management</strong>: Monitor for memory leaks in long-running applications</li>
+</ol>
+<h3 id="Production-Considerations"><a href="#Production-Considerations" class="headerlink" title="Production Considerations"></a>Production Considerations</h3><ul>
+<li><strong>Graceful Shutdown</strong>: Implement proper cleanup of resources and in-flight requests</li>
+<li><strong>Health Checks</strong>: Provide endpoints for monitoring system health</li>
+<li><strong>Configuration Management</strong>: Support dynamic configuration updates without restart</li>
+<li><strong>Security</strong>: Implement authentication and authorization for message queues</li>
+<li><strong>Observability</strong>: Comprehensive logging, metrics, and distributed tracing</li>
+</ul>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>The General Async Invoke SDK provides a robust foundation for building scalable, resilient distributed systems. By abstracting message queue specifics behind a unified interface, it enables teams to focus on business logic while maintaining flexibility in infrastructure choices.</p>
+<p>The SPI mechanism ensures extensibility, while built-in resilience patterns like circuit breakers and retry logic provide production-ready reliability. The combination of CompletableFuture and callback-based APIs caters to different programming styles and use cases.</p>
+<p>Key success factors for implementation:</p>
+<ul>
+<li>Thorough testing of error scenarios</li>
+<li>Comprehensive monitoring and alerting</li>
+<li>Clear documentation for developers</li>
+<li>Performance benchmarking across different MQ providers</li>
+<li>Regular review of timeout and retry configurations</li>
+</ul>
+<p>This design balances flexibility, performance, and ease of use while providing the foundation for enterprise-grade asynchronous communication patterns.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/system-design/" rel="tag"># system-design</a>
+              <a href="/tags/async-invocation/" rel="tag"># async invocation</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/13/Design-File-Storage-Service/" rel="prev" title="Design File Storage Service">
+                  <i class="fa fa-angle-left"></i> Design File Storage Service
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/06/13/Design-Multi-Tenant-Database-SDK/" rel="next" title="Design Multi-Tenant Database SDK">
+                  Design Multi-Tenant Database SDK <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
