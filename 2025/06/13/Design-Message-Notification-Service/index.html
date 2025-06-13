@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="System OverviewThe Message Notification Service is a scalable, multi-channel notification platform designed to handle 10 million messages per day across email, SMS, and WeChat channels. The system emp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Design Message Notification Service">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/13/Design-Message-Notification-Service/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="System OverviewThe Message Notification Service is a scalable, multi-channel notification platform designed to handle 10 million messages per day across email, SMS, and WeChat channels. The system emp">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-13T12:54:18.000Z">
+<meta property="article:modified_time" content="2025-06-13T12:56:18.669Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="system-design">
+<meta property="article:tag" content="message notification">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/13/Design-Message-Notification-Service/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/13/Design-Message-Notification-Service/","path":"2025/06/13/Design-Message-Notification-Service/","title":"Design Message Notification Service"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Design Message Notification Service | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#System-Overview"><span class="nav-number">1.</span> <span class="nav-text">System Overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Core-Architecture-Components"><span class="nav-number">2.</span> <span class="nav-text">Core Architecture Components</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Message-Notification-Service-API"><span class="nav-number">2.1.</span> <span class="nav-text">Message Notification Service API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Message-Queue-Architecture"><span class="nav-number">2.2.</span> <span class="nav-text">Message Queue Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Template-Engine-Design"><span class="nav-number">2.3.</span> <span class="nav-text">Template Engine Design</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Scalability-and-Performance"><span class="nav-number">3.</span> <span class="nav-text">Scalability and Performance</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#High-Volume-Message-Processing"><span class="nav-number">3.1.</span> <span class="nav-text">High-Volume Message Processing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Caching-Strategy"><span class="nav-number">3.2.</span> <span class="nav-text">Caching Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Channel-Specific-Implementations"><span class="nav-number">4.</span> <span class="nav-text">Channel-Specific Implementations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Email-Service"><span class="nav-number">4.1.</span> <span class="nav-text">Email Service</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SMS-Service-Implementation"><span class="nav-number">4.2.</span> <span class="nav-text">SMS Service Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WeChat-Integration"><span class="nav-number">4.3.</span> <span class="nav-text">WeChat Integration</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Scheduling-and-Delivery-Management"><span class="nav-number">5.</span> <span class="nav-text">Scheduling and Delivery Management</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Scheduler-Service-Architecture"><span class="nav-number">5.1.</span> <span class="nav-text">Scheduler Service Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Retry-and-Failure-Handling"><span class="nav-number">5.2.</span> <span class="nav-text">Retry and Failure Handling</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MessageNotificationSDK-Design"><span class="nav-number">6.</span> <span class="nav-text">MessageNotificationSDK Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SDK-Architecture"><span class="nav-number">6.1.</span> <span class="nav-text">SDK Architecture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDK-Configuration"><span class="nav-number">6.2.</span> <span class="nav-text">SDK Configuration</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Observability"><span class="nav-number">7.</span> <span class="nav-text">Monitoring and Observability</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Metrics-Dashboard"><span class="nav-number">7.1.</span> <span class="nav-text">Key Metrics Dashboard</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Alerting-Strategy"><span class="nav-number">7.2.</span> <span class="nav-text">Alerting Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Security-and-Compliance"><span class="nav-number">8.</span> <span class="nav-text">Security and Compliance</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Protection"><span class="nav-number">8.1.</span> <span class="nav-text">Data Protection</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Compliance-Considerations"><span class="nav-number">8.2.</span> <span class="nav-text">Compliance Considerations</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Benchmarks-and-Capacity-Planning"><span class="nav-number">9.</span> <span class="nav-text">Performance Benchmarks and Capacity Planning</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Load-Testing-Results"><span class="nav-number">9.1.</span> <span class="nav-text">Load Testing Results</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Database-Sizing"><span class="nav-number">9.2.</span> <span class="nav-text">Database Sizing</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cost-Optimization-Strategies"><span class="nav-number">10.</span> <span class="nav-text">Cost Optimization Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Provider-Cost-Management"><span class="nav-number">10.1.</span> <span class="nav-text">Provider Cost Management</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Testing-Strategy"><span class="nav-number">11.</span> <span class="nav-text">Testing Strategy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Integration-Testing"><span class="nav-number">11.1.</span> <span class="nav-text">Integration Testing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Chaos-Engineering"><span class="nav-number">11.2.</span> <span class="nav-text">Chaos Engineering</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Future-Enhancements"><span class="nav-number">12.</span> <span class="nav-text">Future Enhancements</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Advanced-Features-Roadmap"><span class="nav-number">12.1.</span> <span class="nav-text">Advanced Features Roadmap</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">13.</span> <span class="nav-text">Conclusion</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/13/Design-Message-Notification-Service/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Design Message Notification Service | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Design Message Notification Service
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-13 20:54:18 / Modified: 20:56:18" itemprop="dateCreated datePublished" datetime="2025-06-13T20:54:18+08:00">2025-06-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="System-Overview"><a href="#System-Overview" class="headerlink" title="System Overview"></a>System Overview</h2><p>The Message Notification Service is a scalable, multi-channel notification platform designed to handle 10 million messages per day across email, SMS, and WeChat channels. The system employs event-driven architecture with message queues for decoupling, template-based messaging, and comprehensive delivery tracking.</p>
+<p><strong>Interview Insight</strong>: When discussing notification systems, emphasize the trade-offs between consistency and availability. For notifications, we typically choose availability over strict consistency since delayed delivery is preferable to no delivery.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">    A[Business Services] --&gt; B[MessageNotificationSDK]</span><br><span class="line">    B --&gt; C[API Gateway]</span><br><span class="line">    C --&gt; D[Message Service]</span><br><span class="line">    D --&gt; E[Message Queue]</span><br><span class="line">    E --&gt; F[Channel Processors]</span><br><span class="line">    F --&gt; G[Email Service]</span><br><span class="line">    F --&gt; H[SMS Service]</span><br><span class="line">    F --&gt; I[WeChat Service]</span><br><span class="line">    D --&gt; J[Template Engine]</span><br><span class="line">    D --&gt; K[Scheduler Service]</span><br><span class="line">    F --&gt; L[Delivery Tracker]</span><br><span class="line">    L --&gt; M[Analytics DB]</span><br><span class="line">    D --&gt; N[Message Store]</span><br></pre></td></tr></table></figure>
+
+<h2 id="Core-Architecture-Components"><a href="#Core-Architecture-Components" class="headerlink" title="Core Architecture Components"></a>Core Architecture Components</h2><h3 id="Message-Notification-Service-API"><a href="#Message-Notification-Service-API" class="headerlink" title="Message Notification Service API"></a>Message Notification Service API</h3><p>The central service provides RESTful APIs for immediate and scheduled notifications:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;messageId&quot;</span><span class="punctuation">:</span> <span class="string">&quot;msg_123456&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;recipients&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;userId&quot;</span><span class="punctuation">:</span> <span class="string">&quot;user_001&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;channels&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;email&quot;</span><span class="punctuation">,</span> <span class="string">&quot;sms&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;email&quot;</span><span class="punctuation">:</span> <span class="string">&quot;user@example.com&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;phone&quot;</span><span class="punctuation">:</span> <span class="string">&quot;+1234567890&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;template&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;templateId&quot;</span><span class="punctuation">:</span> <span class="string">&quot;welcome_template&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;variables&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;userName&quot;</span><span class="punctuation">:</span> <span class="string">&quot;John Doe&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;activationLink&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://app.com/activate/xyz&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;priority&quot;</span><span class="punctuation">:</span> <span class="string">&quot;high&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scheduledAt&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-03-15T10:00:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;retryPolicy&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;maxRetries&quot;</span><span class="punctuation">:</span> <span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;backoffMultiplier&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Discuss idempotency here - each message should have a unique ID to prevent duplicate sends. This is crucial for financial notifications or critical alerts.</p>
+<h3 id="Message-Queue-Architecture"><a href="#Message-Queue-Architecture" class="headerlink" title="Message Queue Architecture"></a>Message Queue Architecture</h3><p>The system uses Apache Kafka for high-throughput message processing with the following topic structure:</p>
+<ul>
+<li><code>notification.immediate</code> - Real-time notifications</li>
+<li><code>notification.scheduled</code> - Scheduled notifications  </li>
+<li><code>notification.retry</code> - Failed message retries</li>
+<li><code>notification.dlq</code> - Dead letter queue for permanent failures</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">flowchart LR</span><br><span class="line">    A[API Gateway] --&gt; B[Message Validator]</span><br><span class="line">    B --&gt; C&#123;Message Type&#125;</span><br><span class="line">    C --&gt;|Immediate| D[notification.immediate]</span><br><span class="line">    C --&gt;|Scheduled| E[notification.scheduled]</span><br><span class="line">    D --&gt; F[Channel Router]</span><br><span class="line">    E --&gt; G[Scheduler Service]</span><br><span class="line">    G --&gt; F</span><br><span class="line">    F --&gt; H[Email Processor]</span><br><span class="line">    F --&gt; I[SMS Processor]</span><br><span class="line">    F --&gt; J[WeChat Processor]</span><br><span class="line">    H --&gt; K[Email Provider]</span><br><span class="line">    I --&gt; L[SMS Provider]</span><br><span class="line">    J --&gt; M[WeChat API]</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Explain partitioning strategy - partition by user ID for ordered processing per user, or by message type for parallel processing. The choice depends on whether message ordering matters for your use case.</p>
+<h3 id="Template-Engine-Design"><a href="#Template-Engine-Design" class="headerlink" title="Template Engine Design"></a>Template Engine Design</h3><p>Templates support dynamic content injection with internationalization:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">templates:</span></span><br><span class="line">  <span class="attr">welcome_email:</span></span><br><span class="line">    <span class="attr">subject:</span> <span class="string">&quot;Welcome <span class="template-variable">&#123;&#123;userName&#125;&#125;</span> - <span class="template-variable">&#123;&#123;companyName&#125;&#125;</span>&quot;</span></span><br><span class="line">    <span class="attr">body:</span> <span class="string">|</span></span><br><span class="line"><span class="string">      &lt;html&gt;</span></span><br><span class="line"><span class="string">        &lt;body&gt;</span></span><br><span class="line"><span class="string">          &lt;h1&gt;Welcome &#123;&#123;userName&#125;&#125;!&lt;/h1&gt;</span></span><br><span class="line"><span class="string">          &lt;p&gt;Thank you for joining &#123;&#123;companyName&#125;&#125;.&lt;/p&gt;</span></span><br><span class="line"><span class="string">          &lt;a href=&quot;&#123;&#123;activationLink&#125;&#125;&quot;&gt;Activate Account&lt;/a&gt;</span></span><br><span class="line"><span class="string">        &lt;/body&gt;</span></span><br><span class="line"><span class="string">      &lt;/html&gt;</span></span><br><span class="line"><span class="string"></span>    <span class="attr">channels:</span> [<span class="string">&quot;email&quot;</span>]</span><br><span class="line">    <span class="attr">variables:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">userName:</span> <span class="string">required</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">companyName:</span> <span class="string">required</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">activationLink:</span> <span class="string">required</span></span><br><span class="line">  </span><br><span class="line">  <span class="attr">sms_verification:</span></span><br><span class="line">    <span class="attr">body:</span> <span class="string">&quot;Your <span class="template-variable">&#123;&#123;companyName&#125;&#125;</span> verification code: <span class="template-variable">&#123;&#123;code&#125;&#125;</span>. Valid for <span class="template-variable">&#123;&#123;expiry&#125;&#125;</span> minutes.&quot;</span></span><br><span class="line">    <span class="attr">channels:</span> [<span class="string">&quot;sms&quot;</span>]</span><br><span class="line">    <span class="attr">variables:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">companyName:</span> <span class="string">required</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">code:</span> <span class="string">required</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">expiry:</span> <span class="string">required</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Template versioning is critical for production systems. Discuss A&#x2F;B testing capabilities where different template versions can be tested simultaneously to optimize engagement rates.</p>
+<h2 id="Scalability-and-Performance"><a href="#Scalability-and-Performance" class="headerlink" title="Scalability and Performance"></a>Scalability and Performance</h2><h3 id="High-Volume-Message-Processing"><a href="#High-Volume-Message-Processing" class="headerlink" title="High-Volume Message Processing"></a>High-Volume Message Processing</h3><p>To handle 10 million messages daily (approximately 116 messages&#x2F;second average, 1000+ messages&#x2F;second peak):</p>
+<p><strong>Horizontal Scaling Strategy</strong>:</p>
+<ul>
+<li>Multiple Kafka consumer groups for parallel processing</li>
+<li>Channel-specific processors with independent scaling</li>
+<li>Load balancing across processor instances</li>
+</ul>
+<p><strong>Performance Optimizations</strong>:</p>
+<ul>
+<li>Connection pooling for external APIs</li>
+<li>Batch processing for similar notifications</li>
+<li>Asynchronous processing with circuit breakers</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">    participant BS as Business Service</span><br><span class="line">    participant SDK as Notification SDK</span><br><span class="line">    participant API as API Gateway</span><br><span class="line">    participant MQ as Message Queue</span><br><span class="line">    participant CP as Channel Processor</span><br><span class="line">    participant EP as Email Provider</span><br><span class="line">    </span><br><span class="line">    BS-&gt;&gt;SDK: sendNotification(request)</span><br><span class="line">    SDK-&gt;&gt;API: POST /notifications</span><br><span class="line">    API-&gt;&gt;API: Validate &amp; Enrich</span><br><span class="line">    API-&gt;&gt;MQ: Publish message</span><br><span class="line">    API--&gt;&gt;SDK: messageId (async)</span><br><span class="line">    SDK--&gt;&gt;BS: messageId</span><br><span class="line">    </span><br><span class="line">    MQ-&gt;&gt;CP: Consume message</span><br><span class="line">    CP-&gt;&gt;CP: Apply template</span><br><span class="line">    CP-&gt;&gt;EP: Send email</span><br><span class="line">    EP--&gt;&gt;CP: Delivery status</span><br><span class="line">    CP-&gt;&gt;MQ: Update delivery status</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Discuss the CAP theorem application - in notification systems, we choose availability and partition tolerance over consistency. It’s better to potentially send a duplicate notification than to miss sending one entirely.</p>
+<h3 id="Caching-Strategy"><a href="#Caching-Strategy" class="headerlink" title="Caching Strategy"></a>Caching Strategy</h3><p><strong>Multi-Level Caching</strong>:</p>
+<ul>
+<li><strong>Template Cache</strong>: Redis cluster for compiled templates</li>
+<li><strong>User Preference Cache</strong>: User notification preferences and contact info</li>
+<li><strong>Rate Limiting Cache</strong>: Sliding window counters for rate limiting</li>
+</ul>
+<h2 id="Channel-Specific-Implementations"><a href="#Channel-Specific-Implementations" class="headerlink" title="Channel-Specific Implementations"></a>Channel-Specific Implementations</h2><h3 id="Email-Service"><a href="#Email-Service" class="headerlink" title="Email Service"></a>Email Service</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EmailChannelProcessor</span> <span class="keyword">implements</span> <span class="title class_">ChannelProcessor</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> EmailProviderFactory providerFactory;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> DeliveryResult <span class="title function_">process</span><span class="params">(NotificationMessage message)</span> &#123;</span><br><span class="line">        <span class="type">EmailProvider</span> <span class="variable">provider</span> <span class="operator">=</span> providerFactory.getProvider(message.getPriority());</span><br><span class="line">        </span><br><span class="line">        <span class="type">EmailContent</span> <span class="variable">content</span> <span class="operator">=</span> templateEngine.render(</span><br><span class="line">            message.getTemplateId(), </span><br><span class="line">            message.getVariables()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> provider.send(EmailRequest.builder()</span><br><span class="line">            .to(message.getRecipient().getEmail())</span><br><span class="line">            .subject(content.getSubject())</span><br><span class="line">            .htmlBody(content.getBody())</span><br><span class="line">            .priority(message.getPriority())</span><br><span class="line">            .build());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Provider Failover Strategy</strong>:</p>
+<ul>
+<li>Primary: AWS SES (high volume, cost-effective)</li>
+<li>Secondary: SendGrid (reliability backup)</li>
+<li>Tertiary: Mailgun (final fallback)</li>
+</ul>
+<h3 id="SMS-Service-Implementation"><a href="#SMS-Service-Implementation" class="headerlink" title="SMS Service Implementation"></a>SMS Service Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SmsChannelProcessor</span> <span class="keyword">implements</span> <span class="title class_">ChannelProcessor</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> DeliveryResult <span class="title function_">process</span><span class="params">(NotificationMessage message)</span> &#123;</span><br><span class="line">        <span class="comment">// Route based on country code for optimal delivery rates</span></span><br><span class="line">        <span class="type">SmsProvider</span> <span class="variable">provider</span> <span class="operator">=</span> routingService.selectProvider(</span><br><span class="line">            message.getRecipient().getPhoneNumber()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="type">SmsContent</span> <span class="variable">content</span> <span class="operator">=</span> templateEngine.render(</span><br><span class="line">            message.getTemplateId(),</span><br><span class="line">            message.getVariables()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> provider.send(SmsRequest.builder()</span><br><span class="line">            .to(message.getRecipient().getPhoneNumber())</span><br><span class="line">            .message(content.getMessage())</span><br><span class="line">            .build());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: SMS routing is geography-dependent. Different providers have better delivery rates in different regions. Discuss how you’d implement intelligent routing based on phone number analysis.</p>
+<h3 id="WeChat-Integration"><a href="#WeChat-Integration" class="headerlink" title="WeChat Integration"></a>WeChat Integration</h3><p>WeChat requires special handling due to its ecosystem:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span> </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WeChatChannelProcessor</span> <span class="keyword">implements</span> <span class="title class_">ChannelProcessor</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> DeliveryResult <span class="title function_">process</span><span class="params">(NotificationMessage message)</span> &#123;</span><br><span class="line">        <span class="comment">// WeChat template messages have strict formatting requirements</span></span><br><span class="line">        <span class="type">WeChatTemplate</span> <span class="variable">template</span> <span class="operator">=</span> weChatTemplateService.getTemplate(</span><br><span class="line">            message.getTemplateId()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="type">WeChatMessage</span> <span class="variable">weChatMessage</span> <span class="operator">=</span> WeChatMessage.builder()</span><br><span class="line">            .openId(message.getRecipient().getWeChatOpenId())</span><br><span class="line">            .templateId(template.getWeChatTemplateId())</span><br><span class="line">            .data(transformVariables(message.getVariables()))</span><br><span class="line">            .build();</span><br><span class="line">            </span><br><span class="line">        <span class="keyword">return</span> weChatApiClient.sendTemplateMessage(weChatMessage);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Scheduling-and-Delivery-Management"><a href="#Scheduling-and-Delivery-Management" class="headerlink" title="Scheduling and Delivery Management"></a>Scheduling and Delivery Management</h2><h3 id="Scheduler-Service-Architecture"><a href="#Scheduler-Service-Architecture" class="headerlink" title="Scheduler Service Architecture"></a>Scheduler Service Architecture</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">flowchart TD</span><br><span class="line">    A[Scheduled Messages] --&gt; B[Time-based Partitioner]</span><br><span class="line">    B --&gt; C[Quartz Scheduler Cluster]</span><br><span class="line">    C --&gt; D[Message Trigger]</span><br><span class="line">    D --&gt; E&#123;Delivery Window?&#125;</span><br><span class="line">    E --&gt;|Yes| F[Send to Processing Queue]</span><br><span class="line">    E --&gt;|No| G[Reschedule]</span><br><span class="line">    F --&gt; H[Channel Processors]</span><br><span class="line">    G --&gt; A</span><br></pre></td></tr></table></figure>
+
+<p><strong>Delivery Window Management</strong>:</p>
+<ul>
+<li>Timezone-aware scheduling</li>
+<li>Business hours enforcement</li>
+<li>Frequency capping to prevent spam</li>
+</ul>
+<h3 id="Retry-and-Failure-Handling"><a href="#Retry-and-Failure-Handling" class="headerlink" title="Retry and Failure Handling"></a>Retry and Failure Handling</h3><p><strong>Exponential Backoff Strategy</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RetryPolicyManager</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> RetryPolicy <span class="title function_">getRetryPolicy</span><span class="params">(ChannelType channel, FailureReason reason)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> RetryPolicy.builder()</span><br><span class="line">            .maxRetries(getMaxRetries(channel, reason))</span><br><span class="line">            .initialDelay(Duration.ofSeconds(<span class="number">30</span>))</span><br><span class="line">            .backoffMultiplier(<span class="number">2.0</span>)</span><br><span class="line">            .maxDelay(Duration.ofHours(<span class="number">4</span>))</span><br><span class="line">            .jitter(<span class="number">0.1</span>)</span><br><span class="line">            .build();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="title function_">getMaxRetries</span><span class="params">(ChannelType channel, FailureReason reason)</span> &#123;</span><br><span class="line">        <span class="comment">// Email: 3 retries for transient failures, 0 for invalid addresses</span></span><br><span class="line">        <span class="comment">// SMS: 2 retries for network issues, 0 for invalid numbers  </span></span><br><span class="line">        <span class="comment">// WeChat: 3 retries for API limits, 1 for user blocks</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Discuss the importance of classifying failures - temporary vs permanent. Retrying an invalid email address wastes resources, while network timeouts should be retried with backoff.</p>
+<h2 id="MessageNotificationSDK-Design"><a href="#MessageNotificationSDK-Design" class="headerlink" title="MessageNotificationSDK Design"></a>MessageNotificationSDK Design</h2><h3 id="SDK-Architecture"><a href="#SDK-Architecture" class="headerlink" title="SDK Architecture"></a>SDK Architecture</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MessageNotificationSDK</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> NotificationClient notificationClient;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CircuitBreaker circuitBreaker;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;MessageResult&gt; <span class="title function_">sendNotification</span><span class="params">(NotificationRequest request)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> circuitBreaker.executeAsync(() -&gt; </span><br><span class="line">            notificationClient.sendNotification(request)</span><br><span class="line">        ).exceptionally(throwable -&gt; &#123;</span><br><span class="line">            <span class="comment">// Fallback: store in local queue for retry</span></span><br><span class="line">            localQueueService.enqueue(request);</span><br><span class="line">            <span class="keyword">return</span> MessageResult.queued(request.getMessageId());</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;MessageResult&gt; <span class="title function_">sendScheduledNotification</span><span class="params">(</span></span><br><span class="line"><span class="params">        NotificationRequest request, </span></span><br><span class="line"><span class="params">        Instant scheduledTime</span></span><br><span class="line"><span class="params">    )</span> &#123;</span><br><span class="line">        <span class="type">ScheduledNotificationRequest</span> <span class="variable">scheduledRequest</span> <span class="operator">=</span> </span><br><span class="line">            ScheduledNotificationRequest.builder()</span><br><span class="line">                .notificationRequest(request)</span><br><span class="line">                .scheduledAt(scheduledTime)</span><br><span class="line">                .build();</span><br><span class="line">                </span><br><span class="line">        <span class="keyword">return</span> notificationClient.scheduleNotification(scheduledRequest);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="SDK-Configuration"><a href="#SDK-Configuration" class="headerlink" title="SDK Configuration"></a>SDK Configuration</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">notification:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">baseUrl:</span> <span class="string">https://notifications.company.com</span></span><br><span class="line">    <span class="attr">timeout:</span> <span class="string">30s</span></span><br><span class="line">    <span class="attr">retries:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">circuit-breaker:</span></span><br><span class="line">    <span class="attr">failure-threshold:</span> <span class="number">5</span></span><br><span class="line">    <span class="attr">recovery-timeout:</span> <span class="string">60s</span></span><br><span class="line">  <span class="attr">local-queue:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">max-size:</span> <span class="number">1000</span></span><br><span class="line">    <span class="attr">flush-interval:</span> <span class="string">30s</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: The SDK should be resilient to service unavailability. Discuss local queuing, circuit breakers, and graceful degradation strategies.</p>
+<h2 id="Monitoring-and-Observability"><a href="#Monitoring-and-Observability" class="headerlink" title="Monitoring and Observability"></a>Monitoring and Observability</h2><h3 id="Key-Metrics-Dashboard"><a href="#Key-Metrics-Dashboard" class="headerlink" title="Key Metrics Dashboard"></a>Key Metrics Dashboard</h3><p><strong>Throughput Metrics</strong>:</p>
+<ul>
+<li>Messages processed per second by channel</li>
+<li>Queue depth and processing latency</li>
+<li>Template rendering performance</li>
+</ul>
+<p><strong>Delivery Metrics</strong>:</p>
+<ul>
+<li>Delivery success rate by channel and provider</li>
+<li>Bounce and failure rates</li>
+<li>Time to delivery distribution</li>
+</ul>
+<p><strong>Business Metrics</strong>:</p>
+<ul>
+<li>User engagement rates</li>
+<li>Opt-out rates by channel</li>
+<li>Cost per notification by channel</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">    A[Notification Service] --&gt; B[Metrics Collector]</span><br><span class="line">    B --&gt; C[Prometheus]</span><br><span class="line">    C --&gt; D[Grafana Dashboard]</span><br><span class="line">    B --&gt; E[Application Logs]</span><br><span class="line">    E --&gt; F[ELK Stack]</span><br><span class="line">    B --&gt; G[Distributed Tracing]</span><br><span class="line">    G --&gt; H[Jaeger]</span><br></pre></td></tr></table></figure>
+
+<h3 id="Alerting-Strategy"><a href="#Alerting-Strategy" class="headerlink" title="Alerting Strategy"></a>Alerting Strategy</h3><p><strong>Critical Alerts</strong>:</p>
+<ul>
+<li>Queue depth &gt; 10,000 messages</li>
+<li>Delivery success rate &lt; 95%</li>
+<li>Provider API failure rate &gt; 5%</li>
+</ul>
+<p><strong>Warning Alerts</strong>:</p>
+<ul>
+<li>Processing latency &gt; 30 seconds</li>
+<li>Template rendering errors</li>
+<li>Unusual bounce rate increases</li>
+</ul>
+<h2 id="Security-and-Compliance"><a href="#Security-and-Compliance" class="headerlink" title="Security and Compliance"></a>Security and Compliance</h2><h3 id="Data-Protection"><a href="#Data-Protection" class="headerlink" title="Data Protection"></a>Data Protection</h3><p><strong>Encryption</strong>:</p>
+<ul>
+<li>At-rest: AES-256 encryption for stored messages</li>
+<li>In-transit: TLS 1.3 for all API communications</li>
+<li>PII masking in logs and metrics</li>
+</ul>
+<p><strong>Access Control</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@PreAuthorize(&quot;hasRole(&#x27;NOTIFICATION_ADMIN&#x27;) or hasPermission(#request.userId, &#x27;SEND_NOTIFICATION&#x27;)&quot;)</span></span><br><span class="line"><span class="keyword">public</span> MessageResult <span class="title function_">sendNotification</span><span class="params">(NotificationRequest request)</span> &#123;</span><br><span class="line">    <span class="comment">// Implementation</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Compliance-Considerations"><a href="#Compliance-Considerations" class="headerlink" title="Compliance Considerations"></a>Compliance Considerations</h3><p><strong>GDPR Compliance</strong>:</p>
+<ul>
+<li>Right to be forgotten: Automatic message deletion after retention period</li>
+<li>Consent management: Integration with preference center</li>
+<li>Data minimization: Only store necessary message data</li>
+</ul>
+<p><strong>CAN-SPAM Act</strong>:</p>
+<ul>
+<li>Automatic unsubscribe link injection</li>
+<li>Sender identification requirements</li>
+<li>Opt-out processing within 10 business days</li>
+</ul>
+<p><strong>Interview Insight</strong>: Security should be built-in, not bolted-on. Discuss defense in depth - encryption, authentication, authorization, input validation, and audit logging at every layer.</p>
+<h2 id="Performance-Benchmarks-and-Capacity-Planning"><a href="#Performance-Benchmarks-and-Capacity-Planning" class="headerlink" title="Performance Benchmarks and Capacity Planning"></a>Performance Benchmarks and Capacity Planning</h2><h3 id="Load-Testing-Results"><a href="#Load-Testing-Results" class="headerlink" title="Load Testing Results"></a>Load Testing Results</h3><p><strong>Target Performance</strong>:</p>
+<ul>
+<li>10M messages&#x2F;day &#x3D; 115 messages&#x2F;second average</li>
+<li>Peak capacity: 1,000 messages&#x2F;second</li>
+<li>99th percentile latency: &lt; 100ms for API calls</li>
+<li>95th percentile delivery time: &lt; 30 seconds</li>
+</ul>
+<p><strong>Scaling Calculations</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Email Channel:</span><br><span class="line">- Provider rate limit: 1000 emails/second</span><br><span class="line">- Buffer factor: 2x for burst capacity</span><br><span class="line">- Required instances: 2 (with failover)</span><br><span class="line"></span><br><span class="line">SMS Channel:  </span><br><span class="line">- Provider rate limit: 100 SMS/second</span><br><span class="line">- Peak SMS load: ~200/second (20% of total)</span><br><span class="line">- Required instances: 4 (with geographic distribution)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Database-Sizing"><a href="#Database-Sizing" class="headerlink" title="Database Sizing"></a>Database Sizing</h3><p><strong>Message Storage Requirements</strong>:</p>
+<ul>
+<li>10M messages&#x2F;day × 2KB average size &#x3D; 20GB&#x2F;day</li>
+<li>90-day retention &#x3D; 1.8TB storage requirement</li>
+<li>With replication and indexes: 5TB total</li>
+</ul>
+<h2 id="Cost-Optimization-Strategies"><a href="#Cost-Optimization-Strategies" class="headerlink" title="Cost Optimization Strategies"></a>Cost Optimization Strategies</h2><h3 id="Provider-Cost-Management"><a href="#Provider-Cost-Management" class="headerlink" title="Provider Cost Management"></a>Provider Cost Management</h3><p><strong>Email Costs</strong>:</p>
+<ul>
+<li>AWS SES: $0.10 per 1,000 emails</li>
+<li>SendGrid: $0.20 per 1,000 emails  </li>
+<li>Strategy: Primary on SES, failover to SendGrid</li>
+</ul>
+<p><strong>SMS Costs</strong>:</p>
+<ul>
+<li>Twilio US: $0.0075 per SMS</li>
+<li>International routing for cost optimization</li>
+<li>Bulk messaging discounts negotiation</li>
+</ul>
+<p><strong>Infrastructure Costs</strong>:</p>
+<ul>
+<li>Kafka cluster: $500&#x2F;month</li>
+<li>Application servers: $800&#x2F;month</li>
+<li>Database: $300&#x2F;month</li>
+<li>Monitoring: $200&#x2F;month</li>
+<li><strong>Total</strong>: ~$1,800&#x2F;month for 10M messages</li>
+</ul>
+<p><strong>Interview Insight</strong>: Always discuss cost optimization in system design. Show understanding of the business impact - a 10% improvement in delivery rates might justify 50% higher costs if it drives revenue.</p>
+<h2 id="Testing-Strategy"><a href="#Testing-Strategy" class="headerlink" title="Testing Strategy"></a>Testing Strategy</h2><h3 id="Integration-Testing"><a href="#Integration-Testing" class="headerlink" title="Integration Testing"></a>Integration Testing</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="meta">@TestcontainersConfiguration</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">NotificationServiceIntegrationTest</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">shouldProcessHighVolumeNotifications</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Simulate 1000 concurrent notification requests</span></span><br><span class="line">        List&lt;CompletableFuture&lt;MessageResult&gt;&gt; futures = IntStream.range(<span class="number">0</span>, <span class="number">1000</span>)</span><br><span class="line">            .mapToObj(i -&gt; notificationService.sendNotification(createTestRequest(i)))</span><br><span class="line">            .collect(toList());</span><br><span class="line">            </span><br><span class="line">        CompletableFuture.allOf(futures.toArray(<span class="keyword">new</span> <span class="title class_">CompletableFuture</span>[<span class="number">0</span>]))</span><br><span class="line">            .join();</span><br><span class="line">            </span><br><span class="line">        <span class="comment">// Verify all messages processed within SLA</span></span><br><span class="line">        assertThat(futures).allSatisfy(future -&gt; </span><br><span class="line">            assertThat(future.get().getStatus()).isEqualTo(DELIVERED)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Chaos-Engineering"><a href="#Chaos-Engineering" class="headerlink" title="Chaos Engineering"></a>Chaos Engineering</h3><p><strong>Failure Scenarios</strong>:</p>
+<ul>
+<li>Provider API timeouts and rate limiting</li>
+<li>Database connection failures</li>
+<li>Kafka broker failures</li>
+<li>Network partitions between services</li>
+</ul>
+<h2 id="Future-Enhancements"><a href="#Future-Enhancements" class="headerlink" title="Future Enhancements"></a>Future Enhancements</h2><h3 id="Advanced-Features-Roadmap"><a href="#Advanced-Features-Roadmap" class="headerlink" title="Advanced Features Roadmap"></a>Advanced Features Roadmap</h3><p><strong>Machine Learning Integration</strong>:</p>
+<ul>
+<li>Optimal send time prediction per user</li>
+<li>Template A&#x2F;B testing automation</li>
+<li>Delivery success rate optimization</li>
+</ul>
+<p><strong>Rich Media Support</strong>:</p>
+<ul>
+<li>Image and video attachments</li>
+<li>Interactive email templates</li>
+<li>Push notification rich media</li>
+</ul>
+<p><strong>Advanced Analytics</strong>:</p>
+<ul>
+<li>User engagement scoring</li>
+<li>Campaign performance analytics</li>
+<li>Predictive churn analysis</li>
+</ul>
+<p><strong>Interview Insight</strong>: Always end system design discussions with future considerations. This shows forward thinking and understanding that systems evolve. Discuss how your current architecture would accommodate these enhancements.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>This Message Notification Service design provides a robust, scalable foundation for high-volume, multi-channel notifications. The architecture emphasizes reliability, observability, and maintainability while meeting the 10 million messages per day requirement with room for growth.</p>
+<p>Key design principles applied:</p>
+<ul>
+<li><strong>Decoupling</strong>: Message queues separate concerns and enable independent scaling</li>
+<li><strong>Reliability</strong>: Multiple failover mechanisms and retry strategies</li>
+<li><strong>Observability</strong>: Comprehensive monitoring and alerting</li>
+<li><strong>Security</strong>: Built-in encryption, access control, and compliance features</li>
+<li><strong>Cost Efficiency</strong>: Provider optimization and resource right-sizing</li>
+</ul>
+<p>The system can be deployed incrementally, starting with core notification functionality and adding advanced features as business needs evolve.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/system-design/" rel="tag"># system-design</a>
+              <a href="/tags/message-notification/" rel="tag"># message notification</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/13/Design-Multi-Tenant-Database-SDK/" rel="prev" title="Design Multi-Tenant Database SDK">
+                  <i class="fa fa-angle-left"></i> Design Multi-Tenant Database SDK
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

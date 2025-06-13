@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-count">36</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -151,7 +151,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,301 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/07/MySQL-MVCC-Detailed-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/07/MySQL-MVCC-Detailed-Guide/" class="post-title-link" itemprop="url">MySQL MVCC Detailed Guide</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-06-07 20:12:50" itemprop="dateCreated datePublished" datetime="2025-06-07T20:12:50+08:00">2025-06-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2025-06-08 21:36:30" itemprop="dateModified" datetime="2025-06-08T21:36:30+08:00">2025-06-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="What-is-MVCC-Multi-Version-Concurrency-Control"><a href="#What-is-MVCC-Multi-Version-Concurrency-Control" class="headerlink" title="What is MVCC(Multi-Version Concurrency Control)?"></a>What is MVCC(Multi-Version Concurrency Control)?</h1><p>MVCC is a concurrency control method that allows multiple transactions to access the same data simultaneously without blocking each other. Instead of using locks for reads, MVCC maintains multiple versions of data and shows each transaction a consistent snapshot based on when the transaction started.</p>
+<h1 id="Why-MVCC-Matters"><a href="#Why-MVCC-Matters" class="headerlink" title="Why MVCC Matters"></a>Why MVCC Matters</h1><h2 id="Traditional-Locking-Problems"><a href="#Traditional-Locking-Problems" class="headerlink" title="Traditional Locking Problems"></a>Traditional Locking Problems</h2><p>Without MVCC, databases face the <strong>readers-writers problem</strong>:</p>
+<ul>
+<li><strong>Readers block writers</strong>: Transactions reading data prevent others from modifying it</li>
+<li><strong>Writers block readers</strong>: Transactions modifying data prevent others from reading it</li>
+<li><strong>Performance bottleneck</strong>: High contention leads to poor concurrency</li>
+</ul>
+<h2 id="MVCC-Benefits"><a href="#MVCC-Benefits" class="headerlink" title="MVCC Benefits"></a>MVCC Benefits</h2><ul>
+<li><strong>Non-blocking reads</strong>: Readers never block writers and vice versa</li>
+<li><strong>Consistent snapshots</strong>: Each transaction sees a consistent view of data</li>
+<li><strong>Higher concurrency</strong>: Multiple transactions can work simultaneously</li>
+<li><strong>ACID compliance</strong>: Maintains isolation without sacrificing performance</li>
+</ul>
+<h1 id="Core-MVCC-Components"><a href="#Core-MVCC-Components" class="headerlink" title="Core MVCC Components"></a>Core MVCC Components</h1><h2 id="Hidden-Columns-in-InnoDB"><a href="#Hidden-Columns-in-InnoDB" class="headerlink" title="Hidden Columns in InnoDB"></a>Hidden Columns in InnoDB</h2><p>Every InnoDB table row contains hidden system columns:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">| User Data | DB_TRX_ID | DB_ROLL_PTR | DB_ROW_ID |</span><br><span class="line">|-----------|-----------|-------------|-----------|</span><br><span class="line">| name, age | 12345     | 0x8A2B...   | 67890     |</span><br></pre></td></tr></table></figure>
+
+<h3 id="DB-TRX-ID-Transaction-ID"><a href="#DB-TRX-ID-Transaction-ID" class="headerlink" title="DB_TRX_ID (Transaction ID)"></a>DB_TRX_ID (Transaction ID)</h3><ul>
+<li><strong>Size</strong>: 6 bytes</li>
+<li><strong>Purpose</strong>: Identifies which transaction last modified this row</li>
+<li><strong>Behavior</strong>: Updated every time a row is inserted or updated</li>
+<li><strong>Uniqueness</strong>: Globally unique, monotonically increasing</li>
+</ul>
+<h3 id="DB-ROLL-PTR-Rollback-Pointer"><a href="#DB-ROLL-PTR-Rollback-Pointer" class="headerlink" title="DB_ROLL_PTR (Rollback Pointer)"></a>DB_ROLL_PTR (Rollback Pointer)</h3><ul>
+<li><strong>Size</strong>: 7 bytes</li>
+<li><strong>Purpose</strong>: Points to the undo log record for this row’s previous version</li>
+<li><strong>Structure</strong>: Contains undo log segment ID and offset</li>
+<li><strong>Function</strong>: Forms the backbone of the version chain</li>
+</ul>
+<h3 id="DB-ROW-ID-Row-ID"><a href="#DB-ROW-ID-Row-ID" class="headerlink" title="DB_ROW_ID (Row ID)"></a>DB_ROW_ID (Row ID)</h3><ul>
+<li><strong>Size</strong>: 6 bytes</li>
+<li><strong>Purpose</strong>: Auto-incrementing row identifier</li>
+<li><strong>When used</strong>: Only when table has no primary key or unique index</li>
+<li><strong>Note</strong>: Not directly related to MVCC, but part of InnoDB’s row format</li>
+</ul>
+<h2 id="Version-Chains-and-Undo-Log"><a href="#Version-Chains-and-Undo-Log" class="headerlink" title="Version Chains and Undo Log"></a>Version Chains and Undo Log</h2><h3 id="Version-Chain-Structure"><a href="#Version-Chain-Structure" class="headerlink" title="Version Chain Structure"></a>Version Chain Structure</h3><p>When a row is modified multiple times, MVCC creates a version chain:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Current Row (TRX_ID: 103)</span><br><span class="line">    ↓ (DB_ROLL_PTR)</span><br><span class="line">Version 2 (TRX_ID: 102) ← Undo Log Entry</span><br><span class="line">    ↓ (roll_ptr)</span><br><span class="line">Version 1 (TRX_ID: 101) ← Undo Log Entry</span><br><span class="line">    ↓ (roll_ptr)</span><br><span class="line">Original (TRX_ID: 100) ← Undo Log Entry</span><br></pre></td></tr></table></figure>
+
+<h3 id="Detailed-Example"><a href="#Detailed-Example" class="headerlink" title="Detailed Example"></a>Detailed Example</h3><p>Let’s trace a row through multiple modifications:</p>
+<h4 id="Initial-State"><a href="#Initial-State" class="headerlink" title="Initial State"></a>Initial State</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 100 inserts row</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> users (name, age) <span class="keyword">VALUES</span> (<span class="string">&#x27;Alice&#x27;</span>, <span class="number">25</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Row State:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| name: Alice | age: 25 | DB_TRX_ID: 100 | DB_ROLL_PTR: NULL |</span><br></pre></td></tr></table></figure>
+
+<h4 id="First-Update"><a href="#First-Update" class="headerlink" title="First Update"></a>First Update</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 101 updates age</span></span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> age <span class="operator">=</span> <span class="number">26</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>After Update:</strong></p>
+<ul>
+<li><strong>Current row</strong>: <code>| name: Alice | age: 26 | DB_TRX_ID: 101 | DB_ROLL_PTR: 0x8A2B |</code></li>
+<li><strong>Undo log entry</strong>: <code>| operation: UPDATE | old_age: 25 | roll_ptr: NULL |</code></li>
+</ul>
+<h4 id="Second-Update"><a href="#Second-Update" class="headerlink" title="Second Update"></a>Second Update</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 102 updates name</span></span><br><span class="line"><span class="keyword">UPDATE</span> users <span class="keyword">SET</span> name <span class="operator">=</span> <span class="string">&#x27;Alicia&#x27;</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>After Update:</strong></p>
+<ul>
+<li><strong>Current row</strong>: <code>| name: Alicia | age: 26 | DB_TRX_ID: 102 | DB_ROLL_PTR: 0x8C3D |</code></li>
+<li><strong>New undo entry</strong>: <code>| operation: UPDATE | old_name: Alice | roll_ptr: 0x8A2B |</code></li>
+<li><strong>Previous undo entry</strong>: <code>| operation: UPDATE | old_age: 25 | roll_ptr: NULL |</code></li>
+</ul>
+<h3 id="Undo-Log-Types"><a href="#Undo-Log-Types" class="headerlink" title="Undo Log Types"></a>Undo Log Types</h3><h4 id="INSERT-Undo-Log"><a href="#INSERT-Undo-Log" class="headerlink" title="INSERT Undo Log"></a>INSERT Undo Log</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| Type: INSERT | Table ID | Primary Key Values | Transaction ID |</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Purpose</strong>: Rolling back INSERT operations</li>
+<li><strong>Content</strong>: Only primary key needed (for deletion)</li>
+<li><strong>Cleanup</strong>: Purged immediately after transaction commits</li>
+</ul>
+<h4 id="UPDATE-Undo-Log"><a href="#UPDATE-Undo-Log" class="headerlink" title="UPDATE Undo Log"></a>UPDATE Undo Log</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| Type: UPDATE | Table ID | Primary Key | Changed Columns | Old Values | roll_ptr |</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Purpose</strong>: Rolling back UPDATE operations and MVCC reads</li>
+<li><strong>Content</strong>: Original values of modified columns</li>
+<li><strong>Cleanup</strong>: Purged when no active transaction needs this version</li>
+</ul>
+<h4 id="DELETE-Undo-Log"><a href="#DELETE-Undo-Log" class="headerlink" title="DELETE Undo Log"></a>DELETE Undo Log</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">| Type: DELETE | Table ID | Complete Row Data | roll_ptr |</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Purpose</strong>: Rolling back DELETE operations</li>
+<li><strong>Content</strong>: Entire row data</li>
+<li><strong>Behavior</strong>: Row is marked as deleted but not physically removed</li>
+</ul>
+<h2 id="Read-View-Mechanism"><a href="#Read-View-Mechanism" class="headerlink" title="Read View Mechanism"></a>Read View Mechanism</h2><h3 id="Read-View-Structure"><a href="#Read-View-Structure" class="headerlink" title="Read View Structure"></a>Read View Structure</h3><p>A Read View is a snapshot of active transactions at a specific point in time:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">ReadView</span> &#123;</span><br><span class="line">    <span class="type">trx_id_t</span>    m_low_limit_id;     <span class="comment">// Highest TRX_ID + 1 at creation time</span></span><br><span class="line">    <span class="type">trx_id_t</span>    m_up_limit_id;      <span class="comment">// Lowest active TRX_ID at creation time</span></span><br><span class="line">    <span class="type">trx_list_t</span>  m_ids;             <span class="comment">// List of active transaction IDs</span></span><br><span class="line">    <span class="type">trx_id_t</span>    m_creator_trx_id;   <span class="comment">// Transaction ID that created this view</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Read-View-Fields-Explained"><a href="#Read-View-Fields-Explained" class="headerlink" title="Read View Fields Explained"></a>Read View Fields Explained</h3><h4 id="m-low-limit-id-High-Water-Mark"><a href="#m-low-limit-id-High-Water-Mark" class="headerlink" title="m_low_limit_id (High Water Mark)"></a>m_low_limit_id (High Water Mark)</h4><ul>
+<li><strong>Definition</strong>: Next transaction ID to be assigned</li>
+<li><strong>Rule</strong>: Any TRX_ID ≥ m_low_limit_id is invisible (not yet started)</li>
+</ul>
+<h4 id="m-up-limit-id-Low-Water-Mark"><a href="#m-up-limit-id-Low-Water-Mark" class="headerlink" title="m_up_limit_id (Low Water Mark)"></a>m_up_limit_id (Low Water Mark)</h4><ul>
+<li><strong>Definition</strong>: Smallest active transaction ID when Read View was created</li>
+<li><strong>Rule</strong>: Any TRX_ID &lt; m_up_limit_id is visible (committed before snapshot)</li>
+</ul>
+<h4 id="m-ids-Active-Transaction-List"><a href="#m-ids-Active-Transaction-List" class="headerlink" title="m_ids (Active Transaction List)"></a>m_ids (Active Transaction List)</h4><ul>
+<li><strong>Definition</strong>: List of all active (uncommitted) transaction IDs</li>
+<li><strong>Rule</strong>: Any TRX_ID in this list is invisible (uncommitted)</li>
+</ul>
+<h4 id="m-creator-trx-id"><a href="#m-creator-trx-id" class="headerlink" title="m_creator_trx_id"></a>m_creator_trx_id</h4><ul>
+<li><strong>Definition</strong>: ID of the transaction that created this Read View</li>
+<li><strong>Rule</strong>: Changes made by this transaction are always visible to itself</li>
+</ul>
+<h3 id="Visibility-Algorithm"><a href="#Visibility-Algorithm" class="headerlink" title="Visibility Algorithm"></a>Visibility Algorithm</h3><p>For each row version, MVCC determines visibility using this logic:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">is_visible</span>(<span class="params">row_trx_id, read_view</span>):</span><br><span class="line">    <span class="comment"># Rule 1: Own changes are always visible</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id == read_view.m_creator_trx_id:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Rule 2: Future transactions are invisible</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id &gt;= read_view.m_low_limit_id:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Rule 3: Very old transactions are visible</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id &lt; read_view.m_up_limit_id:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Rule 4: Check if transaction was active</span></span><br><span class="line">    <span class="keyword">if</span> row_trx_id <span class="keyword">in</span> read_view.m_ids:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span>  <span class="comment"># Was active, so invisible</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span>   <span class="comment"># Was committed, so visible</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Detailed-Visibility-Example"><a href="#Detailed-Visibility-Example" class="headerlink" title="Detailed Visibility Example"></a>Detailed Visibility Example</h3><p><strong>Scenario Setup:</strong></p>
+<ul>
+<li>Active transactions: 100, 102, 105</li>
+<li>Next TRX_ID to assign: 106</li>
+<li>Current transaction: 103 (reading data)</li>
+</ul>
+<p><strong>Read View for Transaction 103:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">m_creator_trx_id: 103</span><br><span class="line">m_up_limit_id: 100    (lowest active)</span><br><span class="line">m_low_limit_id: 106   (next to assign)</span><br><span class="line">m_ids: [100, 102, 105] (active transactions)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Visibility Tests:</strong></p>
+<ul>
+<li><strong>TRX_ID 99</strong>: Visible (&lt; m_up_limit_id, committed before snapshot)</li>
+<li><strong>TRX_ID 100</strong>: Invisible (in m_ids, still active)</li>
+<li><strong>TRX_ID 101</strong>: Visible (not in m_ids, committed)</li>
+<li><strong>TRX_ID 102</strong>: Invisible (in m_ids, still active)</li>
+<li><strong>TRX_ID 103</strong>: Visible (own transaction)</li>
+<li><strong>TRX_ID 104</strong>: Visible (not in m_ids, committed)</li>
+<li><strong>TRX_ID 105</strong>: Invisible (in m_ids, still active)</li>
+<li><strong>TRX_ID 106</strong>: Invisible (≥ m_low_limit_id, future transaction)</li>
+</ul>
+<h2 id="Isolation-Levels-and-Read-Views"><a href="#Isolation-Levels-and-Read-Views" class="headerlink" title="Isolation Levels and Read Views"></a>Isolation Levels and Read Views</h2><h3 id="READ-COMMITTED"><a href="#READ-COMMITTED" class="headerlink" title="READ COMMITTED"></a>READ COMMITTED</h3><ul>
+<li><strong>Read View Creation</strong>: New Read View for <strong>every</strong> SELECT statement</li>
+<li><strong>Behavior</strong>: Sees all changes committed before each individual statement</li>
+<li><strong>Result</strong>: Can see different data within the same transaction (non-repeatable reads)</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction A</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Returns 25</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction B commits: UPDATE users SET age = 26 WHERE name = &#x27;Alice&#x27;;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Returns 26 (different result!)</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="REPEATABLE-READ"><a href="#REPEATABLE-READ" class="headerlink" title="REPEATABLE READ"></a>REPEATABLE READ</h3><ul>
+<li><strong>Read View Creation</strong>: Single Read View at <strong>first</strong> SELECT statement</li>
+<li><strong>Behavior</strong>: Consistent snapshot throughout the entire transaction</li>
+<li><strong>Result</strong>: Same data for all reads within the transaction</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction A</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Returns 25, creates Read View</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction B commits: UPDATE users SET age = 26 WHERE name = &#x27;Alice&#x27;;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice&#x27;</span>; <span class="comment">-- Still returns 25 (consistent!)</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="MVCC-Read-Process-Step-by-Step"><a href="#MVCC-Read-Process-Step-by-Step" class="headerlink" title="MVCC Read Process (Step by Step)"></a>MVCC Read Process (Step by Step)</h2><h3 id="When-a-SELECT-Statement-Executes"><a href="#When-a-SELECT-Statement-Executes" class="headerlink" title="When a SELECT Statement Executes:"></a>When a SELECT Statement Executes:</h3><h4 id="Step-1-Create-or-Reuse-Read-View"><a href="#Step-1-Create-or-Reuse-Read-View" class="headerlink" title="Step 1: Create or Reuse Read View"></a>Step 1: Create or Reuse Read View</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> name, age <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> user_id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>READ COMMITTED</strong>: Create new Read View</li>
+<li><strong>REPEATABLE READ</strong>: Use existing Read View or create if first read</li>
+</ul>
+<h4 id="Step-2-Locate-Current-Row-Version"><a href="#Step-2-Locate-Current-Row-Version" class="headerlink" title="Step 2: Locate Current Row Version"></a>Step 2: Locate Current Row Version</h4><ul>
+<li>Use index or table scan to find the row</li>
+<li>Current row has latest TRX_ID and ROLL_PTR</li>
+</ul>
+<h4 id="Step-3-Apply-Visibility-Rules"><a href="#Step-3-Apply-Visibility-Rules" class="headerlink" title="Step 3: Apply Visibility Rules"></a>Step 3: Apply Visibility Rules</h4><ul>
+<li>Check if current version is visible using Read View</li>
+<li>If visible, return this version</li>
+<li>If not visible, follow the version chain</li>
+</ul>
+<h4 id="Step-4-Traverse-Version-Chain"><a href="#Step-4-Traverse-Version-Chain" class="headerlink" title="Step 4: Traverse Version Chain"></a>Step 4: Traverse Version Chain</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Current Row (TRX_ID: 105) → Not visible</span><br><span class="line">    ↓ (follow ROLL_PTR)</span><br><span class="line">Version in Undo (TRX_ID: 103) → Not visible</span><br><span class="line">    ↓ (follow roll_ptr)</span><br><span class="line">Version in Undo (TRX_ID: 101) → Visible! Return this version</span><br></pre></td></tr></table></figure>
+
+<h4 id="Step-5-Return-Appropriate-Version"><a href="#Step-5-Return-Appropriate-Version" class="headerlink" title="Step 5: Return Appropriate Version"></a>Step 5: Return Appropriate Version</h4><ul>
+<li>Return the first visible version found</li>
+<li>If no visible version exists, row doesn’t exist for this transaction</li>
+</ul>
+<h2 id="MVCC-Write-Operations"><a href="#MVCC-Write-Operations" class="headerlink" title="MVCC Write Operations"></a>MVCC Write Operations</h2><h3 id="INSERT-Operations"><a href="#INSERT-Operations" class="headerlink" title="INSERT Operations"></a>INSERT Operations</h3><ol>
+<li><strong>Create new row</strong> with current transaction’s TRX_ID</li>
+<li><strong>No undo log needed</strong> for MVCC (only for rollback)</li>
+<li><strong>Row immediately visible</strong> to the inserting transaction</li>
+<li><strong>Invisible to others</strong> until transaction commits</li>
+</ol>
+<h3 id="UPDATE-Operations"><a href="#UPDATE-Operations" class="headerlink" title="UPDATE Operations"></a>UPDATE Operations</h3><ol>
+<li><strong>Create undo log entry</strong> with original values</li>
+<li><strong>Update current row</strong> with new values and TRX_ID</li>
+<li><strong>Link to previous version</strong> via ROLL_PTR</li>
+<li><strong>Original version remains</strong> accessible via undo log</li>
+</ol>
+<h3 id="DELETE-Operations"><a href="#DELETE-Operations" class="headerlink" title="DELETE Operations"></a>DELETE Operations</h3><ol>
+<li><strong>Mark row as deleted</strong> (set delete flag)</li>
+<li><strong>Create undo log entry</strong> with complete row data</li>
+<li><strong>Row remains physically present</strong> but marked deleted</li>
+<li><strong>Appears deleted to new transactions</strong> but still visible to older ones</li>
+</ol>
+<h2 id="Purge-Process"><a href="#Purge-Process" class="headerlink" title="Purge Process"></a>Purge Process</h2><h3 id="Why-Purge-is-Needed"><a href="#Why-Purge-is-Needed" class="headerlink" title="Why Purge is Needed"></a>Why Purge is Needed</h3><ul>
+<li>Undo logs grow indefinitely without cleanup</li>
+<li>Old versions become unnecessary when no transaction needs them</li>
+<li>Storage space must be reclaimed</li>
+</ul>
+<h3 id="Purge-Thread-Operation"><a href="#Purge-Thread-Operation" class="headerlink" title="Purge Thread Operation"></a>Purge Thread Operation</h3><ol>
+<li><strong>Identify purgeable versions</strong>: No active transaction needs them</li>
+<li><strong>Remove undo log entries</strong>: Free up undo tablespace</li>
+<li><strong>Physical row deletion</strong>: Remove rows marked for deletion</li>
+<li><strong>Index cleanup</strong>: Remove deleted entries from secondary indexes</li>
+</ol>
+<h3 id="Purge-Lag-Issues"><a href="#Purge-Lag-Issues" class="headerlink" title="Purge Lag Issues"></a>Purge Lag Issues</h3><p>When purge falls behind:</p>
+<ul>
+<li><strong>Undo tablespace growth</strong>: Disk space consumption increases</li>
+<li><strong>Version chain length</strong>: Longer chains slow down reads</li>
+<li><strong>Memory pressure</strong>: More versions kept in buffer pool</li>
+</ul>
+<h2 id="Performance-Implications"><a href="#Performance-Implications" class="headerlink" title="Performance Implications"></a>Performance Implications</h2><h3 id="MVCC-Benefits-1"><a href="#MVCC-Benefits-1" class="headerlink" title="MVCC Benefits"></a>MVCC Benefits</h3><ul>
+<li><strong>High concurrency</strong>: No read-write blocking</li>
+<li><strong>Consistent reads</strong>: Snapshot isolation without locks</li>
+<li><strong>Predictable performance</strong>: No lock contention delays</li>
+</ul>
+<h3 id="MVCC-Costs"><a href="#MVCC-Costs" class="headerlink" title="MVCC Costs"></a>MVCC Costs</h3><ul>
+<li><strong>Storage overhead</strong>: Multiple versions consume space</li>
+<li><strong>Version traversal</strong>: Long chains increase read latency</li>
+<li><strong>Purge overhead</strong>: Background cleanup uses resources</li>
+<li><strong>Undo log I&#x2F;O</strong>: Additional disk operations for version chains</li>
+</ul>
+<h3 id="Optimization-Strategies"><a href="#Optimization-Strategies" class="headerlink" title="Optimization Strategies"></a>Optimization Strategies</h3><ol>
+<li><strong>Monitor purge lag</strong>: Ensure purge keeps up with modifications</li>
+<li><strong>Tune undo tablespace</strong>: Size appropriately for workload</li>
+<li><strong>Minimize long transactions</strong>: Reduce version chain lengths</li>
+<li><strong>Index optimization</strong>: Reduce version traversal overhead</li>
+</ol>
+<h2 id="Common-MVCC-Scenarios"><a href="#Common-MVCC-Scenarios" class="headerlink" title="Common MVCC Scenarios"></a>Common MVCC Scenarios</h2><h3 id="Phantom-Reads-Prevention"><a href="#Phantom-Reads-Prevention" class="headerlink" title="Phantom Reads Prevention"></a>Phantom Reads Prevention</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Transaction 1 (REPEATABLE READ)</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> amount <span class="operator">&gt;</span> <span class="number">1000</span>; <span class="comment">-- Returns 5</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction 2 inserts new row</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> orders (amount) <span class="keyword">VALUES</span> (<span class="number">1500</span>);</span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Transaction 1 continues</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> amount <span class="operator">&gt;</span> <span class="number">1000</span>; <span class="comment">-- Still returns 5</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Consistent-Backup"><a href="#Consistent-Backup" class="headerlink" title="Consistent Backup"></a>Consistent Backup</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Long-running backup transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION <span class="keyword">WITH</span> CONSISTENT SNAPSHOT;</span><br><span class="line"><span class="comment">-- Takes hours to complete, but sees consistent point-in-time data</span></span><br><span class="line">mysqldump <span class="comment">--single-transaction ...</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Read-Write-Workload"><a href="#Read-Write-Workload" class="headerlink" title="Read-Write Workload"></a>Read-Write Workload</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Reader transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> accounts <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Non-blocking read</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Writer transaction (concurrent)</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Non-blocking write</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Reader continues with original snapshot</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> accounts <span class="keyword">WHERE</span> account_id <span class="operator">=</span> <span class="number">1</span>; <span class="comment">-- Still sees original balance</span></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
+
+<p>This comprehensive understanding of MVCC explains how MySQL achieves high concurrency while maintaining data consistency, making it essential knowledge for database administrators and developers working with high-performance applications.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
