@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-count">38</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -151,7 +151,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,335 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Java-Interview-Guide-Core-Concepts/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/12/Java-Interview-Guide-Core-Concepts/" class="post-title-link" itemprop="url">Java Interview Guide - Core Concepts</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-12 15:44:19 / Modified: 15:45:36" itemprop="dateCreated datePublished" datetime="2025-06-12T15:44:19+08:00">2025-06-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Java-Fundamentals"><a href="#Java-Fundamentals" class="headerlink" title="Java Fundamentals"></a>Java Fundamentals</h2><h3 id="Collection-Framework"><a href="#Collection-Framework" class="headerlink" title="Collection Framework"></a>Collection Framework</h3><p><strong>Key Concepts:</strong> Thread safety, iterators, duplicates, ordered collections, key-value pairs</p>
+<h4 id="List-Implementations"><a href="#List-Implementations" class="headerlink" title="List Implementations"></a>List Implementations</h4><p><strong>Vector</strong></p>
+<ul>
+<li>Thread-safe with strong consistency</li>
+<li>2x capacity expansion</li>
+<li><code>Collections.synchronizedList()</code> requires manual synchronization for iterators</li>
+</ul>
+<p><strong>ArrayList</strong></p>
+<ul>
+<li>Array-based implementation</li>
+<li>Inefficient head insertion, efficient tail insertion</li>
+<li>1.5x capacity expansion</li>
+<li>Pre-specify capacity to reduce expansion overhead</li>
+<li>Uses <code>transient</code> for object array to avoid serializing empty slots</li>
+</ul>
+<p><strong>LinkedList</strong></p>
+<ul>
+<li>Doubly-linked list implementation</li>
+<li>Slowest for middle insertions</li>
+<li>Use Iterator for traversal</li>
+<li><code>remove(Integer)</code> removes element, <code>remove(int)</code> removes by index</li>
+</ul>
+<p><strong>Iterator Safety</strong></p>
+<ul>
+<li>Enhanced for-loop uses iterator internally</li>
+<li>Concurrent modification throws <code>ConcurrentModificationException</code></li>
+<li>Use iterator’s <code>remove()</code> method instead of collection’s</li>
+</ul>
+<h4 id="Map-Implementations"><a href="#Map-Implementations" class="headerlink" title="Map Implementations"></a>Map Implementations</h4><p><strong>Hashtable</strong></p>
+<ul>
+<li>Thread-safe using <code>synchronized</code></li>
+<li>No null keys&#x2F;values allowed</li>
+</ul>
+<p><strong>HashMap</strong></p>
+<ul>
+<li>Not thread-safe, allows null keys&#x2F;values</li>
+<li>Array + linked list structure</li>
+<li>Hash collision resolution via chaining</li>
+<li>Default capacity: 16, load factor: 0.75</li>
+<li>JDK 1.8: Converts to red-black tree when chain length &gt; 8 and capacity &gt; 64</li>
+<li>Multi-threading can cause infinite loops during rehashing</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Hash calculation for efficient indexing</span></span><br><span class="line">index = (n - <span class="number">1</span>) &amp; hash(key)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Hash function reduces collisions</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">hash</span><span class="params">(Object key)</span> &#123;</span><br><span class="line">    <span class="type">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="literal">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>LinkedHashMap</strong></p>
+<ul>
+<li>HashMap + doubly-linked list</li>
+<li>Maintains insertion&#x2F;access order</li>
+<li>Used for LRU cache implementation</li>
+</ul>
+<p><strong>TreeMap</strong></p>
+<ul>
+<li>Red-black tree based</li>
+<li>O(log n) time complexity</li>
+<li>Sorted keys via Comparator&#x2F;Comparable</li>
+</ul>
+<h3 id="I-O-Models"><a href="#I-O-Models" class="headerlink" title="I&#x2F;O Models"></a>I&#x2F;O Models</h3><p><strong>Java I&#x2F;O Hierarchy</strong></p>
+<ul>
+<li>Base classes: <code>InputStream/Reader</code>, <code>OutputStream/Writer</code></li>
+<li>Decorator pattern implementation</li>
+</ul>
+<p><strong>BIO (Blocking I&#x2F;O)</strong></p>
+<ul>
+<li>Synchronous blocking model</li>
+<li>One thread per connection</li>
+<li>Suitable for low-concurrency scenarios</li>
+<li>Thread pool provides natural rate limiting</li>
+</ul>
+<p><strong>NIO (Non-blocking I&#x2F;O)</strong></p>
+<ul>
+<li>I&#x2F;O multiplexing model (not traditional NIO)</li>
+<li>Uses <code>select/epoll</code> system calls</li>
+<li>Single thread monitors multiple file descriptors</li>
+<li>Core components: Buffer, Channel, Selector</li>
+</ul>
+<p><strong>AIO (Asynchronous I&#x2F;O)</strong></p>
+<ul>
+<li>Event-driven with callbacks</li>
+<li>Introduced in Java 7 as NIO.2</li>
+<li>Direct return without blocking</li>
+<li>Limited adoption in practice</li>
+</ul>
+<h3 id="Thread-Pool"><a href="#Thread-Pool" class="headerlink" title="Thread Pool"></a>Thread Pool</h3><p><strong>Thread Creation Methods</strong></p>
+<ol>
+<li>Runnable interface</li>
+<li>Thread class</li>
+<li>Callable + FutureTask</li>
+<li>Thread pools (recommended)</li>
+</ol>
+<p><strong>Core Parameters</strong></p>
+<ul>
+<li><code>corePoolSize</code>: Core thread count</li>
+<li><code>maximumPoolSize</code>: Maximum thread count</li>
+<li><code>keepAliveTime</code>: Idle thread survival time</li>
+<li><code>workQueue</code>: Task queue (must be bounded)</li>
+<li><code>rejectedExecutionHandler</code>: Rejection policy</li>
+</ul>
+<p><strong>Execution Flow</strong></p>
+<ol>
+<li>Create threads up to core size</li>
+<li>Queue tasks when core threads busy</li>
+<li>Expand to max size when queue full</li>
+<li>Apply rejection policy when max reached</li>
+<li>Shrink to core size after keepAliveTime</li>
+</ol>
+<p><strong>Optimal Thread Count</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Optimal Threads = CPU Cores × [1 + (I/O Time / CPU Time)]</span><br></pre></td></tr></table></figure>
+
+<p><strong>Best Practices</strong></p>
+<ul>
+<li>Graceful shutdown</li>
+<li>Uncaught exception handling</li>
+<li>Separate pools for dependent tasks</li>
+<li>Proper rejection policy implementation</li>
+</ul>
+<h3 id="ThreadLocal"><a href="#ThreadLocal" class="headerlink" title="ThreadLocal"></a>ThreadLocal</h3><p><strong>Use Cases</strong></p>
+<ul>
+<li>Thread isolation with cross-method data sharing</li>
+<li>Database session management (Hibernate)</li>
+<li>Request context propagation (user ID, session)</li>
+<li>HTTP request instances</li>
+</ul>
+<p><strong>Implementation</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread → ThreadLocalMap&lt;ThreadLocal, Object&gt; → Entry(key, value)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Memory Management</strong></p>
+<ul>
+<li>Entry key uses weak reference</li>
+<li>Automatic cleanup of null keys</li>
+<li>Must use <code>private static final</code> modifiers</li>
+</ul>
+<p><strong>Best Practices</strong></p>
+<ul>
+<li>Always call <code>remove()</code> in finally blocks</li>
+<li>Handle thread pool reuse scenarios</li>
+<li>Use <code>afterExecute</code> hook for cleanup</li>
+</ul>
+<h2 id="JVM-Java-Virtual-Machine"><a href="#JVM-Java-Virtual-Machine" class="headerlink" title="JVM (Java Virtual Machine)"></a>JVM (Java Virtual Machine)</h2><h3 id="Memory-Structure"><a href="#Memory-Structure" class="headerlink" title="Memory Structure"></a>Memory Structure</h3><p><strong>Components</strong></p>
+<ul>
+<li>Class Loader</li>
+<li>Runtime Data Area</li>
+<li>Execution Engine</li>
+<li>Native Interface</li>
+</ul>
+<p><strong>Runtime Data Areas</strong></p>
+<p><strong>Thread-Shared</strong></p>
+<ul>
+<li><strong>Method Area</strong>: Class metadata, constants, static variables</li>
+<li><strong>Heap</strong>: Object instances, string pool (JDK 7+)</li>
+</ul>
+<p><strong>Thread-Private</strong></p>
+<ul>
+<li><strong>VM Stack</strong>: Stack frames with local variables, operand stack</li>
+<li><strong>Native Method Stack</strong>: For native method calls</li>
+<li><strong>Program Counter</strong>: Current bytecode instruction pointer</li>
+</ul>
+<p><strong>Key Changes</strong></p>
+<ul>
+<li><strong>JDK 8</strong>: Metaspace replaced PermGen (uses native memory)</li>
+<li><strong>JDK 7</strong>: String pool moved to heap for better GC efficiency</li>
+</ul>
+<h3 id="Class-Loading"><a href="#Class-Loading" class="headerlink" title="Class Loading"></a>Class Loading</h3><p><strong>Process</strong></p>
+<ol>
+<li><strong>Loading</strong>: Read .class files, create Class objects</li>
+<li><strong>Verification</strong>: Validate bytecode integrity</li>
+<li><strong>Preparation</strong>: Allocate memory, set default values for static variables</li>
+<li><strong>Resolution</strong>: Convert symbolic references to direct references</li>
+<li><strong>Initialization</strong>: Execute static blocks and variable assignments</li>
+</ol>
+<p><strong>Class Loaders</strong></p>
+<ul>
+<li><strong>Bootstrap</strong>: JDK core classes</li>
+<li><strong>Extension&#x2F;Platform</strong>: JDK extensions</li>
+<li><strong>Application</strong>: CLASSPATH classes</li>
+</ul>
+<p><strong>Parent Delegation</strong></p>
+<ul>
+<li>Child loaders delegate to parent first</li>
+<li>Prevents duplicate loading</li>
+<li>Ensures class uniqueness and security</li>
+</ul>
+<p><strong>Custom Class Loaders</strong></p>
+<ul>
+<li>Extend ClassLoader, override <code>findClass()</code></li>
+<li>Tomcat breaks delegation for web app isolation</li>
+</ul>
+<h3 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h3><p><strong>Memory Regions</strong></p>
+<ul>
+<li><strong>Young Generation</strong>: Eden + Survivor (From&#x2F;To)</li>
+<li><strong>Old Generation</strong>: Long-lived objects</li>
+<li><strong>Metaspace</strong>: Class metadata (JDK 8+)</li>
+</ul>
+<p><strong>GC Root Objects</strong></p>
+<ul>
+<li>Local variables in method stacks</li>
+<li>Static variables in loaded classes</li>
+<li>JNI references in native stacks</li>
+<li>Active Java threads</li>
+</ul>
+<p><strong>Reference Types</strong></p>
+<ul>
+<li><strong>Strong</strong>: Never collected while referenced</li>
+<li><strong>Soft</strong>: Collected before OOM</li>
+<li><strong>Weak</strong>: Collected at next GC</li>
+<li><strong>Phantom</strong>: For cleanup notification only</li>
+</ul>
+<p><strong>Collection Algorithms</strong></p>
+<ul>
+<li><strong>Young Generation</strong>: Copy algorithm (efficient, no fragmentation)</li>
+<li><strong>Old Generation</strong>: Mark-Sweep or Mark-Compact</li>
+</ul>
+<p><strong>Garbage Collectors</strong></p>
+<p><strong>Serial&#x2F;Parallel</strong></p>
+<ul>
+<li>Single&#x2F;multi-threaded</li>
+<li>Suitable for small applications or batch processing</li>
+</ul>
+<p><strong>CMS (Concurrent Mark Sweep)</strong></p>
+<ul>
+<li>Low-latency for old generation</li>
+<li>Concurrent collection with application threads</li>
+</ul>
+<p><strong>G1 (Garbage First)</strong></p>
+<ul>
+<li>Region-based collection</li>
+<li>Predictable pause times</li>
+<li>Default in JDK 9+, suitable for large heaps (&gt;8GB)</li>
+</ul>
+<p><strong>ZGC&#x2F;Shenandoah</strong></p>
+<ul>
+<li>Ultra-low latency (&lt;10ms)</li>
+<li>Supports TB-scale heaps</li>
+<li>Ideal for cloud-native applications</li>
+</ul>
+<p><strong>Tuning Parameters</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Heap sizing</span></span><br><span class="line">-Xms4g -Xmx4g                    <span class="comment"># Initial = Max heap</span></span><br><span class="line">-Xmn2g                           <span class="comment"># Young generation size</span></span><br><span class="line">-XX:SurvivorRatio=8              <span class="comment"># Eden:Survivor ratio</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># GC logging</span></span><br><span class="line">-XX:+PrintGCDetails -Xloggc:gc.log</span><br><span class="line"></span><br><span class="line"><span class="comment"># Metaspace</span></span><br><span class="line">-XX:MetaspaceSize=256M -XX:MaxMetaspaceSize=512M</span><br><span class="line"></span><br><span class="line"><span class="comment"># OOM debugging</span></span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/dump.hprof</span><br></pre></td></tr></table></figure>
+
+<p><strong>OOM Troubleshooting</strong></p>
+<ol>
+<li>Generate heap dumps on OOM</li>
+<li>Analyze with MAT (Memory Analyzer Tool) or VisualVM</li>
+<li>Common causes: memory leaks, oversized objects, insufficient heap space</li>
+<li>Tune object promotion thresholds and GC parameters</li>
+</ol>
+<h2 id="Performance-Optimization-Tips"><a href="#Performance-Optimization-Tips" class="headerlink" title="Performance Optimization Tips"></a>Performance Optimization Tips</h2><ol>
+<li><strong>Collections</strong>: Pre-size collections, use appropriate implementations</li>
+<li><strong>Strings</strong>: Use StringBuilder for concatenation, intern frequently used strings</li>
+<li><strong>Thread Pools</strong>: Tune core&#x2F;max sizes based on workload characteristics</li>
+<li><strong>GC</strong>: Choose appropriate collector, monitor GC logs, tune heap ratios</li>
+<li><strong>Memory</strong>: Avoid memory leaks, use object pools for expensive objects</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3803,514 +4132,6 @@ ReorderingLogic -- &quot;Emits Globally Ordered Events&quot; --&gt; DownstreamSy
 <td>Ensures per-key ordering</td>
 </tr>
 </tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Redis-Data-Types-and-Data-Structures-Complete-Guide/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/09/Redis-Data-Types-and-Data-Structures-Complete-Guide/" class="post-title-link" itemprop="url">Redis Data Types and Data Structures: Complete Guide</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-09 21:40:29 / Modified: 22:45:29" itemprop="dateCreated datePublished" datetime="2025-06-09T21:40:29+08:00">2025-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Redis (Remote Dictionary Server) is an in-memory data structure store that supports various data types. Understanding the underlying data structures is crucial for optimal performance and memory usage.</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[Redis Data Types] --&gt; B[String]
-A --&gt; C[Hash]
-A --&gt; D[List]
-A --&gt; E[Set]
-A --&gt; F[Sorted Set]
-A --&gt; G[Bitmap]
-A --&gt; H[HyperLogLog]
-A --&gt; I[Stream]
-A --&gt; J[Geospatial]
-
-B --&gt; B1[Simple Dynamic String - SDS]
-C --&gt; C1[Hash Table &#x2F; Ziplist]
-D --&gt; D1[Ziplist &#x2F; Quicklist]
-E --&gt; E1[Hash Table &#x2F; Intset]
-F --&gt; F1[Skiplist + Hash Table &#x2F; Ziplist]
-</code>
-</pre>
-
-<p><strong>🎯 Interview Insight</strong>: Always mention that Redis uses different underlying data structures based on the size and type of data to optimize memory and performance.</p>
-<hr>
-<h2 id="String"><a href="#String" class="headerlink" title="String"></a>String</h2><h3 id="Underlying-Data-Structure-Simple-Dynamic-String-SDS"><a href="#Underlying-Data-Structure-Simple-Dynamic-String-SDS" class="headerlink" title="Underlying Data Structure: Simple Dynamic String (SDS)"></a>Underlying Data Structure: Simple Dynamic String (SDS)</h3><p>Redis strings are built on Simple Dynamic Strings, not C strings. SDS provides several advantages:</p>
-<ul>
-<li><strong>Length caching</strong>: O(1) length operation</li>
-<li><strong>Buffer overrun protection</strong>: Prevents buffer overflow</li>
-<li><strong>Binary safe</strong>: Can store any binary data</li>
-<li><strong>Space pre-allocation</strong>: Reduces memory reallocations</li>
-</ul>
-<h3 id="Structure-Layout"><a href="#Structure-Layout" class="headerlink" title="Structure Layout"></a>Structure Layout</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    <span class="type">int</span> len;        <span class="comment">// String length</span></span><br><span class="line">    <span class="type">int</span> <span class="built_in">free</span>;       <span class="comment">// Available space</span></span><br><span class="line">    <span class="type">char</span> buf[];     <span class="comment">// Character array</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices"><a href="#Use-Cases-Best-Practices" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Caching"><a href="#1-Caching" class="headerlink" title="1. Caching"></a>1. Caching</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Session storage</span></span><br><span class="line">SET user:1001:session <span class="string">&quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;</span></span><br><span class="line">EXPIRE user:1001:session 3600</span><br><span class="line"></span><br><span class="line"><span class="comment"># Cache with compression</span></span><br><span class="line">SET article:123 <span class="string">&quot;compressed_json_data&quot;</span> EX 1800</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Counters"><a href="#2-Counters" class="headerlink" title="2. Counters"></a>2. Counters</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Page views</span></span><br><span class="line">INCR page:home:views</span><br><span class="line">INCRBY user:1001:score 50</span><br><span class="line"></span><br><span class="line"><span class="comment"># Rate limiting</span></span><br><span class="line">SET rate_limit:user:1001 1 EX 60 NX</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Distributed-Locks"><a href="#3-Distributed-Locks" class="headerlink" title="3. Distributed Locks"></a>3. Distributed Locks</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Acquire lock</span></span><br><span class="line">SET lock:resource:123 <span class="string">&quot;unique_token&quot;</span> EX 30 NX</span><br><span class="line"></span><br><span class="line"><span class="comment"># Release lock (Lua script)</span></span><br><span class="line"><span class="keyword">if</span> redis.call(<span class="string">&quot;get&quot;</span>, KEYS[1]) == ARGV[1] <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">return</span> redis.call(<span class="string">&quot;del&quot;</span>, KEYS[1])</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">return</span> 0</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
-
-<h3 id="Memory-Optimization-Tips"><a href="#Memory-Optimization-Tips" class="headerlink" title="Memory Optimization Tips"></a>Memory Optimization Tips</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Use appropriate data types for numbers</span></span><br><span class="line">SET counter 42           <span class="comment"># Stored as string &quot;42&quot;</span></span><br><span class="line">SET counter:int 42       <span class="comment"># Better: use INCR for integers</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Compress large strings</span></span><br><span class="line">SET large:data <span class="string">&quot;gzip_compressed_data&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Explain that Redis optimizes integer strings (like “123”) by storing them as actual integers when possible, saving memory.</p>
-<hr>
-<h2 id="Hash"><a href="#Hash" class="headerlink" title="Hash"></a>Hash</h2><h3 id="Underlying-Data-Structures"><a href="#Underlying-Data-Structures" class="headerlink" title="Underlying Data Structures"></a>Underlying Data Structures</h3><p>Redis hashes use two different encodings based on configuration:</p>
-<ol>
-<li><strong>Ziplist</strong> (for small hashes)</li>
-<li><strong>Hash Table</strong> (for larger hashes)</li>
-</ol>
-<pre>
-<code class="mermaid">
-flowchart LR
-A[Hash] --&gt; B{Size Check}
-B --&gt;|Small| C[Ziplist Encoding]
-B --&gt;|Large| D[Hash Table Encoding]
-
-C --&gt; C1[Sequential Storage]
-C --&gt; C2[Memory Efficient]
-
-D --&gt; D1[O（1） Access]
-D --&gt; D2[Hash Collision Handling]
-</code>
-</pre>
-
-<h3 id="Configuration-Thresholds"><a href="#Configuration-Thresholds" class="headerlink" title="Configuration Thresholds"></a>Configuration Thresholds</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># redis.conf settings</span></span><br><span class="line">hash-max-ziplist-entries 512    <span class="comment"># Max fields in ziplist</span></span><br><span class="line">hash-max-ziplist-value 64      <span class="comment"># Max value size in ziplist</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-1"><a href="#Use-Cases-Best-Practices-1" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-User-Profiles"><a href="#1-User-Profiles" class="headerlink" title="1. User Profiles"></a>1. User Profiles</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># User data storage</span></span><br><span class="line">HSET user:1001 name <span class="string">&quot;John Doe&quot;</span> email <span class="string">&quot;john@example.com&quot;</span> age 30</span><br><span class="line">HMGET user:1001 name email</span><br><span class="line">HINCRBY user:1001 login_count 1</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Object-Storage"><a href="#2-Object-Storage" class="headerlink" title="2. Object Storage"></a>2. Object Storage</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Product catalog</span></span><br><span class="line">HSET product:123 name <span class="string">&quot;Laptop&quot;</span> price 999.99 stock 50 category <span class="string">&quot;electronics&quot;</span></span><br><span class="line">HGETALL product:123</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Configuration-Storage"><a href="#3-Configuration-Storage" class="headerlink" title="3. Configuration Storage"></a>3. Configuration Storage</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Application settings</span></span><br><span class="line">HSET app:config db_host <span class="string">&quot;localhost&quot;</span> db_port 5432 cache_ttl 3600</span><br><span class="line">HGET app:config db_host</span><br></pre></td></tr></table></figure>
-
-<h3 id="Performance-Considerations"><a href="#Performance-Considerations" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Efficient batch operations</span></span><br><span class="line">HMSET user:1001 field1 value1 field2 value2 field3 value3</span><br><span class="line"></span><br><span class="line"><span class="comment"># Avoid large hashes (&gt;1000 fields)</span></span><br><span class="line"><span class="comment"># Better: Split into multiple hashes</span></span><br><span class="line">HSET user:1001:profile name <span class="string">&quot;John&quot;</span> email <span class="string">&quot;john@example.com&quot;</span></span><br><span class="line">HSET user:1001:prefs theme <span class="string">&quot;dark&quot;</span> lang <span class="string">&quot;en&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Mention that ziplist encoding provides significant memory savings (up to 10x) for small hashes, but switching to hash table occurs automatically when thresholds are exceeded.</p>
-<hr>
-<h2 id="List"><a href="#List" class="headerlink" title="List"></a>List</h2><h3 id="Underlying-Data-Structures-1"><a href="#Underlying-Data-Structures-1" class="headerlink" title="Underlying Data Structures"></a>Underlying Data Structures</h3><p>Redis lists evolved through different implementations:</p>
-<ol>
-<li><strong>Ziplist</strong> (Redis &lt; 3.2, for small lists)</li>
-<li><strong>Linked List</strong> (Redis &lt; 3.2, for large lists)</li>
-<li><strong>Quicklist</strong> (Redis &gt;&#x3D; 3.2, hybrid approach)</li>
-</ol>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[List Evolution] --&gt; B[Redis &lt; 3.2]
-A --&gt; C[Redis &gt;&#x3D; 3.2]
-
-B --&gt; B1[Ziplist - Small Lists]
-B --&gt; B2[Linked List - Large Lists]
-
-C --&gt; C1[Quicklist]
-C1 --&gt; C2[Doubly Linked List of Ziplists]
-C2 --&gt; C3[Balanced Memory vs Performance]
-</code>
-</pre>
-
-<h3 id="Quicklist-Structure"><a href="#Quicklist-Structure" class="headerlink" title="Quicklist Structure"></a>Quicklist Structure</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">quicklist</span> &#123;</span></span><br><span class="line">    quicklistNode *head;</span><br><span class="line">    quicklistNode *tail;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> count;    <span class="comment">// Total elements</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;      <span class="comment">// Number of nodes</span></span><br><span class="line">&#125; quicklist;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">quicklistNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">quicklistNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">quicklistNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl;      <span class="comment">// Ziplist</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> sz;        <span class="comment">// Ziplist size</span></span><br><span class="line">&#125; quicklistNode;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-2"><a href="#Use-Cases-Best-Practices-2" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Message-Queues"><a href="#1-Message-Queues" class="headerlink" title="1. Message Queues"></a>1. Message Queues</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Producer</span></span><br><span class="line">LPUSH queue:emails <span class="string">&quot;email1@example.com&quot;</span></span><br><span class="line">LPUSH queue:emails <span class="string">&quot;email2@example.com&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Consumer</span></span><br><span class="line">BRPOP queue:emails 0  <span class="comment"># Blocking pop</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Activity-Feeds"><a href="#2-Activity-Feeds" class="headerlink" title="2. Activity Feeds"></a>2. Activity Feeds</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add new activity</span></span><br><span class="line">LPUSH user:1001:feed <span class="string">&quot;User liked post 123&quot;</span></span><br><span class="line">LTRIM user:1001:feed 0 99  <span class="comment"># Keep latest 100 items</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Get recent activities</span></span><br><span class="line">LRANGE user:1001:feed 0 9  <span class="comment"># Get latest 10</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Undo-Redo-Functionality"><a href="#3-Undo-Redo-Functionality" class="headerlink" title="3. Undo&#x2F;Redo Functionality"></a>3. Undo&#x2F;Redo Functionality</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Save state</span></span><br><span class="line">LPUSH user:1001:undo_stack <span class="string">&quot;state_data&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Undo operation</span></span><br><span class="line">LPOP user:1001:undo_stack</span><br></pre></td></tr></table></figure>
-
-<h3 id="Performance-Optimization"><a href="#Performance-Optimization" class="headerlink" title="Performance Optimization"></a>Performance Optimization</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Efficient pagination</span></span><br><span class="line">LRANGE articles:recent 0 19    <span class="comment"># First page (0-19)</span></span><br><span class="line">LRANGE articles:recent 20 39   <span class="comment"># Second page (20-39)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Avoid LINDEX on large lists (O(n) operation)</span></span><br><span class="line"><span class="comment"># Better: Use LRANGE for multiple elements</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Explain that LPUSH&#x2F;LPOP and RPUSH&#x2F;RPOP are O(1) operations, while LINDEX and LINSERT are O(n). This makes Redis lists perfect for stacks and queues but not for random access.</p>
-<hr>
-<h2 id="Set"><a href="#Set" class="headerlink" title="Set"></a>Set</h2><h3 id="Underlying-Data-Structures-2"><a href="#Underlying-Data-Structures-2" class="headerlink" title="Underlying Data Structures"></a>Underlying Data Structures</h3><p>Sets use two different encodings:</p>
-<ol>
-<li><strong>Intset</strong> (for sets containing only integers)</li>
-<li><strong>Hash Table</strong> (for other cases)</li>
-</ol>
-<pre>
-<code class="mermaid">
-flowchart LR
-A[Set] --&gt; B{All Integers?}
-B --&gt;|Yes &amp; Small| C[Intset Encoding]
-B --&gt;|No or Large| D[Hash Table Encoding]
-
-C --&gt; C1[Sorted Array]
-C --&gt; C2[Binary Search]
-C --&gt; C3[Memory Efficient]
-
-D --&gt; D1[Hash Table]
-D --&gt; D2[O（1） Operations]
-D --&gt; D3[Any Data Type]
-</code>
-</pre>
-
-<h3 id="Configuration"><a href="#Configuration" class="headerlink" title="Configuration"></a>Configuration</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># redis.conf</span></span><br><span class="line">set-max-intset-entries 512  <span class="comment"># Max elements in intset</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-3"><a href="#Use-Cases-Best-Practices-3" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Unique-Visitors-Tracking"><a href="#1-Unique-Visitors-Tracking" class="headerlink" title="1. Unique Visitors Tracking"></a>1. Unique Visitors Tracking</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add visitors</span></span><br><span class="line">SADD page:home:visitors user:1001 user:1002 user:1003</span><br><span class="line"></span><br><span class="line"><span class="comment"># Count unique visitors</span></span><br><span class="line">SCARD page:home:visitors</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check if user visited</span></span><br><span class="line">SISMEMBER page:home:visitors user:1001</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Tag-Systems"><a href="#2-Tag-Systems" class="headerlink" title="2. Tag Systems"></a>2. Tag Systems</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Article tags</span></span><br><span class="line">SADD article:123:tags <span class="string">&quot;python&quot;</span> <span class="string">&quot;redis&quot;</span> <span class="string">&quot;database&quot;</span></span><br><span class="line">SADD article:456:tags <span class="string">&quot;python&quot;</span> <span class="string">&quot;flask&quot;</span> <span class="string">&quot;web&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Find articles with common tags</span></span><br><span class="line">SINTER article:123:tags article:456:tags  <span class="comment"># Returns: python</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Social-Features"><a href="#3-Social-Features" class="headerlink" title="3. Social Features"></a>3. Social Features</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Following/Followers</span></span><br><span class="line">SADD user:1001:following user:1002 user:1003</span><br><span class="line">SADD user:1002:followers user:1001</span><br><span class="line"></span><br><span class="line"><span class="comment"># Mutual friends</span></span><br><span class="line">SINTER user:1001:following user:1002:following</span><br></pre></td></tr></table></figure>
-
-<h3 id="Set-Operations-Showcase"><a href="#Set-Operations-Showcase" class="headerlink" title="Set Operations Showcase"></a>Set Operations Showcase</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Union - All unique elements</span></span><br><span class="line">SADD set1 <span class="string">&quot;a&quot;</span> <span class="string">&quot;b&quot;</span> <span class="string">&quot;c&quot;</span></span><br><span class="line">SADD set2 <span class="string">&quot;c&quot;</span> <span class="string">&quot;d&quot;</span> <span class="string">&quot;e&quot;</span></span><br><span class="line">SUNION set1 set2  <span class="comment"># Result: a, b, c, d, e</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Intersection - Common elements</span></span><br><span class="line">SINTER set1 set2  <span class="comment"># Result: c</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Difference - Elements in set1 but not in set2</span></span><br><span class="line">SDIFF set1 set2   <span class="comment"># Result: a, b</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Emphasize that intset encoding can save significant memory for integer sets, and Redis automatically chooses the optimal encoding based on data characteristics.</p>
-<hr>
-<h2 id="Sorted-Set-ZSet"><a href="#Sorted-Set-ZSet" class="headerlink" title="Sorted Set (ZSet)"></a>Sorted Set (ZSet)</h2><h3 id="Underlying-Data-Structures-3"><a href="#Underlying-Data-Structures-3" class="headerlink" title="Underlying Data Structures"></a>Underlying Data Structures</h3><p>Sorted Sets use a sophisticated dual data structure approach:</p>
-<ol>
-<li><strong>Hash Table</strong> - Maps members to scores (O(1) member lookup)</li>
-<li><strong>Skip List</strong> - Maintains sorted order (O(log n) range operations)</li>
-</ol>
-<p>For small sorted sets, <strong>Ziplist</strong> encoding is used instead.</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[Sorted Set] --&gt; B{Size Check}
-B --&gt;|Small| C[Ziplist Encoding]
-B --&gt;|Large| D[Skip List + Hash Table]
-
-D --&gt; D1[Skip List]
-D --&gt; D2[Hash Table]
-
-D1 --&gt; D3[Sorted Range Queries]
-D1 --&gt; D4[O（log n） Insert&#x2F;Delete]
-
-D2 --&gt; D5[O（1） Score Lookup]
-D2 --&gt; D6[O（1） Member Check]
-</code>
-</pre>
-
-<h3 id="Skip-List-Structure"><a href="#Skip-List-Structure" class="headerlink" title="Skip List Structure"></a>Skip List Structure</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    sds ele;                    <span class="comment">// Member</span></span><br><span class="line">    <span class="type">double</span> score;               <span class="comment">// Score</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> span;     <span class="comment">// Number of nodes to next</span></span><br><span class="line">    &#125; level[];</span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-4"><a href="#Use-Cases-Best-Practices-4" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Leaderboards"><a href="#1-Leaderboards" class="headerlink" title="1. Leaderboards"></a>1. Leaderboards</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Gaming leaderboard</span></span><br><span class="line">ZADD game:leaderboard 1500 <span class="string">&quot;player1&quot;</span> 1200 <span class="string">&quot;player2&quot;</span> 1800 <span class="string">&quot;player3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Top 10 players</span></span><br><span class="line">ZREVRANGE game:leaderboard 0 9 WITHSCORES</span><br><span class="line"></span><br><span class="line"><span class="comment"># Player rank</span></span><br><span class="line">ZREVRANK game:leaderboard <span class="string">&quot;player1&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Update score</span></span><br><span class="line">ZINCRBY game:leaderboard 100 <span class="string">&quot;player1&quot;</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Time-based-Data"><a href="#2-Time-based-Data" class="headerlink" title="2. Time-based Data"></a>2. Time-based Data</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Recent articles (using timestamp as score)</span></span><br><span class="line">ZADD articles:recent 1640995200 <span class="string">&quot;article:123&quot;</span> 1640995300 <span class="string">&quot;article:124&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Get articles from last hour</span></span><br><span class="line">ZRANGEBYSCORE articles:recent $(<span class="built_in">date</span> -d <span class="string">&quot;1 hour ago&quot;</span> +%s) +inf</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Priority-Queues"><a href="#3-Priority-Queues" class="headerlink" title="3. Priority Queues"></a>3. Priority Queues</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Task queue with priorities</span></span><br><span class="line">ZADD task:queue 1 <span class="string">&quot;low_priority_task&quot;</span> 5 <span class="string">&quot;high_priority_task&quot;</span> 3 <span class="string">&quot;medium_task&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Process highest priority task</span></span><br><span class="line">ZPOPMAX task:queue</span><br></pre></td></tr></table></figure>
-
-<h3 id="Advanced-Operations"><a href="#Advanced-Operations" class="headerlink" title="Advanced Operations"></a>Advanced Operations</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Range by score</span></span><br><span class="line">ZRANGEBYSCORE game:leaderboard 1000 2000 WITHSCORES</span><br><span class="line"></span><br><span class="line"><span class="comment"># Count elements in score range</span></span><br><span class="line">ZCOUNT game:leaderboard 1000 2000</span><br><span class="line"></span><br><span class="line"><span class="comment"># Remove by rank</span></span><br><span class="line">ZREMRANGEBYRANK game:leaderboard 0 -11  <span class="comment"># Keep only top 10</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Lexicographical operations (when scores are equal)</span></span><br><span class="line">ZRANGEBYLEX myset <span class="string">&quot;[a&quot;</span> <span class="string">&quot;[z&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Explain why Redis uses both skip list and hash table - skip list for range operations and hash table for direct member access. This dual structure makes sorted sets extremely versatile.</p>
-<hr>
-<h2 id="Bitmap"><a href="#Bitmap" class="headerlink" title="Bitmap"></a>Bitmap</h2><h3 id="Underlying-Data-Structure-String-with-Bit-Operations"><a href="#Underlying-Data-Structure-String-with-Bit-Operations" class="headerlink" title="Underlying Data Structure: String with Bit Operations"></a>Underlying Data Structure: String with Bit Operations</h3><p>Bitmaps in Redis are actually strings that support bit-level operations. Each bit can represent a boolean state for a specific ID or position.</p>
-<pre>
-<code class="mermaid">
-flowchart LR
-A[Bitmap] --&gt; B[String Representation]
-B --&gt; C[Bit Position 0]
-B --&gt; D[Bit Position 1]
-B --&gt; E[Bit Position 2]
-B --&gt; F[... Bit Position N]
-
-C --&gt; C1[User ID 1]
-D --&gt; D1[User ID 2]
-E --&gt; E1[User ID 3]
-F --&gt; F1[User ID N+1]
-</code>
-</pre>
-
-<h3 id="Use-Cases-Best-Practices-5"><a href="#Use-Cases-Best-Practices-5" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-User-Activity-Tracking"><a href="#1-User-Activity-Tracking" class="headerlink" title="1. User Activity Tracking"></a>1. User Activity Tracking</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Daily active users (bit position = user ID)</span></span><br><span class="line">SETBIT daily_active:2024-01-15 1001 1  <span class="comment"># User 1001 was active</span></span><br><span class="line">SETBIT daily_active:2024-01-15 1002 1  <span class="comment"># User 1002 was active</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check if user was active</span></span><br><span class="line">GETBIT daily_active:2024-01-15 1001</span><br><span class="line"></span><br><span class="line"><span class="comment"># Count active users</span></span><br><span class="line">BITCOUNT daily_active:2024-01-15</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Feature-Flags"><a href="#2-Feature-Flags" class="headerlink" title="2. Feature Flags"></a>2. Feature Flags</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Feature availability (bit position = feature ID)</span></span><br><span class="line">SETBIT user:1001:features 0 1  <span class="comment"># Feature 0 enabled</span></span><br><span class="line">SETBIT user:1001:features 2 1  <span class="comment"># Feature 2 enabled</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check feature access</span></span><br><span class="line">GETBIT user:1001:features 0</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-A-B-Testing"><a href="#3-A-B-Testing" class="headerlink" title="3. A&#x2F;B Testing"></a>3. A&#x2F;B Testing</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Test group assignment</span></span><br><span class="line">SETBIT experiment:feature_x:group_a 1001 1</span><br><span class="line">SETBIT experiment:feature_x:group_b 1002 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># Users in both experiments</span></span><br><span class="line">BITOP AND result experiment:feature_x:group_a experiment:other_experiment</span><br></pre></td></tr></table></figure>
-
-<h3 id="Bitmap-Operations"><a href="#Bitmap-Operations" class="headerlink" title="Bitmap Operations"></a>Bitmap Operations</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Bitwise operations</span></span><br><span class="line">BITOP AND result key1 key2        <span class="comment"># Intersection</span></span><br><span class="line">BITOP OR result key1 key2         <span class="comment"># Union</span></span><br><span class="line">BITOP XOR result key1 key2        <span class="comment"># Exclusive OR</span></span><br><span class="line">BITOP NOT result key1             <span class="comment"># Complement</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Find first bit</span></span><br><span class="line">BITPOS daily_active:2024-01-15 1  <span class="comment"># First active user</span></span><br><span class="line">BITPOS daily_active:2024-01-15 0  <span class="comment"># First inactive user</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Memory-Efficiency"><a href="#Memory-Efficiency" class="headerlink" title="Memory Efficiency"></a>Memory Efficiency</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Memory usage example</span></span><br><span class="line"><span class="comment"># Traditional set for 1 million users: ~32MB</span></span><br><span class="line"><span class="comment"># Bitmap for 1 million users: ~125KB (if sparse, much less)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># For user ID 1000000</span></span><br><span class="line">SETBIT <span class="built_in">users</span>:active 1000000 1  <span class="comment"># Uses ~125KB total</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Bitmaps are extremely memory-efficient for representing large sparse boolean datasets. One million users can be represented in just 125KB instead of several megabytes with other data structures.</p>
-<hr>
-<h2 id="HyperLogLog"><a href="#HyperLogLog" class="headerlink" title="HyperLogLog"></a>HyperLogLog</h2><h3 id="Underlying-Data-Structure-Probabilistic-Counting"><a href="#Underlying-Data-Structure-Probabilistic-Counting" class="headerlink" title="Underlying Data Structure: Probabilistic Counting"></a>Underlying Data Structure: Probabilistic Counting</h3><p>HyperLogLog uses probabilistic algorithms to estimate cardinality (unique count) with minimal memory usage.</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[HyperLogLog] --&gt; B[Hash Function]
-B --&gt; C[Leading Zeros Count]
-C --&gt; D[Bucket Assignment]
-D --&gt; E[Cardinality Estimation]
-
-E --&gt; E1[Standard Error: 0.81%]
-E --&gt; E2[Memory Usage: 12KB]
-E --&gt; E3[Max Cardinality: 2^64]
-</code>
-</pre>
-
-<h3 id="Algorithm-Principle"><a href="#Algorithm-Principle" class="headerlink" title="Algorithm Principle"></a>Algorithm Principle</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Simplified algorithm:</span></span><br><span class="line"><span class="comment"># 1. Hash each element</span></span><br><span class="line"><span class="comment"># 2. Count leading zeros in binary representation</span></span><br><span class="line"><span class="comment"># 3. Use bucket system for better accuracy</span></span><br><span class="line"><span class="comment"># 4. Apply harmonic mean for final estimation</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-6"><a href="#Use-Cases-Best-Practices-6" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Unique-Visitors"><a href="#1-Unique-Visitors" class="headerlink" title="1. Unique Visitors"></a>1. Unique Visitors</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add page visitors</span></span><br><span class="line">PFADD page:home:unique_visitors user:1001 user:1002 user:1001</span><br><span class="line"></span><br><span class="line"><span class="comment"># Count unique visitors (approximate)</span></span><br><span class="line">PFCOUNT page:home:unique_visitors</span><br><span class="line"></span><br><span class="line"><span class="comment"># Merge multiple HyperLogLogs</span></span><br><span class="line">PFMERGE daily:unique_visitors page:home:unique_visitors page:about:unique_visitors</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Unique-Event-Counting"><a href="#2-Unique-Event-Counting" class="headerlink" title="2. Unique Event Counting"></a>2. Unique Event Counting</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Track unique events</span></span><br><span class="line">PFADD events:login user:1001 user:1002 user:1003</span><br><span class="line">PFADD events:purchase user:1001 user:1004</span><br><span class="line"></span><br><span class="line"><span class="comment"># Count unique users who performed any action</span></span><br><span class="line">PFMERGE events:total events:login events:purchase</span><br><span class="line">PFCOUNT events:total</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Real-time-Analytics"><a href="#3-Real-time-Analytics" class="headerlink" title="3. Real-time Analytics"></a>3. Real-time Analytics</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Hourly unique visitors</span></span><br><span class="line">PFADD stats:$(<span class="built_in">date</span> +%Y%m%d%H):unique visitor_id_1 visitor_id_2</span><br><span class="line"></span><br><span class="line"><span class="comment"># Daily aggregation</span></span><br><span class="line"><span class="keyword">for</span> hour <span class="keyword">in</span> &#123;00..23&#125;; <span class="keyword">do</span></span><br><span class="line">    PFMERGE stats:$(<span class="built_in">date</span> +%Y%m%d):unique stats:$(<span class="built_in">date</span> +%Y%m%d)<span class="variable">$&#123;hour&#125;</span>:unique</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Accuracy-vs-Memory-Trade-off"><a href="#Accuracy-vs-Memory-Trade-off" class="headerlink" title="Accuracy vs. Memory Trade-off"></a>Accuracy vs. Memory Trade-off</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># HyperLogLog: 12KB for any cardinality up to 2^64</span></span><br><span class="line"><span class="comment"># Set: 1GB+ for 10 million unique elements</span></span><br><span class="line"><span class="comment"># Error rate: 0.81% standard error</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Example comparison:</span></span><br><span class="line"><span class="comment"># Counting 10M unique users:</span></span><br><span class="line"><span class="comment"># - Set: ~320MB memory, 100% accuracy</span></span><br><span class="line"><span class="comment"># - HyperLogLog: 12KB memory, 99.19% accuracy</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: HyperLogLog trades a small amount of accuracy (0.81% standard error) for tremendous memory savings. It’s perfect for analytics where approximate counts are acceptable.</p>
-<hr>
-<h2 id="Stream"><a href="#Stream" class="headerlink" title="Stream"></a>Stream</h2><h3 id="Underlying-Data-Structure-Radix-Tree-Consumer-Groups"><a href="#Underlying-Data-Structure-Radix-Tree-Consumer-Groups" class="headerlink" title="Underlying Data Structure: Radix Tree + Consumer Groups"></a>Underlying Data Structure: Radix Tree + Consumer Groups</h3><p>Redis Streams use a radix tree (compressed trie) to store entries efficiently, with additional structures for consumer group management.</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[Stream] --&gt; B[Radix Tree]
-A --&gt; C[Consumer Groups]
-
-B --&gt; B1[Stream Entries]
-B --&gt; B2[Time-ordered IDs]
-B --&gt; B3[Field-Value Pairs]
-
-C --&gt; C1[Consumer Group State]
-C --&gt; C2[Pending Entries List - PEL]
-C --&gt; C3[Consumer Last Delivered ID]
-</code>
-</pre>
-
-<h3 id="Stream-Entry-Structure"><a href="#Stream-Entry-Structure" class="headerlink" title="Stream Entry Structure"></a>Stream Entry Structure</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Stream ID format: timestamp-sequence</span></span><br><span class="line"><span class="comment"># Example: 1640995200000-0</span></span><br><span class="line"><span class="comment">#          |-------------|--- |</span></span><br><span class="line"><span class="comment">#          timestamp(ms)     sequence</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-7"><a href="#Use-Cases-Best-Practices-7" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Event-Sourcing"><a href="#1-Event-Sourcing" class="headerlink" title="1. Event Sourcing"></a>1. Event Sourcing</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add events to stream</span></span><br><span class="line">XADD user:1001:events * action <span class="string">&quot;login&quot;</span> timestamp 1640995200 ip <span class="string">&quot;192.168.1.1&quot;</span></span><br><span class="line">XADD user:1001:events * action <span class="string">&quot;purchase&quot;</span> item <span class="string">&quot;laptop&quot;</span> amount 999.99</span><br><span class="line"></span><br><span class="line"><span class="comment"># Read events</span></span><br><span class="line">XRANGE user:1001:events - + COUNT 10</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Message-Queues-with-Consumer-Groups"><a href="#2-Message-Queues-with-Consumer-Groups" class="headerlink" title="2. Message Queues with Consumer Groups"></a>2. Message Queues with Consumer Groups</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Create consumer group</span></span><br><span class="line">XGROUP CREATE mystream mygroup $ MKSTREAM</span><br><span class="line"></span><br><span class="line"><span class="comment"># Add messages</span></span><br><span class="line">XADD mystream * task <span class="string">&quot;process_order&quot;</span> order_id 12345</span><br><span class="line"></span><br><span class="line"><span class="comment"># Consume messages</span></span><br><span class="line">XREADGROUP GROUP mygroup consumer1 COUNT 1 STREAMS mystream &gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Acknowledge processing</span></span><br><span class="line">XACK mystream mygroup 1640995200000-0</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Real-time-Data-Processing"><a href="#3-Real-time-Data-Processing" class="headerlink" title="3. Real-time Data Processing"></a>3. Real-time Data Processing</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># IoT sensor data</span></span><br><span class="line">XADD sensors:temperature * sensor_id <span class="string">&quot;temp001&quot;</span> value 23.5 location <span class="string">&quot;room1&quot;</span></span><br><span class="line">XADD sensors:humidity * sensor_id <span class="string">&quot;hum001&quot;</span> value 45.2 location <span class="string">&quot;room1&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Read latest data</span></span><br><span class="line">XREAD COUNT 10 STREAMS sensors:temperature sensors:humidity $ $</span><br></pre></td></tr></table></figure>
-
-<h3 id="Stream-Operations"><a href="#Stream-Operations" class="headerlink" title="Stream Operations"></a>Stream Operations</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Range queries</span></span><br><span class="line">XRANGE mystream 1640995200000 1640998800000  <span class="comment"># Time range</span></span><br><span class="line">XREVRANGE mystream + - COUNT 10               <span class="comment"># Latest 10 entries</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Consumer group management</span></span><br><span class="line">XGROUP CREATE mystream group1 0              <span class="comment"># Create group</span></span><br><span class="line">XINFO GROUPS mystream                        <span class="comment"># Group info</span></span><br><span class="line">XPENDING mystream group1                     <span class="comment"># Pending messages</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Stream maintenance</span></span><br><span class="line">XTRIM mystream MAXLEN ~ 1000                 <span class="comment"># Keep ~1000 entries</span></span><br><span class="line">XDEL mystream 1640995200000-0                <span class="comment"># Delete specific entry</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Streams provide at-least-once delivery guarantees through the Pending Entries List (PEL), making them suitable for reliable message processing unlike simple pub&#x2F;sub.</p>
-<hr>
-<h2 id="Geospatial"><a href="#Geospatial" class="headerlink" title="Geospatial"></a>Geospatial</h2><h3 id="Underlying-Data-Structure-Sorted-Set-with-Geohash"><a href="#Underlying-Data-Structure-Sorted-Set-with-Geohash" class="headerlink" title="Underlying Data Structure: Sorted Set with Geohash"></a>Underlying Data Structure: Sorted Set with Geohash</h3><p>Redis geospatial features are built on top of sorted sets, using geohash as scores to enable spatial queries.</p>
-<pre>
-<code class="mermaid">
-flowchart LR
-A[Geospatial] --&gt; B[Sorted Set Backend]
-B --&gt; C[Geohash as Score]
-C --&gt; D[Spatial Queries]
-
-D --&gt; D1[GEORADIUS]
-D --&gt; D2[GEODIST]
-D --&gt; D3[GEOPOS]
-D --&gt; D4[GEOHASH]
-</code>
-</pre>
-
-<h3 id="Geohash-Encoding"><a href="#Geohash-Encoding" class="headerlink" title="Geohash Encoding"></a>Geohash Encoding</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Latitude/Longitude -&gt; Geohash -&gt; 52-bit integer</span></span><br><span class="line"><span class="comment"># Example: (37.7749, -122.4194) -&gt; 9q8yy -&gt; score for sorted set</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Use-Cases-Best-Practices-8"><a href="#Use-Cases-Best-Practices-8" class="headerlink" title="Use Cases &amp; Best Practices"></a>Use Cases &amp; Best Practices</h3><h4 id="1-Location-Services"><a href="#1-Location-Services" class="headerlink" title="1. Location Services"></a>1. Location Services</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add locations</span></span><br><span class="line">GEOADD locations -122.4194 37.7749 <span class="string">&quot;San Francisco&quot;</span></span><br><span class="line">GEOADD locations -74.0060 40.7128 <span class="string">&quot;New York&quot;</span></span><br><span class="line">GEOADD locations -87.6298 41.8781 <span class="string">&quot;Chicago&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Find nearby locations</span></span><br><span class="line">GEORADIUS locations -122.4194 37.7749 100 km WITHDIST WITHCOORD</span><br><span class="line"></span><br><span class="line"><span class="comment"># Distance between locations</span></span><br><span class="line">GEODIST locations <span class="string">&quot;San Francisco&quot;</span> <span class="string">&quot;New York&quot;</span> km</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Delivery-Services"><a href="#2-Delivery-Services" class="headerlink" title="2. Delivery Services"></a>2. Delivery Services</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add delivery drivers</span></span><br><span class="line">GEOADD drivers -122.4094 37.7849 <span class="string">&quot;driver:1001&quot;</span></span><br><span class="line">GEOADD drivers -122.4294 37.7649 <span class="string">&quot;driver:1002&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Find nearby drivers</span></span><br><span class="line">GEORADIUS drivers -122.4194 37.7749 5 km WITHCOORD ASC</span><br><span class="line"></span><br><span class="line"><span class="comment"># Update driver location</span></span><br><span class="line">GEOADD drivers -122.4150 37.7800 <span class="string">&quot;driver:1001&quot;</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Store-Locator"><a href="#3-Store-Locator" class="headerlink" title="3. Store Locator"></a>3. Store Locator</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add store locations</span></span><br><span class="line">GEOADD stores -122.4194 37.7749 <span class="string">&quot;store:sf_downtown&quot;</span></span><br><span class="line">GEOADD stores -122.4094 37.7849 <span class="string">&quot;store:sf_mission&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Find stores by area</span></span><br><span class="line">GEORADIUSBYMEMBER stores <span class="string">&quot;store:sf_downtown&quot;</span> 10 km WITHCOORD</span><br></pre></td></tr></table></figure>
-
-<h3 id="Advanced-Geospatial-Operations"><a href="#Advanced-Geospatial-Operations" class="headerlink" title="Advanced Geospatial Operations"></a>Advanced Geospatial Operations</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Get coordinates</span></span><br><span class="line">GEOPOS locations <span class="string">&quot;San Francisco&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Get geohash</span></span><br><span class="line">GEOHASH locations <span class="string">&quot;San Francisco&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Since it&#x27;s built on sorted sets, you can use:</span></span><br><span class="line">ZRANGE locations 0 -1              <span class="comment"># All locations</span></span><br><span class="line">ZREM locations <span class="string">&quot;San Francisco&quot;</span>     <span class="comment"># Remove location</span></span><br><span class="line">ZCARD locations                    <span class="comment"># Count locations</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Redis geospatial commands are syntactic sugar over sorted set operations. Understanding this helps explain why you can mix geospatial and sorted set commands on the same key.</p>
-<hr>
-<h2 id="Memory-Optimization"><a href="#Memory-Optimization" class="headerlink" title="Memory Optimization"></a>Memory Optimization</h2><h3 id="Encoding-Optimizations"><a href="#Encoding-Optimizations" class="headerlink" title="Encoding Optimizations"></a>Encoding Optimizations</h3><p>Redis automatically chooses optimal encodings based on data characteristics:</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[Memory Optimization] --&gt; B[Automatic Encoding Selection]
-A --&gt; C[Configuration Tuning]
-A --&gt; D[Data Structure Design]
-
-B --&gt; B1[ziplist for small collections]
-B --&gt; B2[intset for integer sets]
-B --&gt; B3[embstr for small strings]
-
-C --&gt; C1[hash-max-ziplist-entries]
-C --&gt; C2[set-max-intset-entries]
-C --&gt; C3[zset-max-ziplist-entries]
-
-D --&gt; D1[Key naming patterns]
-D --&gt; D2[Appropriate data types]
-D --&gt; D3[Expiration policies]
-</code>
-</pre>
-
-<h3 id="Configuration-Optimization"><a href="#Configuration-Optimization" class="headerlink" title="Configuration Optimization"></a>Configuration Optimization</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># redis.conf optimizations</span></span><br><span class="line">hash-max-ziplist-entries 512</span><br><span class="line">hash-max-ziplist-value 64</span><br><span class="line">list-max-ziplist-size -2</span><br><span class="line">set-max-intset-entries 512</span><br><span class="line">zset-max-ziplist-entries 128</span><br><span class="line">zset-max-ziplist-value 64</span><br><span class="line"></span><br><span class="line"><span class="comment"># Memory usage analysis</span></span><br><span class="line">MEMORY USAGE mykey</span><br><span class="line">MEMORY DOCTOR</span><br><span class="line">INFO memory</span><br></pre></td></tr></table></figure>
-
-<h3 id="Best-Practices"><a href="#Best-Practices" class="headerlink" title="Best Practices"></a>Best Practices</h3><h4 id="1-Key-Design"><a href="#1-Key-Design" class="headerlink" title="1. Key Design"></a>1. Key Design</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Bad: Long descriptive keys</span></span><br><span class="line">SET user:profile:information:personal:name:first <span class="string">&quot;John&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Good: Short, structured keys</span></span><br><span class="line">SET u:1001:fname <span class="string">&quot;John&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Use hash for related data</span></span><br><span class="line">HSET u:1001 fname <span class="string">&quot;John&quot;</span> lname <span class="string">&quot;Doe&quot;</span> email <span class="string">&quot;john@example.com&quot;</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="2-Data-Type-Selection"><a href="#2-Data-Type-Selection" class="headerlink" title="2. Data Type Selection"></a>2. Data Type Selection</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># For counters</span></span><br><span class="line">INCR counter           <span class="comment"># Better than SET counter &quot;1&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># For boolean flags</span></span><br><span class="line">SETBIT flags 1001 1    <span class="comment"># Better than SET flag:1001 &quot;true&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># For unique counting</span></span><br><span class="line">PFADD unique_visitors user:1001  <span class="comment"># Better than SADD for large sets</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="3-Memory-Monitoring"><a href="#3-Memory-Monitoring" class="headerlink" title="3. Memory Monitoring"></a>3. Memory Monitoring</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check memory usage</span></span><br><span class="line">MEMORY STATS</span><br><span class="line">MEMORY USAGE mykey SAMPLES 5</span><br><span class="line"></span><br><span class="line"><span class="comment"># Identify memory hogs</span></span><br><span class="line">redis-cli --bigkeys</span><br><span class="line">redis-cli --memkeys</span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Explain that Redis encoding transitions are transparent but can cause performance spikes during conversion. Understanding thresholds helps design applications that avoid frequent transitions.</p>
-<hr>
-<h2 id="Performance-Considerations-1"><a href="#Performance-Considerations-1" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h2><h3 id="Time-Complexity-by-Operation"><a href="#Time-Complexity-by-Operation" class="headerlink" title="Time Complexity by Operation"></a>Time Complexity by Operation</h3><table>
-<thead>
-<tr>
-<th>Data Type</th>
-<th>Operation</th>
-<th>Time Complexity</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>String</td>
-<td>GET&#x2F;SET</td>
-<td>O(1)</td>
-<td></td>
-</tr>
-<tr>
-<td>Hash</td>
-<td>HGET&#x2F;HSET</td>
-<td>O(1)</td>
-<td>O(n) for HGETALL</td>
-</tr>
-<tr>
-<td>List</td>
-<td>LPUSH&#x2F;RPUSH</td>
-<td>O(1)</td>
-<td></td>
-</tr>
-<tr>
-<td>List</td>
-<td>LINDEX</td>
-<td>O(n)</td>
-<td>Avoid on large lists</td>
-</tr>
-<tr>
-<td>Set</td>
-<td>SADD&#x2F;SREM</td>
-<td>O(1)</td>
-<td></td>
-</tr>
-<tr>
-<td>Set</td>
-<td>SINTER</td>
-<td>O(n*m)</td>
-<td>n &#x3D; smallest set size</td>
-</tr>
-<tr>
-<td>ZSet</td>
-<td>ZADD&#x2F;ZREM</td>
-<td>O(log n)</td>
-<td></td>
-</tr>
-<tr>
-<td>ZSet</td>
-<td>ZRANGE</td>
-<td>O(log n + m)</td>
-<td>m &#x3D; result size</td>
-</tr>
-</tbody></table>
-<h3 id="Pipelining-and-Batching"><a href="#Pipelining-and-Batching" class="headerlink" title="Pipelining and Batching"></a>Pipelining and Batching</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Without pipelining (multiple round trips)</span></span><br><span class="line">SET key1 value1</span><br><span class="line">SET key2 value2</span><br><span class="line">SET key3 value3</span><br><span class="line"></span><br><span class="line"><span class="comment"># With pipelining (single round trip)</span></span><br><span class="line">redis-cli --pipe &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">SET key1 value1</span></span><br><span class="line"><span class="string">SET key2 value2</span></span><br><span class="line"><span class="string">SET key3 value3</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Lua scripting for atomic operations</span></span><br><span class="line">EVAL <span class="string">&quot;</span></span><br><span class="line"><span class="string">  redis.call(&#x27;SET&#x27;, KEYS[1], ARGV[1])</span></span><br><span class="line"><span class="string">  redis.call(&#x27;INCR&#x27;, KEYS[2])</span></span><br><span class="line"><span class="string">  return redis.call(&#x27;GET&#x27;, KEYS[2])</span></span><br><span class="line"><span class="string">&quot;</span> 2 mykey counter myvalue</span><br></pre></td></tr></table></figure>
-
-<h3 id="Connection-Pooling"><a href="#Connection-Pooling" class="headerlink" title="Connection Pooling"></a>Connection Pooling</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Python example with connection pooling</span></span><br><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"></span><br><span class="line"><span class="comment"># Connection pool</span></span><br><span class="line">pool = redis.ConnectionPool(</span><br><span class="line">    host=<span class="string">&#x27;localhost&#x27;</span>,</span><br><span class="line">    port=<span class="number">6379</span>,</span><br><span class="line">    db=<span class="number">0</span>,</span><br><span class="line">    max_connections=<span class="number">20</span>,</span><br><span class="line">    retry_on_timeout=<span class="literal">True</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">r = redis.Redis(connection_pool=pool)</span><br></pre></td></tr></table></figure>
-
-<h3 id="Monitoring-and-Profiling"><a href="#Monitoring-and-Profiling" class="headerlink" title="Monitoring and Profiling"></a>Monitoring and Profiling</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Monitor commands in real-time</span></span><br><span class="line">MONITOR</span><br><span class="line"></span><br><span class="line"><span class="comment"># Slow query log</span></span><br><span class="line">CONFIG SET slowlog-log-slower-than 10000  <span class="comment"># 10ms</span></span><br><span class="line">SLOWLOG GET 10</span><br><span class="line"></span><br><span class="line"><span class="comment"># Client connections</span></span><br><span class="line">CLIENT LIST</span><br><span class="line">CLIENT TRACKING ON</span><br><span class="line"></span><br><span class="line"><span class="comment"># Performance stats</span></span><br><span class="line">INFO stats</span><br><span class="line">INFO commandstats</span><br></pre></td></tr></table></figure>
-
-<p><strong>🎯 Interview Insight</strong>: Always mention that Redis is single-threaded for command execution, so blocking operations can affect overall performance. Understanding this helps explain why pipelining and non-blocking operations are crucial.</p>
-<hr>
-<h2 id="Common-Interview-Questions-Answers"><a href="#Common-Interview-Questions-Answers" class="headerlink" title="Common Interview Questions &amp; Answers"></a>Common Interview Questions &amp; Answers</h2><h3 id="1-“How-does-Redis-achieve-such-high-performance-”"><a href="#1-“How-does-Redis-achieve-such-high-performance-”" class="headerlink" title="1. “How does Redis achieve such high performance?”"></a>1. “How does Redis achieve such high performance?”</h3><p><strong>Key Points:</strong></p>
-<ul>
-<li>Single-threaded command execution eliminates lock contention</li>
-<li>In-memory storage with optimized data structures</li>
-<li>Efficient network I&#x2F;O with epoll&#x2F;kqueue</li>
-<li>Smart encoding selection based on data characteristics</li>
-<li>Pipelining support reduces network round trips</li>
-</ul>
-<h3 id="2-“Explain-the-trade-offs-between-Redis-data-types”"><a href="#2-“Explain-the-trade-offs-between-Redis-data-types”" class="headerlink" title="2. “Explain the trade-offs between Redis data types”"></a>2. “Explain the trade-offs between Redis data types”</h3><p><strong>Answer Framework:</strong></p>
-<ul>
-<li><strong>Memory vs. Access Pattern</strong>: Hash vs. String for objects</li>
-<li><strong>Accuracy vs. Memory</strong>: HyperLogLog vs. Set for counting</li>
-<li><strong>Simplicity vs. Features</strong>: List vs. Stream for queues</li>
-<li><strong>Query Flexibility vs. Memory</strong>: Sorted Set’s dual structure</li>
-</ul>
-<h3 id="3-“How-would-you-design-a-real-time-leaderboard-”"><a href="#3-“How-would-you-design-a-real-time-leaderboard-”" class="headerlink" title="3. “How would you design a real-time leaderboard?”"></a>3. “How would you design a real-time leaderboard?”</h3><p><strong>Solution:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Use Sorted Set with score as points</span></span><br><span class="line">ZADD leaderboard 1500 <span class="string">&quot;player1&quot;</span> 1200 <span class="string">&quot;player2&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Real-time updates</span></span><br><span class="line">ZINCRBY leaderboard 100 <span class="string">&quot;player1&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Get rankings</span></span><br><span class="line">ZREVRANGE leaderboard 0 9 WITHSCORES  <span class="comment"># Top 10</span></span><br><span class="line">ZREVRANK leaderboard <span class="string">&quot;player1&quot;</span>        <span class="comment"># Player rank</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="4-“How-do-you-handle-Redis-memory-limitations-”"><a href="#4-“How-do-you-handle-Redis-memory-limitations-”" class="headerlink" title="4. “How do you handle Redis memory limitations?”"></a>4. “How do you handle Redis memory limitations?”</h3><p><strong>Strategies:</strong></p>
-<ul>
-<li>Use appropriate data types and encodings</li>
-<li>Implement expiration policies</li>
-<li>Use Redis Cluster for horizontal scaling</li>
-<li>Monitor memory usage and optimize keys</li>
-<li>Consider data archival strategies</li>
-</ul>
-<h3 id="5-“Explain-Redis-persistence-options-and-their-trade-offs”"><a href="#5-“Explain-Redis-persistence-options-and-their-trade-offs”" class="headerlink" title="5. “Explain Redis persistence options and their trade-offs”"></a>5. “Explain Redis persistence options and their trade-offs”</h3><p><strong>RDB vs AOF:</strong></p>
-<ul>
-<li><strong>RDB</strong>: Point-in-time snapshots, compact, faster restarts</li>
-<li><strong>AOF</strong>: Command logging, better durability, larger files</li>
-<li><strong>Hybrid</strong>: RDB + AOF for best of both worlds</li>
-</ul>
-<hr>
-<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Understanding Redis data types and their underlying data structures is crucial for:</p>
-<ul>
-<li><strong>Optimal Performance</strong>: Choosing the right data type for your use case</li>
-<li><strong>Memory Efficiency</strong>: Leveraging Redis’s encoding optimizations</li>
-<li><strong>Scalability</strong>: Designing systems that work well with Redis’s architecture</li>
-<li><strong>Reliability</strong>: Understanding persistence and replication implications</li>
-</ul>
-<p>Remember that Redis’s power comes from its simplicity and the careful engineering of its data structures. Each data type is optimized for specific access patterns and use cases.</p>
-<p><strong>Final Interview Tip</strong>: Always relate theoretical knowledge to practical scenarios. Demonstrate understanding by explaining not just <em>what</em> Redis does, but <em>why</em> it makes those design choices and <em>when</em> to use each feature.</p>
 
       
     </div>

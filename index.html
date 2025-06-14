@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-count">38</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -151,7 +151,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,216 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/14/Java-Thread-Pool-Deep-Dive-Production-Best-Practices/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/14/Java-Thread-Pool-Deep-Dive-Production-Best-Practices/" class="post-title-link" itemprop="url">Java Thread Pool Deep Dive: Production Best Practices</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-14 19:23:07 / Modified: 19:24:50" itemprop="dateCreated datePublished" datetime="2025-06-14T19:23:07+08:00">2025-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Understanding-Thread-Pools-in-Java"><a href="#Understanding-Thread-Pools-in-Java" class="headerlink" title="Understanding Thread Pools in Java"></a>Understanding Thread Pools in Java</h2><p>A thread pool is a collection of pre-created threads that can be reused to execute multiple tasks, eliminating the overhead of creating and destroying threads for each task. The Java Concurrency API provides robust thread pool implementations through the <code>ExecutorService</code> interface and <code>ThreadPoolExecutor</code> class.</p>
+<h3 id="Why-Thread-Pools-Matter"><a href="#Why-Thread-Pools-Matter" class="headerlink" title="Why Thread Pools Matter"></a>Why Thread Pools Matter</h3><p>Thread creation and destruction are expensive operations that can significantly impact application performance. Thread pools solve this by:</p>
+<ul>
+<li><strong>Resource Management</strong>: Limiting the number of concurrent threads to prevent resource exhaustion</li>
+<li><strong>Performance Optimization</strong>: Reusing threads reduces creation&#x2F;destruction overhead</li>
+<li><strong>Task Queue Management</strong>: Providing controlled task execution with proper queuing mechanisms</li>
+<li><strong>System Stability</strong>: Preventing thread explosion that could crash the application</li>
+</ul>
+<h2 id="Production-Level-Scenarios-and-Use-Cases"><a href="#Production-Level-Scenarios-and-Use-Cases" class="headerlink" title="Production-Level Scenarios and Use Cases"></a>Production-Level Scenarios and Use Cases</h2><h3 id="High-Volume-Web-Applications"><a href="#High-Volume-Web-Applications" class="headerlink" title="High-Volume Web Applications"></a>High-Volume Web Applications</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// E-commerce order processing system</span></span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderProcessingService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadPoolExecutor orderProcessor;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">OrderProcessingService</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.orderProcessor = <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            <span class="number">10</span>,  <span class="comment">// corePoolSize: handle normal load</span></span><br><span class="line">            <span class="number">50</span>,  <span class="comment">// maximumPoolSize: handle peak traffic</span></span><br><span class="line">            <span class="number">60L</span>, TimeUnit.SECONDS, <span class="comment">// keepAliveTime</span></span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;(<span class="number">1000</span>), <span class="comment">// bounded queue</span></span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ThreadFactory</span>() &#123;</span><br><span class="line">                <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">counter</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">1</span>);</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="keyword">public</span> Thread <span class="title function_">newThread</span><span class="params">(Runnable r)</span> &#123;</span><br><span class="line">                    <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(r, <span class="string">&quot;OrderProcessor-&quot;</span> + counter.getAndIncrement());</span><br><span class="line">                    t.setDaemon(<span class="literal">false</span>); <span class="comment">// Ensure proper shutdown</span></span><br><span class="line">                    <span class="keyword">return</span> t;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy() <span class="comment">// backpressure handling</span></span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;OrderResult&gt; <span class="title function_">processOrder</span><span class="params">(Order order)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// Validate order</span></span><br><span class="line">            validateOrder(order);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Process payment</span></span><br><span class="line">            <span class="type">PaymentResult</span> <span class="variable">paymentResult</span> <span class="operator">=</span> paymentService.processPayment(order);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Update inventory</span></span><br><span class="line">            inventoryService.updateStock(order.getItems());</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Send notification</span></span><br><span class="line">            notificationService.sendOrderConfirmation(order);</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">OrderResult</span>(order.getId(), paymentResult);</span><br><span class="line">        &#125;, orderProcessor);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Batch-Processing-Systems"><a href="#Batch-Processing-Systems" class="headerlink" title="Batch Processing Systems"></a>Batch Processing Systems</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Log analysis system processing millions of log entries</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LogAnalysisService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ForkJoinPool forkJoinPool;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadPoolExecutor ioThreadPool;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">LogAnalysisService</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// CPU-intensive tasks: use ForkJoinPool</span></span><br><span class="line">        <span class="built_in">this</span>.forkJoinPool = <span class="keyword">new</span> <span class="title class_">ForkJoinPool</span>(</span><br><span class="line">            Runtime.getRuntime().availableProcessors()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// I/O intensive tasks: higher thread count</span></span><br><span class="line">        <span class="built_in">this</span>.ioThreadPool = <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            <span class="number">20</span>, <span class="comment">// corePoolSize</span></span><br><span class="line">            <span class="number">100</span>, <span class="comment">// maximumPoolSize  </span></span><br><span class="line">            <span class="number">30L</span>, TimeUnit.SECONDS,</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">500</span>),</span><br><span class="line">            r -&gt; &#123;</span><br><span class="line">                <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(r, <span class="string">&quot;LogIO-Thread&quot;</span>);</span><br><span class="line">                t.setDaemon(<span class="literal">true</span>);</span><br><span class="line">                <span class="keyword">return</span> t;</span><br><span class="line">            &#125;</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processLogFiles</span><span class="params">(List&lt;File&gt; logFiles)</span> &#123;</span><br><span class="line">        <span class="comment">// Parallel processing of log files</span></span><br><span class="line">        logFiles.parallelStream()</span><br><span class="line">            .forEach(file -&gt; &#123;</span><br><span class="line">                CompletableFuture</span><br><span class="line">                    .supplyAsync(() -&gt; readLogFile(file), ioThreadPool)</span><br><span class="line">                    .thenCompose(content -&gt; </span><br><span class="line">                        CompletableFuture.supplyAsync(() -&gt; </span><br><span class="line">                            analyzeContent(content), forkJoinPool))</span><br><span class="line">                    .thenAccept(<span class="built_in">this</span>::storeResults)</span><br><span class="line">                    .exceptionally(throwable -&gt; &#123;</span><br><span class="line">                        logger.error(<span class="string">&quot;Failed to process file: &quot;</span> + file.getName(), throwable);</span><br><span class="line">                        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">                    &#125;);</span><br><span class="line">            &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Microservices-Communication"><a href="#Microservices-Communication" class="headerlink" title="Microservices Communication"></a>Microservices Communication</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Service-to-service communication with circuit breaker pattern</span></span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ExternalServiceClient</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadPoolExecutor httpClientPool;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CircuitBreaker circuitBreaker;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ExternalServiceClient</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.httpClientPool = <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            <span class="number">5</span>,   <span class="comment">// corePoolSize: minimum connections</span></span><br><span class="line">            <span class="number">20</span>,  <span class="comment">// maximumPoolSize: peak load handling</span></span><br><span class="line">            <span class="number">120L</span>, TimeUnit.SECONDS, <span class="comment">// longer keepAlive for HTTP connections</span></span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">SynchronousQueue</span>&lt;&gt;(), <span class="comment">// direct handoff</span></span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">CustomThreadFactory</span>(<span class="string">&quot;HttpClient&quot;</span>),</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.AbortPolicy() <span class="comment">// fail fast on overload</span></span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="built_in">this</span>.circuitBreaker = CircuitBreaker.ofDefaults(<span class="string">&quot;externalService&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;ApiResponse&gt; <span class="title function_">callExternalService</span><span class="params">(ApiRequest request)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(() -&gt; </span><br><span class="line">            circuitBreaker.executeSupplier(() -&gt; &#123;</span><br><span class="line">                <span class="comment">// HTTP call with timeout</span></span><br><span class="line">                <span class="keyword">return</span> httpClient.call(request);</span><br><span class="line">            &#125;), httpClientPool</span><br><span class="line">        ).orTimeout(<span class="number">5</span>, TimeUnit.SECONDS)</span><br><span class="line">         .exceptionally(throwable -&gt; &#123;</span><br><span class="line">             <span class="comment">// Fallback mechanism</span></span><br><span class="line">             <span class="keyword">return</span> handleServiceFailure(request, throwable);</span><br><span class="line">         &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Core-ThreadPoolExecutor-Parameters"><a href="#Core-ThreadPoolExecutor-Parameters" class="headerlink" title="Core ThreadPoolExecutor Parameters"></a>Core ThreadPoolExecutor Parameters</h2><p>Understanding these parameters is crucial for optimal thread pool configuration:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    <span class="type">int</span> corePoolSize,           <span class="comment">// Core threads always alive</span></span><br><span class="line">    <span class="type">int</span> maximumPoolSize,        <span class="comment">// Maximum threads allowed</span></span><br><span class="line">    <span class="type">long</span> keepAliveTime,         <span class="comment">// Idle thread timeout</span></span><br><span class="line">    TimeUnit unit,              <span class="comment">// Time unit for keepAliveTime</span></span><br><span class="line">    BlockingQueue&lt;Runnable&gt; workQueue,  <span class="comment">// Task queue</span></span><br><span class="line">    ThreadFactory threadFactory,        <span class="comment">// Thread creation</span></span><br><span class="line">    RejectedExecutionHandler handler    <span class="comment">// Rejection policy</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Parameter-Deep-Dive"><a href="#Parameter-Deep-Dive" class="headerlink" title="Parameter Deep Dive"></a>Parameter Deep Dive</h3><p><strong>corePoolSize</strong>: The number of threads that remain alive even when idle. These threads are created on-demand as tasks arrive.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example: Web server handling typical load</span></span><br><span class="line"><span class="type">int</span> <span class="variable">corePoolSize</span> <span class="operator">=</span> Runtime.getRuntime().availableProcessors() * <span class="number">2</span>;</span><br><span class="line"><span class="comment">// For CPU-bound: cores * 1</span></span><br><span class="line"><span class="comment">// For I/O-bound: cores * 2-4</span></span><br><span class="line"><span class="comment">// For mixed workload: cores * 1.5-2</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>maximumPoolSize</strong>: Maximum number of threads. Additional threads are created when the queue is full and more tasks arrive.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Calculate based on memory constraints</span></span><br><span class="line"><span class="type">long</span> <span class="variable">maxMemory</span> <span class="operator">=</span> Runtime.getRuntime().maxMemory();</span><br><span class="line"><span class="type">long</span> <span class="variable">threadStackSize</span> <span class="operator">=</span> <span class="number">1024</span> * <span class="number">1024</span>; <span class="comment">// 1MB per thread (typical)</span></span><br><span class="line"><span class="type">int</span> <span class="variable">maxThreadsByMemory</span> <span class="operator">=</span> (<span class="type">int</span>) (maxMemory * <span class="number">0.1</span> / threadStackSize);</span><br><span class="line"><span class="type">int</span> <span class="variable">maximumPoolSize</span> <span class="operator">=</span> Math.min(maxThreadsByMemory, <span class="number">200</span>); <span class="comment">// Cap at 200</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>keepAliveTime</strong>: How long excess threads (above core size) remain idle before termination.</p>
+<p><strong>workQueue</strong>: The queue implementation significantly impacts behavior:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Different queue types for different scenarios</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1. Direct handoff - no queuing, immediate thread creation</span></span><br><span class="line">BlockingQueue&lt;Runnable&gt; directQueue = <span class="keyword">new</span> <span class="title class_">SynchronousQueue</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. Bounded queue - prevents memory exhaustion</span></span><br><span class="line">BlockingQueue&lt;Runnable&gt; boundedQueue = <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. Unbounded queue - unlimited queuing (risk of OutOfMemoryError)</span></span><br><span class="line">BlockingQueue&lt;Runnable&gt; unboundedQueue = <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. Priority queue - task prioritization</span></span><br><span class="line">BlockingQueue&lt;Runnable&gt; priorityQueue = <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>&lt;&gt;(<span class="number">1000</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Thread-Pool-Execution-Workflow"><a href="#Thread-Pool-Execution-Workflow" class="headerlink" title="Thread Pool Execution Workflow"></a>Thread Pool Execution Workflow</h2><pre>
+<code class="mermaid">
+flowchart
+A[Task Submitted] --&gt; B{Core Pool Full?}
+B --&gt;|No| C[Create New Core Thread]
+C --&gt; D[Execute Task]
+B --&gt;|Yes| E{Queue Full?}
+E --&gt;|No| F[Add Task to Queue]
+F --&gt; G[Core Thread Picks Task]
+G --&gt; D
+E --&gt;|Yes| H{Max Pool Reached?}
+H --&gt;|No| I[Create Non-Core Thread]
+I --&gt; D
+H --&gt;|Yes| J[Apply Rejection Policy]
+J --&gt; K[Reject&#x2F;Execute&#x2F;Discard&#x2F;Caller Runs]
+
+D --&gt; L{More Tasks in Queue?}
+L --&gt;|Yes| M[Pick Next Task]
+M --&gt; D
+L --&gt;|No| N{Non-Core Thread?}
+N --&gt;|Yes| O{Keep Alive Expired?}
+O --&gt;|Yes| P[Terminate Thread]
+O --&gt;|No| Q[Wait for Task]
+Q --&gt; L
+N --&gt;|No| Q
+</code>
+</pre>
+
+<h3 id="Internal-Mechanism-Details"><a href="#Internal-Mechanism-Details" class="headerlink" title="Internal Mechanism Details"></a>Internal Mechanism Details</h3><p>The <code>ThreadPoolExecutor</code> maintains several internal data structures:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadPoolExecutorInternals</span> &#123;</span><br><span class="line">    <span class="comment">// Simplified view of internal state</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">ctl</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(ctlOf(RUNNING, <span class="number">0</span>));</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> BlockingQueue&lt;Runnable&gt; workQueue;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">mainLock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> HashSet&lt;Worker&gt; workers = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;Worker&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Condition</span> <span class="variable">termination</span> <span class="operator">=</span> mainLock.newCondition();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Worker thread wrapper</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Worker</span> <span class="keyword">extends</span> <span class="title class_">AbstractQueuedSynchronizer</span> </span><br><span class="line">                                <span class="keyword">implements</span> <span class="title class_">Runnable</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> Thread thread;</span><br><span class="line">        Runnable firstTask;</span><br><span class="line">        <span class="keyword">volatile</span> <span class="type">long</span> completedTasks;</span><br><span class="line">        </span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">            runWorker(<span class="built_in">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Main worker loop</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">runWorker</span><span class="params">(Worker w)</span> &#123;</span><br><span class="line">        <span class="type">Thread</span> <span class="variable">wt</span> <span class="operator">=</span> Thread.currentThread();</span><br><span class="line">        <span class="type">Runnable</span> <span class="variable">task</span> <span class="operator">=</span> w.firstTask;</span><br><span class="line">        w.firstTask = <span class="literal">null</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (task != <span class="literal">null</span> || (task = getTask()) != <span class="literal">null</span>) &#123;</span><br><span class="line">                w.lock();</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    beforeExecute(wt, task);</span><br><span class="line">                    task.run();</span><br><span class="line">                    afterExecute(task, <span class="literal">null</span>);</span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    task = <span class="literal">null</span>;</span><br><span class="line">                    w.completedTasks++;</span><br><span class="line">                    w.unlock();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            processWorkerExit(w, completedAbruptly);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Thread-Pool-Optimization-Strategies"><a href="#Thread-Pool-Optimization-Strategies" class="headerlink" title="Thread Pool Optimization Strategies"></a>Thread Pool Optimization Strategies</h2><h3 id="Determining-Optimal-Core-Thread-Count"><a href="#Determining-Optimal-Core-Thread-Count" class="headerlink" title="Determining Optimal Core Thread Count"></a>Determining Optimal Core Thread Count</h3><p>The optimal thread count depends on workload characteristics:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadPoolOptimizer</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">calculateOptimalCoreSize</span><span class="params">(WorkloadType workloadType)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">availableProcessors</span> <span class="operator">=</span> Runtime.getRuntime().availableProcessors();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">switch</span> (workloadType) &#123;</span><br><span class="line">            <span class="keyword">case</span> CPU_BOUND:</span><br><span class="line">                <span class="comment">// CPU-bound: cores + 1 (to handle occasional I/O)</span></span><br><span class="line">                <span class="keyword">return</span> availableProcessors + <span class="number">1</span>;</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">case</span> IO_BOUND:</span><br><span class="line">                <span class="comment">// I/O-bound: cores * target utilization / (1 - blocking factor)</span></span><br><span class="line">                <span class="comment">// blocking factor: 0.9 (90% waiting), utilization: 0.8</span></span><br><span class="line">                <span class="keyword">return</span> (<span class="type">int</span>) (availableProcessors * <span class="number">0.8</span> / (<span class="number">1</span> - <span class="number">0.9</span>));</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">case</span> MIXED:</span><br><span class="line">                <span class="comment">// Mixed workload: balanced approach</span></span><br><span class="line">                <span class="keyword">return</span> availableProcessors * <span class="number">2</span>;</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">case</span> DATABASE_OPERATIONS:</span><br><span class="line">                <span class="comment">// Database connection pool size consideration</span></span><br><span class="line">                <span class="type">int</span> <span class="variable">dbConnectionPoolSize</span> <span class="operator">=</span> getDbConnectionPoolSize();</span><br><span class="line">                <span class="keyword">return</span> Math.min(availableProcessors * <span class="number">4</span>, dbConnectionPoolSize);</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">return</span> availableProcessors;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Dynamic sizing based on system metrics</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">adjustThreadPoolSize</span><span class="params">(ThreadPoolExecutor executor)</span> &#123;</span><br><span class="line">        <span class="type">ThreadPoolStats</span> <span class="variable">stats</span> <span class="operator">=</span> getThreadPoolStats(executor);</span><br><span class="line">        <span class="type">SystemMetrics</span> <span class="variable">systemMetrics</span> <span class="operator">=</span> getSystemMetrics();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (stats.getAverageQueueSize() &gt; <span class="number">100</span> &amp;&amp; </span><br><span class="line">            systemMetrics.getCpuUsage() &lt; <span class="number">0.7</span> &amp;&amp;</span><br><span class="line">            systemMetrics.getMemoryUsage() &lt; <span class="number">0.8</span>) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Increase core size if queue is growing and resources available</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">newCoreSize</span> <span class="operator">=</span> Math.min(</span><br><span class="line">                executor.getCorePoolSize() + <span class="number">2</span>,</span><br><span class="line">                executor.getMaximumPoolSize()</span><br><span class="line">            );</span><br><span class="line">            executor.setCorePoolSize(newCoreSize);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (stats.getAverageActiveThreads() &lt; executor.getCorePoolSize() * <span class="number">0.5</span>) &#123;</span><br><span class="line">            <span class="comment">// Decrease core size if consistently underutilized</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">newCoreSize</span> <span class="operator">=</span> Math.max(</span><br><span class="line">                executor.getCorePoolSize() - <span class="number">1</span>,</span><br><span class="line">                <span class="number">1</span> <span class="comment">// Minimum one thread</span></span><br><span class="line">            );</span><br><span class="line">            executor.setCorePoolSize(newCoreSize);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Performance-Monitoring-and-Tuning"><a href="#Performance-Monitoring-and-Tuning" class="headerlink" title="Performance Monitoring and Tuning"></a>Performance Monitoring and Tuning</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadPoolMonitor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> MeterRegistry meterRegistry;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">monitorThreadPool</span><span class="params">(String poolName, ThreadPoolExecutor executor)</span> &#123;</span><br><span class="line">        <span class="comment">// Register metrics</span></span><br><span class="line">        Gauge.builder(<span class="string">&quot;threadpool.core.size&quot;</span>)</span><br><span class="line">            .tag(<span class="string">&quot;pool&quot;</span>, poolName)</span><br><span class="line">            .register(meterRegistry, executor, ThreadPoolExecutor::getCorePoolSize);</span><br><span class="line">            </span><br><span class="line">        Gauge.builder(<span class="string">&quot;threadpool.active.threads&quot;</span>)</span><br><span class="line">            .tag(<span class="string">&quot;pool&quot;</span>, poolName)</span><br><span class="line">            .register(meterRegistry, executor, ThreadPoolExecutor::getActiveCount);</span><br><span class="line">            </span><br><span class="line">        Gauge.builder(<span class="string">&quot;threadpool.queue.size&quot;</span>)</span><br><span class="line">            .tag(<span class="string">&quot;pool&quot;</span>, poolName)</span><br><span class="line">            .register(meterRegistry, executor, e -&gt; e.getQueue().size());</span><br><span class="line">            </span><br><span class="line">        <span class="comment">// Custom monitoring</span></span><br><span class="line">        <span class="type">ScheduledExecutorService</span> <span class="variable">monitor</span> <span class="operator">=</span> Executors.newScheduledThreadPool(<span class="number">1</span>);</span><br><span class="line">        monitor.scheduleAtFixedRate(() -&gt; &#123;</span><br><span class="line">            logThreadPoolStats(poolName, executor);</span><br><span class="line">            checkForBottlenecks(executor);</span><br><span class="line">        &#125;, <span class="number">0</span>, <span class="number">30</span>, TimeUnit.SECONDS);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">checkForBottlenecks</span><span class="params">(ThreadPoolExecutor executor)</span> &#123;</span><br><span class="line">        <span class="type">double</span> <span class="variable">queueUtilization</span> <span class="operator">=</span> (<span class="type">double</span>) executor.getQueue().size() / <span class="number">1000</span>; <span class="comment">// assume capacity 1000</span></span><br><span class="line">        <span class="type">double</span> <span class="variable">threadUtilization</span> <span class="operator">=</span> (<span class="type">double</span>) executor.getActiveCount() / executor.getMaximumPoolSize();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (queueUtilization &gt; <span class="number">0.8</span>) &#123;</span><br><span class="line">            logger.warn(<span class="string">&quot;Thread pool queue utilization high: &#123;&#125;%&quot;</span>, queueUtilization * <span class="number">100</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (threadUtilization &gt; <span class="number">0.9</span>) &#123;</span><br><span class="line">            logger.warn(<span class="string">&quot;Thread pool utilization high: &#123;&#125;%&quot;</span>, threadUtilization * <span class="number">100</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Check for thread starvation</span></span><br><span class="line">        <span class="keyword">if</span> (executor.getActiveCount() == executor.getMaximumPoolSize() &amp;&amp; </span><br><span class="line">            executor.getQueue().size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;Potential thread starvation detected!&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Production-Best-Practices"><a href="#Production-Best-Practices" class="headerlink" title="Production Best Practices"></a>Production Best Practices</h2><h3 id="Proper-Thread-Pool-Configuration"><a href="#Proper-Thread-Pool-Configuration" class="headerlink" title="Proper Thread Pool Configuration"></a>Proper Thread Pool Configuration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadPoolConfiguration</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean(name = &quot;taskExecutor&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> ThreadPoolTaskExecutor <span class="title function_">taskExecutor</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">ThreadPoolTaskExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolTaskExecutor</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Core configuration</span></span><br><span class="line">        executor.setCorePoolSize(<span class="number">10</span>);</span><br><span class="line">        executor.setMaxPoolSize(<span class="number">50</span>);</span><br><span class="line">        executor.setQueueCapacity(<span class="number">1000</span>);</span><br><span class="line">        executor.setKeepAliveSeconds(<span class="number">60</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Thread naming for debugging</span></span><br><span class="line">        executor.setThreadNamePrefix(<span class="string">&quot;AsyncTask-&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Graceful shutdown</span></span><br><span class="line">        executor.setWaitForTasksToCompleteOnShutdown(<span class="literal">true</span>);</span><br><span class="line">        executor.setAwaitTerminationSeconds(<span class="number">30</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Rejection policy</span></span><br><span class="line">        executor.setRejectedExecutionHandler(<span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy());</span><br><span class="line">        </span><br><span class="line">        executor.initialize();</span><br><span class="line">        <span class="keyword">return</span> executor;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@Primary</span></span><br><span class="line">    <span class="keyword">public</span> ThreadPoolExecutor <span class="title function_">customThreadPool</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            calculateCorePoolSize(),</span><br><span class="line">            calculateMaxPoolSize(),</span><br><span class="line">            <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;(<span class="number">2000</span>),</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">CustomThreadFactory</span>(<span class="string">&quot;CustomPool&quot;</span>),</span><br><span class="line">            (r, executor) -&gt; &#123;</span><br><span class="line">                <span class="comment">// Custom rejection handling with metrics</span></span><br><span class="line">                rejectionCounter.increment();</span><br><span class="line">                logger.warn(<span class="string">&quot;Task rejected, queue size: &#123;&#125;, active threads: &#123;&#125;&quot;</span>, </span><br><span class="line">                    executor.getQueue().size(), executor.getActiveCount());</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Fallback: try to execute in caller thread</span></span><br><span class="line">                <span class="keyword">if</span> (!executor.isShutdown()) &#123;</span><br><span class="line">                    r.run();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Error-Handling-and-Recovery"><a href="#Error-Handling-and-Recovery" class="headerlink" title="Error Handling and Recovery"></a>Error Handling and Recovery</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RobustTaskExecution</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">executeWithRetry</span><span class="params">(</span></span><br><span class="line"><span class="params">            Supplier&lt;T&gt; task, </span></span><br><span class="line"><span class="params">            ThreadPoolExecutor executor,</span></span><br><span class="line"><span class="params">            <span class="type">int</span> maxRetries)</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="type">Exception</span> <span class="variable">lastException</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">attempt</span> <span class="operator">=</span> <span class="number">1</span>; attempt &lt;= maxRetries; attempt++) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> task.get();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    lastException = e;</span><br><span class="line">                    logger.warn(<span class="string">&quot;Task attempt &#123;&#125; failed&quot;</span>, attempt, e);</span><br><span class="line">                    </span><br><span class="line">                    <span class="keyword">if</span> (attempt &lt; maxRetries) &#123;</span><br><span class="line">                        <span class="keyword">try</span> &#123;</span><br><span class="line">                            <span class="comment">// Exponential backoff</span></span><br><span class="line">                            Thread.sleep(<span class="number">1000</span> * (<span class="type">long</span>) Math.pow(<span class="number">2</span>, attempt - <span class="number">1</span>));</span><br><span class="line">                        &#125; <span class="keyword">catch</span> (InterruptedException ie) &#123;</span><br><span class="line">                            Thread.currentThread().interrupt();</span><br><span class="line">                            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;Task interrupted&quot;</span>, ie);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;Task failed after &quot;</span> + maxRetries + <span class="string">&quot; attempts&quot;</span>, lastException);</span><br><span class="line">        &#125;, executor);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleUncaughtExceptions</span><span class="params">(ThreadPoolExecutor executor)</span> &#123;</span><br><span class="line">        <span class="comment">// Override afterExecute to handle exceptions</span></span><br><span class="line">        <span class="type">ThreadPoolExecutor</span> <span class="variable">customExecutor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            executor.getCorePoolSize(),</span><br><span class="line">            executor.getMaximumPoolSize(),</span><br><span class="line">            executor.getKeepAliveTime(TimeUnit.SECONDS),</span><br><span class="line">            TimeUnit.SECONDS,</span><br><span class="line">            executor.getQueue()</span><br><span class="line">        ) &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">afterExecute</span><span class="params">(Runnable r, Throwable t)</span> &#123;</span><br><span class="line">                <span class="built_in">super</span>.afterExecute(r, t);</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span> (t != <span class="literal">null</span>) &#123;</span><br><span class="line">                    logger.error(<span class="string">&quot;Task execution failed&quot;</span>, t);</span><br><span class="line">                    <span class="comment">// Custom error handling - alerting, recovery, etc.</span></span><br><span class="line">                    handleTaskFailure(r, t);</span><br><span class="line">                &#125;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Extract exception from Future if needed</span></span><br><span class="line">                <span class="keyword">if</span> (t == <span class="literal">null</span> &amp;&amp; r <span class="keyword">instanceof</span> Future&lt;?&gt;) &#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        ((Future&lt;?&gt;) r).get();</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (ExecutionException ee) &#123;</span><br><span class="line">                        t = ee.getCause();</span><br><span class="line">                        logger.error(<span class="string">&quot;Future task failed&quot;</span>, t);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (InterruptedException ie) &#123;</span><br><span class="line">                        Thread.currentThread().interrupt();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Graceful-Shutdown-Implementation"><a href="#Graceful-Shutdown-Implementation" class="headerlink" title="Graceful Shutdown Implementation"></a>Graceful Shutdown Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadPoolLifecycleManager</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@PreDestroy</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">shutdown</span><span class="params">()</span> &#123;</span><br><span class="line">        shutdownExecutor(orderProcessingExecutor, <span class="string">&quot;OrderProcessing&quot;</span>, <span class="number">30</span>);</span><br><span class="line">        shutdownExecutor(emailExecutor, <span class="string">&quot;Email&quot;</span>, <span class="number">10</span>);</span><br><span class="line">        shutdownExecutor(backgroundTaskExecutor, <span class="string">&quot;BackgroundTask&quot;</span>, <span class="number">60</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">shutdownExecutor</span><span class="params">(ExecutorService executor, String name, <span class="type">int</span> timeoutSeconds)</span> &#123;</span><br><span class="line">        logger.info(<span class="string">&quot;Shutting down &#123;&#125; thread pool&quot;</span>, name);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Disable new task submission</span></span><br><span class="line">        executor.shutdown();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// Wait for existing tasks to complete</span></span><br><span class="line">            <span class="keyword">if</span> (!executor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) &#123;</span><br><span class="line">                logger.warn(<span class="string">&quot;&#123;&#125; thread pool did not terminate gracefully, forcing shutdown&quot;</span>, name);</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Cancel currently executing tasks</span></span><br><span class="line">                List&lt;Runnable&gt; droppedTasks = executor.shutdownNow();</span><br><span class="line">                logger.warn(<span class="string">&quot;Dropped &#123;&#125; tasks from &#123;&#125; thread pool&quot;</span>, droppedTasks.size(), name);</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Wait a bit more</span></span><br><span class="line">                <span class="keyword">if</span> (!executor.awaitTermination(<span class="number">5</span>, TimeUnit.SECONDS)) &#123;</span><br><span class="line">                    logger.error(<span class="string">&quot;&#123;&#125; thread pool did not terminate after forced shutdown&quot;</span>, name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                logger.info(<span class="string">&quot;&#123;&#125; thread pool terminated gracefully&quot;</span>, name);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;Shutdown interrupted for &#123;&#125; thread pool&quot;</span>, name);</span><br><span class="line">            executor.shutdownNow();</span><br><span class="line">            Thread.currentThread().interrupt();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Questions-and-Key-Insights"><a href="#Interview-Questions-and-Key-Insights" class="headerlink" title="Interview Questions and Key Insights"></a>Interview Questions and Key Insights</h2><h3 id="Core-Concepts-Questions"><a href="#Core-Concepts-Questions" class="headerlink" title="Core Concepts Questions"></a>Core Concepts Questions</h3><p><strong>Q: What happens when a ThreadPoolExecutor receives a task?</strong></p>
+<p>The execution follows a specific workflow:</p>
+<ol>
+<li>If core threads &lt; corePoolSize, create a new core thread</li>
+<li>If core pool is full, add task to queue</li>
+<li>If queue is full and threads &lt; maximumPoolSize, create non-core thread</li>
+<li>If max pool size reached, apply rejection policy</li>
+</ol>
+<p><strong>Q: Explain the difference between submit() and execute() methods.</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// execute() - fire and forget, no return value</span></span><br><span class="line">executor.execute(() -&gt; System.out.println(<span class="string">&quot;Task executed&quot;</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// submit() - returns Future for result/exception handling</span></span><br><span class="line">Future&lt;?&gt; future = executor.submit(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Task result&quot;</span>;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">CompletableFuture&lt;String&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Async result&quot;</span>;</span><br><span class="line">&#125;, executor);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Q: How do you handle thread pool saturation?</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. Proper sizing</span></span><br><span class="line"><span class="type">int</span> <span class="variable">optimalSize</span> <span class="operator">=</span> availableProcessors * (<span class="number">1</span> + waitTime/serviceTime);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. Bounded queues to provide backpressure</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. Appropriate rejection policies</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy(); <span class="comment">// Backpressure</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.AbortPolicy();      <span class="comment">// Fail fast</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Advanced-Scenarios"><a href="#Advanced-Scenarios" class="headerlink" title="Advanced Scenarios"></a>Advanced Scenarios</h3><p><strong>Q: How would you implement a thread pool that can handle both CPU-intensive and I&#x2F;O-intensive tasks?</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HybridThreadPoolManager</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadPoolExecutor cpuPool;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadPoolExecutor ioPool;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">HybridThreadPoolManager</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// CPU pool: cores + 1</span></span><br><span class="line">        <span class="built_in">this</span>.cpuPool = <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            Runtime.getRuntime().availableProcessors() + <span class="number">1</span>,</span><br><span class="line">            Runtime.getRuntime().availableProcessors() + <span class="number">1</span>,</span><br><span class="line">            <span class="number">0L</span>, TimeUnit.MILLISECONDS,</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// I/O pool: higher thread count</span></span><br><span class="line">        <span class="built_in">this</span>.ioPool = <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">            <span class="number">20</span>, <span class="number">100</span>, <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(<span class="number">500</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">executeTask</span><span class="params">(TaskType type, Supplier&lt;T&gt; task)</span> &#123;</span><br><span class="line">        <span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> (type == TaskType.CPU_BOUND) ? cpuPool : ioPool;</span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(task, executor);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Thread-Pool-State-Diagram"><a href="#Thread-Pool-State-Diagram" class="headerlink" title="Thread Pool State Diagram"></a>Thread Pool State Diagram</h2><pre>
+<code class="mermaid">
+stateDiagram-v2
+[*] --&gt; RUNNING: new ThreadPoolExecutor()
+RUNNING --&gt; SHUTDOWN: shutdown()
+RUNNING --&gt; STOP: shutdownNow()
+SHUTDOWN --&gt; TIDYING: All tasks completed
+STOP --&gt; TIDYING: All tasks completed
+TIDYING --&gt; TERMINATED: terminated() hook completed
+TERMINATED --&gt; [*]
+
+state RUNNING {
+    [*] --&gt; Accepting_Tasks
+    Accepting_Tasks --&gt; Executing_Tasks: Task submitted
+    Executing_Tasks --&gt; Accepting_Tasks: Task completed
+}
+
+state SHUTDOWN {
+    [*] --&gt; No_New_Tasks
+    No_New_Tasks --&gt; Finishing_Tasks: Complete existing
+}
+</code>
+</pre>
+
+<h2 id="Advanced-Patterns-and-Techniques"><a href="#Advanced-Patterns-and-Techniques" class="headerlink" title="Advanced Patterns and Techniques"></a>Advanced Patterns and Techniques</h2><h3 id="Custom-Thread-Pool-Implementation"><a href="#Custom-Thread-Pool-Implementation" class="headerlink" title="Custom Thread Pool Implementation"></a>Custom Thread Pool Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AdaptiveThreadPool</span> <span class="keyword">extends</span> <span class="title class_">ThreadPoolExecutor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicLong</span> <span class="variable">totalTasks</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicLong</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicLong</span> <span class="variable">totalTime</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicLong</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">double</span> <span class="variable">averageTaskTime</span> <span class="operator">=</span> <span class="number">0.0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">AdaptiveThreadPool</span><span class="params">(<span class="type">int</span> corePoolSize, <span class="type">int</span> maximumPoolSize)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(corePoolSize, maximumPoolSize, <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">              <span class="keyword">new</span> <span class="title class_">LinkedBlockingQueue</span>&lt;&gt;(), <span class="keyword">new</span> <span class="title class_">AdaptiveThreadFactory</span>());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">beforeExecute</span><span class="params">(Thread t, Runnable r)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.beforeExecute(t, r);</span><br><span class="line">        <span class="comment">// Mark start time</span></span><br><span class="line">        TASK_START_TIME.set(System.nanoTime());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">afterExecute</span><span class="params">(Runnable r, Throwable t)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.afterExecute(r, t);</span><br><span class="line">        </span><br><span class="line">        <span class="type">long</span> <span class="variable">duration</span> <span class="operator">=</span> System.nanoTime() - TASK_START_TIME.get();</span><br><span class="line">        totalTasks.incrementAndGet();</span><br><span class="line">        totalTime.addAndGet(duration);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Update average task time</span></span><br><span class="line">        averageTaskTime = (<span class="type">double</span>) totalTime.get() / totalTasks.get();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Adaptive sizing based on task duration and queue size</span></span><br><span class="line">        adaptPoolSize();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">adaptPoolSize</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">queueSize</span> <span class="operator">=</span> getQueue().size();</span><br><span class="line">        <span class="type">int</span> <span class="variable">activeThreads</span> <span class="operator">=</span> getActiveCount();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// If queue is growing and tasks are I/O bound (long duration)</span></span><br><span class="line">        <span class="keyword">if</span> (queueSize &gt; <span class="number">10</span> &amp;&amp; averageTaskTime &gt; <span class="number">100_000_000</span>) &#123; <span class="comment">// 100ms</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">newCoreSize</span> <span class="operator">=</span> Math.min(getCorePoolSize() + <span class="number">1</span>, getMaximumPoolSize());</span><br><span class="line">            setCorePoolSize(newCoreSize);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// If threads are idle and few tasks in queue</span></span><br><span class="line">        <span class="keyword">if</span> (queueSize &lt; <span class="number">5</span> &amp;&amp; activeThreads &lt; getCorePoolSize() / <span class="number">2</span>) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">newCoreSize</span> <span class="operator">=</span> Math.max(getCorePoolSize() - <span class="number">1</span>, <span class="number">1</span>);</span><br><span class="line">            setCorePoolSize(newCoreSize);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;Long&gt; TASK_START_TIME = <span class="keyword">new</span> <span class="title class_">ThreadLocal</span>&lt;&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Integration-with-Spring-Framework"><a href="#Integration-with-Spring-Framework" class="headerlink" title="Integration with Spring Framework"></a>Integration with Spring Framework</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableAsync</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AsyncConfiguration</span> <span class="keyword">implements</span> <span class="title class_">AsyncConfigurer</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Executor <span class="title function_">getAsyncExecutor</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">ThreadPoolTaskExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolTaskExecutor</span>();</span><br><span class="line">        executor.setCorePoolSize(<span class="number">10</span>);</span><br><span class="line">        executor.setMaxPoolSize(<span class="number">100</span>);</span><br><span class="line">        executor.setQueueCapacity(<span class="number">500</span>);</span><br><span class="line">        executor.setThreadNamePrefix(<span class="string">&quot;Async-&quot;</span>);</span><br><span class="line">        executor.setRejectedExecutionHandler(<span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy());</span><br><span class="line">        executor.initialize();</span><br><span class="line">        <span class="keyword">return</span> executor;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> AsyncUncaughtExceptionHandler <span class="title function_">getAsyncUncaughtExceptionHandler</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> (throwable, method, objects) -&gt; &#123;</span><br><span class="line">            logger.error(<span class="string">&quot;Async method &#123;&#125; failed with args &#123;&#125;&quot;</span>, </span><br><span class="line">                method.getName(), Arrays.toString(objects), throwable);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Custom error handling - metrics, alerting, etc.</span></span><br><span class="line">            handleAsyncException(method, throwable);</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> TaskScheduler <span class="title function_">taskScheduler</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">ThreadPoolTaskScheduler</span> <span class="variable">scheduler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolTaskScheduler</span>();</span><br><span class="line">        scheduler.setPoolSize(<span class="number">5</span>);</span><br><span class="line">        scheduler.setThreadNamePrefix(<span class="string">&quot;Scheduled-&quot;</span>);</span><br><span class="line">        scheduler.setWaitForTasksToCompleteOnShutdown(<span class="literal">true</span>);</span><br><span class="line">        scheduler.setAwaitTerminationSeconds(<span class="number">30</span>);</span><br><span class="line">        <span class="keyword">return</span> scheduler;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Summary-and-Key-Takeaways"><a href="#Summary-and-Key-Takeaways" class="headerlink" title="Summary and Key Takeaways"></a>Summary and Key Takeaways</h2><p>Thread pools are fundamental to building scalable Java applications. Key principles for success:</p>
+<ol>
+<li><strong>Right-size your pools</strong> based on workload characteristics (CPU vs I&#x2F;O bound)</li>
+<li><strong>Use bounded queues</strong> to provide backpressure and prevent memory exhaustion  </li>
+<li><strong>Implement proper monitoring</strong> to understand pool behavior and performance</li>
+<li><strong>Handle failures gracefully</strong> with appropriate rejection policies and error handling</li>
+<li><strong>Ensure clean shutdown</strong> to prevent resource leaks and data corruption</li>
+<li><strong>Monitor and tune continuously</strong> based on production metrics and load patterns</li>
+</ol>
+<p>The choice of thread pool configuration can make the difference between a responsive, scalable application and one that fails under load. Always test your configuration under realistic load conditions and be prepared to adjust based on observed behavior.</p>
+<p>Remember that thread pools are just one part of the concurrency story - proper synchronization, lock-free data structures, and understanding of the Java Memory Model are equally important for building robust concurrent applications.</p>
+<h2 id="External-References"><a href="#External-References" class="headerlink" title="External References"></a>External References</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html">Oracle Java Documentation - Executor Framework</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.amazon.com/Java-Concurrency-Practice-Brian-Goetz/dp/0321349601">Java Concurrency in Practice by Brian Goetz</a></li>
+<li><a target="_blank" rel="noopener" href="https://spring.io/guides/gs/async-method/">Spring Framework Async Execution</a></li>
+<li><a target="_blank" rel="noopener" href="https://micrometer.io/docs/concepts#_executors">Micrometer Metrics for Thread Pools</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/en/java/javase/11/gctuning/">JVM Performance Tuning Guide</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3299,335 +3509,6 @@ Archived --&gt; [*]
 </ol>
 <p><strong>Final Interview Insight</strong><br><em>“What’s the most important consideration when designing an authorization system?”</em> The answer should emphasize the balance between security and usability, the importance of understanding the business context, and the need for systems that can evolve with changing requirements while maintaining security posture.</p>
 <p>Remember: Authorization is not just about saying “yes” or “no” to access requests—it’s about building a foundation of trust that enables business operations while protecting critical assets.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Java-Interview-Guide-Core-Concepts/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/12/Java-Interview-Guide-Core-Concepts/" class="post-title-link" itemprop="url">Java Interview Guide - Core Concepts</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-12 15:44:19 / Modified: 15:45:36" itemprop="dateCreated datePublished" datetime="2025-06-12T15:44:19+08:00">2025-06-12</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Java-Fundamentals"><a href="#Java-Fundamentals" class="headerlink" title="Java Fundamentals"></a>Java Fundamentals</h2><h3 id="Collection-Framework"><a href="#Collection-Framework" class="headerlink" title="Collection Framework"></a>Collection Framework</h3><p><strong>Key Concepts:</strong> Thread safety, iterators, duplicates, ordered collections, key-value pairs</p>
-<h4 id="List-Implementations"><a href="#List-Implementations" class="headerlink" title="List Implementations"></a>List Implementations</h4><p><strong>Vector</strong></p>
-<ul>
-<li>Thread-safe with strong consistency</li>
-<li>2x capacity expansion</li>
-<li><code>Collections.synchronizedList()</code> requires manual synchronization for iterators</li>
-</ul>
-<p><strong>ArrayList</strong></p>
-<ul>
-<li>Array-based implementation</li>
-<li>Inefficient head insertion, efficient tail insertion</li>
-<li>1.5x capacity expansion</li>
-<li>Pre-specify capacity to reduce expansion overhead</li>
-<li>Uses <code>transient</code> for object array to avoid serializing empty slots</li>
-</ul>
-<p><strong>LinkedList</strong></p>
-<ul>
-<li>Doubly-linked list implementation</li>
-<li>Slowest for middle insertions</li>
-<li>Use Iterator for traversal</li>
-<li><code>remove(Integer)</code> removes element, <code>remove(int)</code> removes by index</li>
-</ul>
-<p><strong>Iterator Safety</strong></p>
-<ul>
-<li>Enhanced for-loop uses iterator internally</li>
-<li>Concurrent modification throws <code>ConcurrentModificationException</code></li>
-<li>Use iterator’s <code>remove()</code> method instead of collection’s</li>
-</ul>
-<h4 id="Map-Implementations"><a href="#Map-Implementations" class="headerlink" title="Map Implementations"></a>Map Implementations</h4><p><strong>Hashtable</strong></p>
-<ul>
-<li>Thread-safe using <code>synchronized</code></li>
-<li>No null keys&#x2F;values allowed</li>
-</ul>
-<p><strong>HashMap</strong></p>
-<ul>
-<li>Not thread-safe, allows null keys&#x2F;values</li>
-<li>Array + linked list structure</li>
-<li>Hash collision resolution via chaining</li>
-<li>Default capacity: 16, load factor: 0.75</li>
-<li>JDK 1.8: Converts to red-black tree when chain length &gt; 8 and capacity &gt; 64</li>
-<li>Multi-threading can cause infinite loops during rehashing</li>
-</ul>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Hash calculation for efficient indexing</span></span><br><span class="line">index = (n - <span class="number">1</span>) &amp; hash(key)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Hash function reduces collisions</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">hash</span><span class="params">(Object key)</span> &#123;</span><br><span class="line">    <span class="type">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="literal">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>LinkedHashMap</strong></p>
-<ul>
-<li>HashMap + doubly-linked list</li>
-<li>Maintains insertion&#x2F;access order</li>
-<li>Used for LRU cache implementation</li>
-</ul>
-<p><strong>TreeMap</strong></p>
-<ul>
-<li>Red-black tree based</li>
-<li>O(log n) time complexity</li>
-<li>Sorted keys via Comparator&#x2F;Comparable</li>
-</ul>
-<h3 id="I-O-Models"><a href="#I-O-Models" class="headerlink" title="I&#x2F;O Models"></a>I&#x2F;O Models</h3><p><strong>Java I&#x2F;O Hierarchy</strong></p>
-<ul>
-<li>Base classes: <code>InputStream/Reader</code>, <code>OutputStream/Writer</code></li>
-<li>Decorator pattern implementation</li>
-</ul>
-<p><strong>BIO (Blocking I&#x2F;O)</strong></p>
-<ul>
-<li>Synchronous blocking model</li>
-<li>One thread per connection</li>
-<li>Suitable for low-concurrency scenarios</li>
-<li>Thread pool provides natural rate limiting</li>
-</ul>
-<p><strong>NIO (Non-blocking I&#x2F;O)</strong></p>
-<ul>
-<li>I&#x2F;O multiplexing model (not traditional NIO)</li>
-<li>Uses <code>select/epoll</code> system calls</li>
-<li>Single thread monitors multiple file descriptors</li>
-<li>Core components: Buffer, Channel, Selector</li>
-</ul>
-<p><strong>AIO (Asynchronous I&#x2F;O)</strong></p>
-<ul>
-<li>Event-driven with callbacks</li>
-<li>Introduced in Java 7 as NIO.2</li>
-<li>Direct return without blocking</li>
-<li>Limited adoption in practice</li>
-</ul>
-<h3 id="Thread-Pool"><a href="#Thread-Pool" class="headerlink" title="Thread Pool"></a>Thread Pool</h3><p><strong>Thread Creation Methods</strong></p>
-<ol>
-<li>Runnable interface</li>
-<li>Thread class</li>
-<li>Callable + FutureTask</li>
-<li>Thread pools (recommended)</li>
-</ol>
-<p><strong>Core Parameters</strong></p>
-<ul>
-<li><code>corePoolSize</code>: Core thread count</li>
-<li><code>maximumPoolSize</code>: Maximum thread count</li>
-<li><code>keepAliveTime</code>: Idle thread survival time</li>
-<li><code>workQueue</code>: Task queue (must be bounded)</li>
-<li><code>rejectedExecutionHandler</code>: Rejection policy</li>
-</ul>
-<p><strong>Execution Flow</strong></p>
-<ol>
-<li>Create threads up to core size</li>
-<li>Queue tasks when core threads busy</li>
-<li>Expand to max size when queue full</li>
-<li>Apply rejection policy when max reached</li>
-<li>Shrink to core size after keepAliveTime</li>
-</ol>
-<p><strong>Optimal Thread Count</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Optimal Threads = CPU Cores × [1 + (I/O Time / CPU Time)]</span><br></pre></td></tr></table></figure>
-
-<p><strong>Best Practices</strong></p>
-<ul>
-<li>Graceful shutdown</li>
-<li>Uncaught exception handling</li>
-<li>Separate pools for dependent tasks</li>
-<li>Proper rejection policy implementation</li>
-</ul>
-<h3 id="ThreadLocal"><a href="#ThreadLocal" class="headerlink" title="ThreadLocal"></a>ThreadLocal</h3><p><strong>Use Cases</strong></p>
-<ul>
-<li>Thread isolation with cross-method data sharing</li>
-<li>Database session management (Hibernate)</li>
-<li>Request context propagation (user ID, session)</li>
-<li>HTTP request instances</li>
-</ul>
-<p><strong>Implementation</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread → ThreadLocalMap&lt;ThreadLocal, Object&gt; → Entry(key, value)</span><br></pre></td></tr></table></figure>
-
-<p><strong>Memory Management</strong></p>
-<ul>
-<li>Entry key uses weak reference</li>
-<li>Automatic cleanup of null keys</li>
-<li>Must use <code>private static final</code> modifiers</li>
-</ul>
-<p><strong>Best Practices</strong></p>
-<ul>
-<li>Always call <code>remove()</code> in finally blocks</li>
-<li>Handle thread pool reuse scenarios</li>
-<li>Use <code>afterExecute</code> hook for cleanup</li>
-</ul>
-<h2 id="JVM-Java-Virtual-Machine"><a href="#JVM-Java-Virtual-Machine" class="headerlink" title="JVM (Java Virtual Machine)"></a>JVM (Java Virtual Machine)</h2><h3 id="Memory-Structure"><a href="#Memory-Structure" class="headerlink" title="Memory Structure"></a>Memory Structure</h3><p><strong>Components</strong></p>
-<ul>
-<li>Class Loader</li>
-<li>Runtime Data Area</li>
-<li>Execution Engine</li>
-<li>Native Interface</li>
-</ul>
-<p><strong>Runtime Data Areas</strong></p>
-<p><strong>Thread-Shared</strong></p>
-<ul>
-<li><strong>Method Area</strong>: Class metadata, constants, static variables</li>
-<li><strong>Heap</strong>: Object instances, string pool (JDK 7+)</li>
-</ul>
-<p><strong>Thread-Private</strong></p>
-<ul>
-<li><strong>VM Stack</strong>: Stack frames with local variables, operand stack</li>
-<li><strong>Native Method Stack</strong>: For native method calls</li>
-<li><strong>Program Counter</strong>: Current bytecode instruction pointer</li>
-</ul>
-<p><strong>Key Changes</strong></p>
-<ul>
-<li><strong>JDK 8</strong>: Metaspace replaced PermGen (uses native memory)</li>
-<li><strong>JDK 7</strong>: String pool moved to heap for better GC efficiency</li>
-</ul>
-<h3 id="Class-Loading"><a href="#Class-Loading" class="headerlink" title="Class Loading"></a>Class Loading</h3><p><strong>Process</strong></p>
-<ol>
-<li><strong>Loading</strong>: Read .class files, create Class objects</li>
-<li><strong>Verification</strong>: Validate bytecode integrity</li>
-<li><strong>Preparation</strong>: Allocate memory, set default values for static variables</li>
-<li><strong>Resolution</strong>: Convert symbolic references to direct references</li>
-<li><strong>Initialization</strong>: Execute static blocks and variable assignments</li>
-</ol>
-<p><strong>Class Loaders</strong></p>
-<ul>
-<li><strong>Bootstrap</strong>: JDK core classes</li>
-<li><strong>Extension&#x2F;Platform</strong>: JDK extensions</li>
-<li><strong>Application</strong>: CLASSPATH classes</li>
-</ul>
-<p><strong>Parent Delegation</strong></p>
-<ul>
-<li>Child loaders delegate to parent first</li>
-<li>Prevents duplicate loading</li>
-<li>Ensures class uniqueness and security</li>
-</ul>
-<p><strong>Custom Class Loaders</strong></p>
-<ul>
-<li>Extend ClassLoader, override <code>findClass()</code></li>
-<li>Tomcat breaks delegation for web app isolation</li>
-</ul>
-<h3 id="Garbage-Collection"><a href="#Garbage-Collection" class="headerlink" title="Garbage Collection"></a>Garbage Collection</h3><p><strong>Memory Regions</strong></p>
-<ul>
-<li><strong>Young Generation</strong>: Eden + Survivor (From&#x2F;To)</li>
-<li><strong>Old Generation</strong>: Long-lived objects</li>
-<li><strong>Metaspace</strong>: Class metadata (JDK 8+)</li>
-</ul>
-<p><strong>GC Root Objects</strong></p>
-<ul>
-<li>Local variables in method stacks</li>
-<li>Static variables in loaded classes</li>
-<li>JNI references in native stacks</li>
-<li>Active Java threads</li>
-</ul>
-<p><strong>Reference Types</strong></p>
-<ul>
-<li><strong>Strong</strong>: Never collected while referenced</li>
-<li><strong>Soft</strong>: Collected before OOM</li>
-<li><strong>Weak</strong>: Collected at next GC</li>
-<li><strong>Phantom</strong>: For cleanup notification only</li>
-</ul>
-<p><strong>Collection Algorithms</strong></p>
-<ul>
-<li><strong>Young Generation</strong>: Copy algorithm (efficient, no fragmentation)</li>
-<li><strong>Old Generation</strong>: Mark-Sweep or Mark-Compact</li>
-</ul>
-<p><strong>Garbage Collectors</strong></p>
-<p><strong>Serial&#x2F;Parallel</strong></p>
-<ul>
-<li>Single&#x2F;multi-threaded</li>
-<li>Suitable for small applications or batch processing</li>
-</ul>
-<p><strong>CMS (Concurrent Mark Sweep)</strong></p>
-<ul>
-<li>Low-latency for old generation</li>
-<li>Concurrent collection with application threads</li>
-</ul>
-<p><strong>G1 (Garbage First)</strong></p>
-<ul>
-<li>Region-based collection</li>
-<li>Predictable pause times</li>
-<li>Default in JDK 9+, suitable for large heaps (&gt;8GB)</li>
-</ul>
-<p><strong>ZGC&#x2F;Shenandoah</strong></p>
-<ul>
-<li>Ultra-low latency (&lt;10ms)</li>
-<li>Supports TB-scale heaps</li>
-<li>Ideal for cloud-native applications</li>
-</ul>
-<p><strong>Tuning Parameters</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Heap sizing</span></span><br><span class="line">-Xms4g -Xmx4g                    <span class="comment"># Initial = Max heap</span></span><br><span class="line">-Xmn2g                           <span class="comment"># Young generation size</span></span><br><span class="line">-XX:SurvivorRatio=8              <span class="comment"># Eden:Survivor ratio</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># GC logging</span></span><br><span class="line">-XX:+PrintGCDetails -Xloggc:gc.log</span><br><span class="line"></span><br><span class="line"><span class="comment"># Metaspace</span></span><br><span class="line">-XX:MetaspaceSize=256M -XX:MaxMetaspaceSize=512M</span><br><span class="line"></span><br><span class="line"><span class="comment"># OOM debugging</span></span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/dump.hprof</span><br></pre></td></tr></table></figure>
-
-<p><strong>OOM Troubleshooting</strong></p>
-<ol>
-<li>Generate heap dumps on OOM</li>
-<li>Analyze with MAT (Memory Analyzer Tool) or VisualVM</li>
-<li>Common causes: memory leaks, oversized objects, insufficient heap space</li>
-<li>Tune object promotion thresholds and GC parameters</li>
-</ol>
-<h2 id="Performance-Optimization-Tips"><a href="#Performance-Optimization-Tips" class="headerlink" title="Performance Optimization Tips"></a>Performance Optimization Tips</h2><ol>
-<li><strong>Collections</strong>: Pre-size collections, use appropriate implementations</li>
-<li><strong>Strings</strong>: Use StringBuilder for concatenation, intern frequently used strings</li>
-<li><strong>Thread Pools</strong>: Tune core&#x2F;max sizes based on workload characteristics</li>
-<li><strong>GC</strong>: Choose appropriate collector, monitor GC logs, tune heap ratios</li>
-<li><strong>Memory</strong>: Avoid memory leaks, use object pools for expensive objects</li>
-</ol>
 
       
     </div>
