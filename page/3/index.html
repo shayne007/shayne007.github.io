@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-count">37</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -151,7 +151,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">14</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,613 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/Kafka-Performance-Theory-Best-Practices/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/09/Kafka-Performance-Theory-Best-Practices/" class="post-title-link" itemprop="url">Kafka Performance: Theory, Best Practices</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 19:27:51 / Modified: 21:06:19" itemprop="dateCreated datePublished" datetime="2025-06-09T19:27:51+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Core-Architecture-Performance-Foundations"><a href="#Core-Architecture-Performance-Foundations" class="headerlink" title="Core Architecture &amp; Performance Foundations"></a>Core Architecture &amp; Performance Foundations</h2><p>Kafka’s exceptional performance stems from its unique architectural decisions that prioritize throughput over latency in most scenarios.</p>
+<h3 id="Log-Structured-Storage"><a href="#Log-Structured-Storage" class="headerlink" title="Log-Structured Storage"></a>Log-Structured Storage</h3><p>Kafka treats each partition as an immutable, append-only log. This design choice eliminates the complexity of in-place updates and enables several performance optimizations.</p>
+<pre>
+<code class="mermaid">
+graph TB
+A[Producer] --&gt;|Append| B[Partition Log]
+B --&gt; C[Segment 1]
+B --&gt; D[Segment 2]
+B --&gt; E[Segment N]
+C --&gt; F[Index File]
+D --&gt; G[Index File]
+E --&gt; H[Index File]
+I[Consumer] --&gt;|Sequential Read| B
+</code>
+</pre>
+
+<p><strong>Key Benefits:</strong></p>
+<ul>
+<li><strong>Sequential writes</strong>: Much faster than random writes (100x+ improvement on HDDs)</li>
+<li><strong>Predictable performance</strong>: No fragmentation or compaction overhead during writes</li>
+<li><strong>Simple replication</strong>: Entire log segments can be efficiently replicated</li>
+</ul>
+<p><strong>💡 Interview Insight</strong>: “<em>Why is Kafka faster than traditional message queues?</em>“</p>
+<ul>
+<li>Traditional queues often use complex data structures (B-trees, hash tables) requiring random I&#x2F;O</li>
+<li>Kafka’s append-only log leverages OS page cache and sequential I&#x2F;O patterns</li>
+<li>No message acknowledgment tracking per message - consumers track their own offsets</li>
+</ul>
+<h3 id="Distributed-Commit-Log"><a href="#Distributed-Commit-Log" class="headerlink" title="Distributed Commit Log"></a>Distributed Commit Log</h3><pre>
+<code class="mermaid">
+graph LR
+subgraph &quot;Topic: user-events (Replication Factor &#x3D; 3)&quot;
+    P1[Partition 0]
+    P2[Partition 1]
+    P3[Partition 2]
+end
+
+subgraph &quot;Broker 1&quot;
+    B1P0L[P0 Leader]
+    B1P1F[P1 Follower]
+    B1P2F[P2 Follower]
+end
+
+subgraph &quot;Broker 2&quot;
+    B2P0F[P0 Follower]
+    B2P1L[P1 Leader]
+    B2P2F[P2 Follower]
+end
+
+subgraph &quot;Broker 3&quot;
+    B3P0F[P0 Follower]
+    B3P1F[P1 Follower]
+    B3P2L[P2 Leader]
+end
+
+P1 -.-&gt; B1P0L
+P1 -.-&gt; B2P0F
+P1 -.-&gt; B3P0F
+
+P2 -.-&gt; B1P1F
+P2 -.-&gt; B2P1L
+P2 -.-&gt; B3P1F
+
+P3 -.-&gt; B1P2F
+P3 -.-&gt; B2P2F
+P3 -.-&gt; B3P2L
+</code>
+</pre>
+
+<hr>
+<h2 id="Sequential-I-O-Zero-Copy"><a href="#Sequential-I-O-Zero-Copy" class="headerlink" title="Sequential I&#x2F;O &amp; Zero-Copy"></a>Sequential I&#x2F;O &amp; Zero-Copy</h2><h3 id="Sequential-I-O-Advantage"><a href="#Sequential-I-O-Advantage" class="headerlink" title="Sequential I&#x2F;O Advantage"></a>Sequential I&#x2F;O Advantage</h3><p>Modern storage systems are optimized for sequential access patterns. Kafka exploits this by:</p>
+<ol>
+<li><strong>Write Pattern</strong>: Always append to the end of the log</li>
+<li><strong>Read Pattern</strong>: Consumers typically read sequentially from their last position</li>
+<li><strong>OS Page Cache</strong>: Leverages kernel’s read-ahead and write-behind caching</li>
+</ol>
+<p><strong>Performance Numbers:</strong></p>
+<ul>
+<li>Sequential reads: ~600 MB&#x2F;s on typical SSDs</li>
+<li>Random reads: ~100 MB&#x2F;s on same SSDs</li>
+<li>Sequential writes: ~500 MB&#x2F;s vs ~50 MB&#x2F;s random writes</li>
+</ul>
+<h3 id="Zero-Copy-Implementation"><a href="#Zero-Copy-Implementation" class="headerlink" title="Zero-Copy Implementation"></a>Zero-Copy Implementation</h3><p>Kafka minimizes data copying between kernel and user space using <code>sendfile()</code> system call.</p>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant Consumer
+participant Kafka Broker
+participant OS Kernel
+participant Disk
+
+Consumer-&gt;&gt;Kafka Broker: Fetch Request
+Kafka Broker-&gt;&gt;OS Kernel: sendfile() syscall
+OS Kernel-&gt;&gt;Disk: Read data
+OS Kernel--&gt;&gt;Consumer: Direct data transfer
+Note over OS Kernel, Consumer: Zero-copy: Data never enters&lt;br&#x2F;&gt;user space in broker process
+</code>
+</pre>
+
+<p><strong>Traditional Copy Process:</strong></p>
+<ol>
+<li>Disk → OS Buffer → Application Buffer → Socket Buffer → Network</li>
+<li><strong>4 copies, 2 context switches</strong></li>
+</ol>
+<p><strong>Kafka Zero-Copy:</strong></p>
+<ol>
+<li>Disk → OS Buffer → Network</li>
+<li><strong>2 copies, 1 context switch</strong></li>
+</ol>
+<p><strong>💡 Interview Insight</strong>: “<em>How does Kafka achieve zero-copy and why is it important?</em>“</p>
+<ul>
+<li>Uses <code>sendfile()</code> system call to transfer data directly from page cache to socket</li>
+<li>Reduces CPU usage by ~50% for read-heavy workloads</li>
+<li>Eliminates garbage collection pressure from avoided object allocation</li>
+</ul>
+<hr>
+<h2 id="Partitioning-Parallelism"><a href="#Partitioning-Parallelism" class="headerlink" title="Partitioning &amp; Parallelism"></a>Partitioning &amp; Parallelism</h2><h3 id="Partition-Strategy"><a href="#Partition-Strategy" class="headerlink" title="Partition Strategy"></a>Partition Strategy</h3><p>Partitioning is Kafka’s primary mechanism for achieving horizontal scalability and parallelism.</p>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Producer Side&quot;
+    P[Producer] --&gt; PK[Partitioner]
+    PK --&gt; |Hash Key % Partitions| P0[Partition 0]
+    PK --&gt; |Hash Key % Partitions| P1[Partition 1]
+    PK --&gt; |Hash Key % Partitions| P2[Partition 2]
+end
+
+subgraph &quot;Consumer Side&quot;
+    CG[Consumer Group]
+    C1[Consumer 1] --&gt; P0
+    C2[Consumer 2] --&gt; P1
+    C3[Consumer 3] --&gt; P2
+end
+</code>
+</pre>
+
+<h3 id="Optimal-Partition-Count"><a href="#Optimal-Partition-Count" class="headerlink" title="Optimal Partition Count"></a>Optimal Partition Count</h3><p><strong>Formula</strong>: <code>Partitions = max(Tp, Tc)</code></p>
+<ul>
+<li><code>Tp</code> &#x3D; Target throughput &#x2F; Producer throughput per partition</li>
+<li><code>Tc</code> &#x3D; Target throughput &#x2F; Consumer throughput per partition</li>
+</ul>
+<p><strong>Example Calculation:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Target: 1GB/s</span><br><span class="line">Producer per partition: 50MB/s</span><br><span class="line">Consumer per partition: 100MB/s</span><br><span class="line"></span><br><span class="line">Tp = 1000MB/s ÷ 50MB/s = 20 partitions</span><br><span class="line">Tc = 1000MB/s ÷ 100MB/s = 10 partitions</span><br><span class="line"></span><br><span class="line">Recommended: 20 partitions</span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: “<em>How do you determine the right number of partitions?</em>“</p>
+<ul>
+<li>Start with 2-3x the number of brokers</li>
+<li>Consider peak throughput requirements</li>
+<li>Account for future growth (partitions can only be increased, not decreased)</li>
+<li>Balance between parallelism and overhead (more partitions &#x3D; more files, more memory)</li>
+</ul>
+<h3 id="Partition-Assignment-Strategies"><a href="#Partition-Assignment-Strategies" class="headerlink" title="Partition Assignment Strategies"></a>Partition Assignment Strategies</h3><ol>
+<li><strong>Range Assignment</strong>: Assigns contiguous partition ranges</li>
+<li><strong>Round Robin</strong>: Distributes partitions evenly</li>
+<li><strong>Sticky Assignment</strong>: Minimizes partition movement during rebalancing</li>
+</ol>
+<hr>
+<h2 id="Batch-Processing-Compression"><a href="#Batch-Processing-Compression" class="headerlink" title="Batch Processing &amp; Compression"></a>Batch Processing &amp; Compression</h2><h3 id="Producer-Batching"><a href="#Producer-Batching" class="headerlink" title="Producer Batching"></a>Producer Batching</h3><p>Kafka producers batch messages to improve throughput at the cost of latency.</p>
+<pre>
+<code class="mermaid">
+graph LR
+subgraph &quot;Producer Memory&quot;
+    A[Message 1] --&gt; B[Batch Buffer]
+    C[Message 2] --&gt; B
+    D[Message 3] --&gt; B
+    E[Message N] --&gt; B
+end
+
+B --&gt; |Batch Size OR Linger.ms| F[Network Send]
+F --&gt; G[Broker]
+</code>
+</pre>
+
+<p><strong>Key Parameters:</strong></p>
+<ul>
+<li><code>batch.size</code>: Maximum batch size in bytes (default: 16KB)</li>
+<li><code>linger.ms</code>: Time to wait for additional messages (default: 0ms)</li>
+<li><code>buffer.memory</code>: Total memory for batching (default: 32MB)</li>
+</ul>
+<p><strong>Batching Trade-offs:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">High batch.size + High linger.ms = High throughput, High latency</span><br><span class="line">Low batch.size + Low linger.ms = Low latency, Lower throughput</span><br></pre></td></tr></table></figure>
+
+<h3 id="Compression-Algorithms"><a href="#Compression-Algorithms" class="headerlink" title="Compression Algorithms"></a>Compression Algorithms</h3><table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Compression Ratio</th>
+<th>CPU Usage</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>gzip</strong></td>
+<td>High (60-70%)</td>
+<td>High</td>
+<td>Storage-constrained, batch processing</td>
+</tr>
+<tr>
+<td><strong>snappy</strong></td>
+<td>Medium (40-50%)</td>
+<td>Low</td>
+<td>Balanced performance</td>
+</tr>
+<tr>
+<td><strong>lz4</strong></td>
+<td>Low (30-40%)</td>
+<td>Very Low</td>
+<td>Latency-sensitive applications</td>
+</tr>
+<tr>
+<td><strong>zstd</strong></td>
+<td>High (65-75%)</td>
+<td>Medium</td>
+<td>Best overall balance</td>
+</tr>
+</tbody></table>
+<p><strong>💡 Interview Insight</strong>: “<em>When would you choose different compression algorithms?</em>“</p>
+<ul>
+<li><strong>Snappy</strong>: Real-time systems where CPU is more expensive than network&#x2F;storage</li>
+<li><strong>gzip</strong>: Batch processing where storage costs are high</li>
+<li><strong>lz4</strong>: Ultra-low latency requirements</li>
+<li><strong>zstd</strong>: New deployments where you want best compression with reasonable CPU usage</li>
+</ul>
+<hr>
+<h2 id="Memory-Management-Caching"><a href="#Memory-Management-Caching" class="headerlink" title="Memory Management &amp; Caching"></a>Memory Management &amp; Caching</h2><h3 id="OS-Page-Cache-Strategy"><a href="#OS-Page-Cache-Strategy" class="headerlink" title="OS Page Cache Strategy"></a>OS Page Cache Strategy</h3><p>Kafka deliberately avoids maintaining an in-process cache, instead relying on the OS page cache.</p>
+<pre>
+<code class="mermaid">
+graph TB
+A[Producer Write] --&gt; B[OS Page Cache]
+B --&gt; C[Disk Write&lt;br&#x2F;&gt;Background]
+
+D[Consumer Read] --&gt; E{In Page Cache?}
+E --&gt;|Yes| F[Memory Read&lt;br&#x2F;&gt;~100x faster]
+E --&gt;|No| G[Disk Read]
+G --&gt; B
+</code>
+</pre>
+
+<p><strong>Benefits:</strong></p>
+<ul>
+<li><strong>No GC pressure</strong>: Cache memory is managed by OS, not JVM</li>
+<li><strong>Shared cache</strong>: Multiple processes can benefit from same cached data</li>
+<li><strong>Automatic management</strong>: OS handles eviction policies and memory pressure</li>
+<li><strong>Survives process restarts</strong>: Cache persists across Kafka broker restarts</li>
+</ul>
+<h3 id="Memory-Configuration"><a href="#Memory-Configuration" class="headerlink" title="Memory Configuration"></a>Memory Configuration</h3><p><strong>Producer Memory Settings:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Total memory for batching</span></span><br><span class="line"><span class="attr">buffer.memory</span>=<span class="string">134217728  # 128MB</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Memory per partition</span></span><br><span class="line"><span class="attr">batch.size</span>=<span class="string">65536  # 64KB</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Compression buffer</span></span><br><span class="line"><span class="attr">compression.type</span>=<span class="string">snappy</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Broker Memory Settings:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Heap size (keep relatively small)</span></span><br><span class="line"><span class="attr">-Xmx6g</span> <span class="string">-Xms6g</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Page cache will use remaining system memory</span></span><br><span class="line"><span class="comment"># For 32GB system: 6GB heap + 26GB page cache</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: “<em>Why does Kafka use OS page cache instead of application cache?</em>“</p>
+<ul>
+<li>Avoids duplicate caching (application cache + OS cache)</li>
+<li>Eliminates GC pauses from large heaps</li>
+<li>Better memory utilization across system</li>
+<li>Automatic cache warming on restart</li>
+</ul>
+<hr>
+<h2 id="Network-Optimization"><a href="#Network-Optimization" class="headerlink" title="Network Optimization"></a>Network Optimization</h2><h3 id="Request-Pipelining"><a href="#Request-Pipelining" class="headerlink" title="Request Pipelining"></a>Request Pipelining</h3><p>Kafka uses asynchronous, pipelined requests to maximize network utilization.</p>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant Producer
+participant Kafka Broker
+
+Producer-&gt;&gt;Kafka Broker: Request 1
+Producer-&gt;&gt;Kafka Broker: Request 2
+Producer-&gt;&gt;Kafka Broker: Request 3
+Kafka Broker--&gt;&gt;Producer: Response 1
+Kafka Broker--&gt;&gt;Producer: Response 2
+Kafka Broker--&gt;&gt;Producer: Response 3
+
+Note over Producer, Kafka Broker: Multiple in-flight requests&lt;br&#x2F;&gt;maximize network utilization
+</code>
+</pre>
+
+<p><strong>Key Parameters:</strong></p>
+<ul>
+<li><code>max.in.flight.requests.per.connection</code>: Default 5</li>
+<li>Higher values &#x3D; better throughput but potential ordering issues</li>
+<li>For strict ordering: Set to 1 with <code>enable.idempotence=true</code></li>
+</ul>
+<h3 id="Fetch-Optimization"><a href="#Fetch-Optimization" class="headerlink" title="Fetch Optimization"></a>Fetch Optimization</h3><p>Consumers use sophisticated fetching strategies to balance latency and throughput.</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Minimum bytes to fetch (reduces small requests)</span></span><br><span class="line"><span class="attr">fetch.min.bytes</span>=<span class="string">50000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Maximum wait time for min bytes</span></span><br><span class="line"><span class="attr">fetch.max.wait.ms</span>=<span class="string">500</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Maximum bytes per partition</span></span><br><span class="line"><span class="attr">max.partition.fetch.bytes</span>=<span class="string">1048576</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Total fetch size</span></span><br><span class="line"><span class="attr">fetch.max.bytes</span>=<span class="string">52428800</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: “<em>How do you optimize network usage in Kafka?</em>“</p>
+<ul>
+<li>Increase <code>fetch.min.bytes</code> to reduce request frequency</li>
+<li>Tune <code>max.in.flight.requests</code> based on ordering requirements</li>
+<li>Use compression to reduce network bandwidth</li>
+<li>Configure proper <code>socket.send.buffer.bytes</code> and <code>socket.receive.buffer.bytes</code></li>
+</ul>
+<hr>
+<h2 id="Producer-Performance-Tuning"><a href="#Producer-Performance-Tuning" class="headerlink" title="Producer Performance Tuning"></a>Producer Performance Tuning</h2><h3 id="Throughput-Optimized-Configuration"><a href="#Throughput-Optimized-Configuration" class="headerlink" title="Throughput-Optimized Configuration"></a>Throughput-Optimized Configuration</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Batching</span></span><br><span class="line"><span class="attr">batch.size</span>=<span class="string">65536</span></span><br><span class="line"><span class="attr">linger.ms</span>=<span class="string">20</span></span><br><span class="line"><span class="attr">buffer.memory</span>=<span class="string">134217728</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Compression</span></span><br><span class="line"><span class="attr">compression.type</span>=<span class="string">snappy</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Network</span></span><br><span class="line"><span class="attr">max.in.flight.requests.per.connection</span>=<span class="string">5</span></span><br><span class="line"><span class="attr">send.buffer.bytes</span>=<span class="string">131072</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Acknowledgment</span></span><br><span class="line"><span class="attr">acks</span>=<span class="string">1  # Balance between durability and performance</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Latency-Optimized-Configuration"><a href="#Latency-Optimized-Configuration" class="headerlink" title="Latency-Optimized Configuration"></a>Latency-Optimized Configuration</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Minimal batching</span></span><br><span class="line"><span class="attr">batch.size</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">linger.ms</span>=<span class="string">0</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># No compression</span></span><br><span class="line"><span class="attr">compression.type</span>=<span class="string">none</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Network</span></span><br><span class="line"><span class="attr">max.in.flight.requests.per.connection</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">send.buffer.bytes</span>=<span class="string">131072</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Acknowledgment</span></span><br><span class="line"><span class="attr">acks</span>=<span class="string">1</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Producer-Performance-Patterns"><a href="#Producer-Performance-Patterns" class="headerlink" title="Producer Performance Patterns"></a>Producer Performance Patterns</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Message] --&gt; B{Async or Sync?}
+B --&gt;|Async| C[Fire and Forget]
+B --&gt;|Sync| D[Wait for Response]
+
+C --&gt; E[Callback Handler]
+E --&gt; F{Success?}
+F --&gt;|Yes| G[Continue]
+F --&gt;|No| H[Retry Logic]
+
+D --&gt; I[Block Thread]
+I --&gt; J[Get Response]
+</code>
+</pre>
+
+<p><strong>💡 Interview Insight</strong>: “<em>What’s the difference between sync and async producers?</em>“</p>
+<ul>
+<li><strong>Sync</strong>: <code>producer.send().get()</code> - blocks until acknowledgment, guarantees ordering</li>
+<li><strong>Async</strong>: <code>producer.send(callback)</code> - non-blocking, higher throughput</li>
+<li><strong>Fire-and-forget</strong>: <code>producer.send()</code> - highest throughput, no delivery guarantees</li>
+</ul>
+<hr>
+<h2 id="Consumer-Performance-Tuning"><a href="#Consumer-Performance-Tuning" class="headerlink" title="Consumer Performance Tuning"></a>Consumer Performance Tuning</h2><h3 id="Consumer-Group-Rebalancing"><a href="#Consumer-Group-Rebalancing" class="headerlink" title="Consumer Group Rebalancing"></a>Consumer Group Rebalancing</h3><p>Understanding rebalancing is crucial for consumer performance optimization.</p>
+<pre>
+<code class="mermaid">
+stateDiagram-v2
+[*] --&gt; Stable
+Stable --&gt; PreparingRebalance : Member joins&#x2F;leaves
+PreparingRebalance --&gt; CompletingRebalance : All members ready
+CompletingRebalance --&gt; Stable : Assignment complete
+
+note right of PreparingRebalance
+    Stop processing
+    Revoke partitions
+end note
+
+note right of CompletingRebalance
+    Receive new assignment
+    Resume processing
+end note
+</code>
+</pre>
+
+<h3 id="Optimizing-Consumer-Throughput"><a href="#Optimizing-Consumer-Throughput" class="headerlink" title="Optimizing Consumer Throughput"></a>Optimizing Consumer Throughput</h3><p><strong>High-Throughput Settings:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Fetch more data per request</span></span><br><span class="line"><span class="attr">fetch.min.bytes</span>=<span class="string">100000</span></span><br><span class="line"><span class="attr">fetch.max.wait.ms</span>=<span class="string">500</span></span><br><span class="line"><span class="attr">max.partition.fetch.bytes</span>=<span class="string">2097152</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Process more messages per poll</span></span><br><span class="line"><span class="attr">max.poll.records</span>=<span class="string">2000</span></span><br><span class="line"><span class="attr">max.poll.interval.ms</span>=<span class="string">600000</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Reduce commit frequency</span></span><br><span class="line"><span class="attr">enable.auto.commit</span>=<span class="string">false  # Manual commit for better control</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Manual Commit Strategies:</strong></p>
+<ol>
+<li><strong>Per-batch Commit:</strong></li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    ConsumerRecords&lt;String, String&gt; records = consumer.poll(Duration.ofMillis(<span class="number">100</span>));</span><br><span class="line">    processRecords(records);</span><br><span class="line">    consumer.commitSync(); <span class="comment">// Commit after processing batch</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>Periodic Commit:</strong></li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="variable">count</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    ConsumerRecords&lt;String, String&gt; records = consumer.poll(Duration.ofMillis(<span class="number">100</span>));</span><br><span class="line">    processRecords(records);</span><br><span class="line">    <span class="keyword">if</span> (++count % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">        consumer.commitAsync(); <span class="comment">// Commit every 100 batches</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>💡 Interview Insight</strong>: “<em>How do you handle consumer lag?</em>“</p>
+<ul>
+<li>Scale out consumers (up to partition count)</li>
+<li>Increase <code>max.poll.records</code> and <code>fetch.min.bytes</code></li>
+<li>Optimize message processing logic</li>
+<li>Consider parallel processing within consumer</li>
+<li>Monitor consumer lag metrics and set up alerts</li>
+</ul>
+<h3 id="Consumer-Offset-Management"><a href="#Consumer-Offset-Management" class="headerlink" title="Consumer Offset Management"></a>Consumer Offset Management</h3><pre>
+<code class="mermaid">
+graph LR
+A[Consumer] --&gt; B[Process Messages]
+B --&gt; C{Auto Commit?}
+C --&gt;|Yes| D[Auto Commit&lt;br&#x2F;&gt;every 5s]
+C --&gt;|No| E[Manual Commit]
+E --&gt; F[Sync Commit]
+E --&gt; G[Async Commit]
+
+D --&gt; H[__consumer_offsets]
+F --&gt; H
+G --&gt; H
+</code>
+</pre>
+
+<hr>
+<h2 id="Broker-Configuration-Scaling"><a href="#Broker-Configuration-Scaling" class="headerlink" title="Broker Configuration &amp; Scaling"></a>Broker Configuration &amp; Scaling</h2><h3 id="Critical-Broker-Settings"><a href="#Critical-Broker-Settings" class="headerlink" title="Critical Broker Settings"></a>Critical Broker Settings</h3><p><strong>File System &amp; I&#x2F;O:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Log directories (use multiple disks)</span></span><br><span class="line"><span class="attr">log.dirs</span>=<span class="string">/disk1/kafka-logs,/disk2/kafka-logs,/disk3/kafka-logs</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Segment size (balance between storage and recovery time)</span></span><br><span class="line"><span class="attr">log.segment.bytes</span>=<span class="string">1073741824  # 1GB</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Flush settings (rely on OS page cache)</span></span><br><span class="line"><span class="attr">log.flush.interval.messages</span>=<span class="string">10000</span></span><br><span class="line"><span class="attr">log.flush.interval.ms</span>=<span class="string">1000</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Memory &amp; Network:</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Socket buffer sizes</span></span><br><span class="line"><span class="attr">socket.send.buffer.bytes</span>=<span class="string">102400</span></span><br><span class="line"><span class="attr">socket.receive.buffer.bytes</span>=<span class="string">102400</span></span><br><span class="line"><span class="attr">socket.request.max.bytes</span>=<span class="string">104857600</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Network threads</span></span><br><span class="line"><span class="attr">num.network.threads</span>=<span class="string">8</span></span><br><span class="line"><span class="attr">num.io.threads</span>=<span class="string">16</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Scaling-Patterns"><a href="#Scaling-Patterns" class="headerlink" title="Scaling Patterns"></a>Scaling Patterns</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Vertical Scaling&quot;
+    A[Add CPU] --&gt; B[More threads]
+    C[Add Memory] --&gt; D[Larger page cache]
+    E[Add Storage] --&gt; F[More partitions]
+end
+
+subgraph &quot;Horizontal Scaling&quot;
+    G[Add Brokers] --&gt; H[Rebalance partitions]
+    I[Add Consumers] --&gt; J[Parallel processing]
+end
+</code>
+</pre>
+
+<p><strong>Scaling Decision Matrix:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bottleneck</th>
+<th>Solution</th>
+<th>Configuration</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CPU</td>
+<td>More brokers or cores</td>
+<td><code>num.io.threads</code>, <code>num.network.threads</code></td>
+</tr>
+<tr>
+<td>Memory</td>
+<td>More RAM or brokers</td>
+<td>Increase system memory for page cache</td>
+</tr>
+<tr>
+<td>Disk I&#x2F;O</td>
+<td>More disks or SSDs</td>
+<td><code>log.dirs</code> with multiple paths</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>More brokers</td>
+<td>Monitor network utilization</td>
+</tr>
+</tbody></table>
+<p><strong>💡 Interview Insight</strong>: “<em>How do you scale Kafka horizontally?</em>“</p>
+<ul>
+<li>Add brokers to cluster (automatic load balancing for new topics)</li>
+<li>Use <code>kafka-reassign-partitions.sh</code> for existing topics</li>
+<li>Consider rack awareness for better fault tolerance</li>
+<li>Monitor cluster balance and partition distribution</li>
+</ul>
+<hr>
+<h2 id="Monitoring-Troubleshooting"><a href="#Monitoring-Troubleshooting" class="headerlink" title="Monitoring &amp; Troubleshooting"></a>Monitoring &amp; Troubleshooting</h2><h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><p><strong>Broker Metrics:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># Throughput</span><br><span class="line">kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec</span><br><span class="line">kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec</span><br><span class="line">kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec</span><br><span class="line"></span><br><span class="line"># Request latency</span><br><span class="line">kafka.network:type=RequestMetrics,name=TotalTimeMs,request=Produce</span><br><span class="line">kafka.network:type=RequestMetrics,name=TotalTimeMs,request=FetchConsumer</span><br><span class="line"></span><br><span class="line"># Disk usage</span><br><span class="line">kafka.log:type=LogSize,name=Size</span><br></pre></td></tr></table></figure>
+
+<p><strong>Consumer Metrics:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># Lag monitoring</span><br><span class="line">kafka.consumer:type=consumer-fetch-manager-metrics,client-id=*,attribute=records-lag-max</span><br><span class="line">kafka.consumer:type=consumer-coordinator-metrics,client-id=*,attribute=commit-latency-avg</span><br></pre></td></tr></table></figure>
+
+<h3 id="Performance-Troubleshooting-Flowchart"><a href="#Performance-Troubleshooting-Flowchart" class="headerlink" title="Performance Troubleshooting Flowchart"></a>Performance Troubleshooting Flowchart</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Performance Issue] --&gt; B{High Latency?}
+B --&gt;|Yes| C[Check Network]
+B --&gt;|No| D{Low Throughput?}
+
+C --&gt; E[Request queue time]
+C --&gt; F[Remote time]
+C --&gt; G[Response queue time]
+
+D --&gt; H[Check Batching]
+D --&gt; I[Check Compression]
+D --&gt; J[Check Partitions]
+
+H --&gt; K[Increase batch.size]
+I --&gt; L[Enable compression]
+J --&gt; M[Add partitions]
+
+E --&gt; N[Scale brokers]
+F --&gt; O[Network tuning]
+G --&gt; P[More network threads]
+</code>
+</pre>
+
+<h3 id="Common-Performance-Anti-Patterns"><a href="#Common-Performance-Anti-Patterns" class="headerlink" title="Common Performance Anti-Patterns"></a>Common Performance Anti-Patterns</h3><ol>
+<li><p><strong>Too Many Small Partitions</strong></p>
+<ul>
+<li>Problem: High metadata overhead</li>
+<li>Solution: Consolidate topics, increase partition size</li>
+</ul>
+</li>
+<li><p><strong>Uneven Partition Distribution</strong></p>
+<ul>
+<li>Problem: Hot spots on specific brokers</li>
+<li>Solution: Better partitioning strategy, partition reassignment</li>
+</ul>
+</li>
+<li><p><strong>Synchronous Processing</strong></p>
+<ul>
+<li>Problem: Blocking I&#x2F;O reduces throughput</li>
+<li>Solution: Async processing, thread pools</li>
+</ul>
+</li>
+<li><p><strong>Large Consumer Groups</strong></p>
+<ul>
+<li>Problem: Frequent rebalancing</li>
+<li>Solution: Optimize group size, use static membership</li>
+</ul>
+</li>
+</ol>
+<p><strong>💡 Interview Insight</strong>: “<em>How do you troubleshoot Kafka performance issues?</em>“</p>
+<ul>
+<li>Start with JMX metrics to identify bottlenecks</li>
+<li>Use <code>kafka-run-class.sh kafka.tools.JmxTool</code> for quick metric checks</li>
+<li>Monitor OS-level metrics (CPU, memory, disk I&#x2F;O, network)</li>
+<li>Check GC logs for long pauses</li>
+<li>Analyze request logs for slow operations</li>
+</ul>
+<h3 id="Production-Checklist"><a href="#Production-Checklist" class="headerlink" title="Production Checklist"></a>Production Checklist</h3><p><strong>Hardware Recommendations:</strong></p>
+<ul>
+<li><strong>CPU</strong>: 24+ cores for high-throughput brokers</li>
+<li><strong>Memory</strong>: 64GB+ (6-8GB heap, rest for page cache)</li>
+<li><strong>Storage</strong>: NVMe SSDs with XFS filesystem</li>
+<li><strong>Network</strong>: 10GbE minimum for production clusters</li>
+</ul>
+<p><strong>Operating System Tuning:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Increase file descriptor limits</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;* soft nofile 100000&quot;</span> &gt;&gt; /etc/security/limits.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;* hard nofile 100000&quot;</span> &gt;&gt; /etc/security/limits.conf</span><br><span class="line"></span><br><span class="line"><span class="comment"># Optimize kernel parameters</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;vm.swappiness=1&#x27;</span> &gt;&gt; /etc/sysctl.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;vm.dirty_background_ratio=5&#x27;</span> &gt;&gt; /etc/sysctl.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;vm.dirty_ratio=60&#x27;</span> &gt;&gt; /etc/sysctl.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;net.core.rmem_max=134217728&#x27;</span> &gt;&gt; /etc/sysctl.conf</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;net.core.wmem_max=134217728&#x27;</span> &gt;&gt; /etc/sysctl.conf</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Key-Takeaways-Interview-Preparation"><a href="#Key-Takeaways-Interview-Preparation" class="headerlink" title="Key Takeaways &amp; Interview Preparation"></a>Key Takeaways &amp; Interview Preparation</h2><h3 id="Essential-Concepts-to-Master"><a href="#Essential-Concepts-to-Master" class="headerlink" title="Essential Concepts to Master"></a>Essential Concepts to Master</h3><ol>
+<li><strong>Sequential I&#x2F;O and Zero-Copy</strong>: Understand why these are fundamental to Kafka’s performance</li>
+<li><strong>Partitioning Strategy</strong>: Know how to calculate optimal partition counts</li>
+<li><strong>Producer&#x2F;Consumer Tuning</strong>: Memorize key configuration parameters and their trade-offs</li>
+<li><strong>Monitoring</strong>: Be familiar with key JMX metrics and troubleshooting approaches</li>
+<li><strong>Scaling Patterns</strong>: Understand when to scale vertically vs horizontally</li>
+</ol>
+<h3 id="Common-Interview-Questions-Answers"><a href="#Common-Interview-Questions-Answers" class="headerlink" title="Common Interview Questions &amp; Answers"></a>Common Interview Questions &amp; Answers</h3><p><strong>Q: “How does Kafka achieve such high throughput?”</strong><br><strong>A:</strong> “Kafka’s high throughput comes from several design decisions: sequential I&#x2F;O instead of random access, zero-copy data transfer using sendfile(), efficient batching and compression, leveraging OS page cache instead of application-level caching, and horizontal scaling through partitioning.”</p>
+<p><strong>Q: “What happens when a consumer falls behind?”</strong><br><strong>A:</strong> “Consumer lag occurs when the consumer can’t keep up with the producer rate. Solutions include: scaling out consumers (up to the number of partitions), increasing fetch.min.bytes and max.poll.records for better batching, optimizing message processing logic, and potentially using multiple threads within the consumer application.”</p>
+<p><strong>Q: “How do you ensure message ordering in Kafka?”</strong><br><strong>A:</strong> “Kafka guarantees ordering within a partition. For strict global ordering, use a single partition (limiting throughput). For key-based ordering, use a partitioner that routes messages with the same key to the same partition. Set max.in.flight.requests.per.connection&#x3D;1 with enable.idempotence&#x3D;true for producers.”</p>
+<p>This comprehensive guide covers Kafka’s performance mechanisms from theory to practice, providing you with the knowledge needed for both system design and technical interviews.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3847,208 +4454,6 @@ style Sync2 fill:#e1f5fe
 <li>Plan for growth and peak loads</li>
 </ul>
 <p>This comprehensive guide provides both the theoretical understanding and practical implementation knowledge needed for MySQL buffer pool optimization in production environments.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/07/MySQL-Prevents-Most-Phantom-Reads/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/07/MySQL-Prevents-Most-Phantom-Reads/" class="post-title-link" itemprop="url">How MySQL Prevents Most Phantom Reads</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-07 22:08:41 / Modified: 22:10:23" itemprop="dateCreated datePublished" datetime="2025-06-07T22:08:41+08:00">2025-06-07</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p>MySQL’s InnoDB storage engine uses a sophisticated combination of locking mechanisms and MVCC (Multi-Version Concurrency Control) to prevent phantom reads in the REPEATABLE READ isolation level. This makes MySQL’s implementation more restrictive than the SQL standard, effectively providing near-Serializable behavior while maintaining better performance.</p>
-<h2 id="Key-Mechanisms"><a href="#Key-Mechanisms" class="headerlink" title="Key Mechanisms"></a>Key Mechanisms</h2><h3 id="Next-Key-Locking"><a href="#Next-Key-Locking" class="headerlink" title="Next-Key Locking"></a>Next-Key Locking</h3><p>Next-key locking is InnoDB’s primary mechanism for preventing phantom reads. It combines:</p>
-<ul>
-<li><strong>Record locks</strong>: Lock existing rows</li>
-<li><strong>Gap locks</strong>: Lock the spaces between index records</li>
-</ul>
-<p>This combination ensures that no new rows can be inserted in the gaps where phantom reads could occur.</p>
-<h3 id="Gap-Locking"><a href="#Gap-Locking" class="headerlink" title="Gap Locking"></a>Gap Locking</h3><p>Gap locks specifically target the empty spaces between index records:</p>
-<ul>
-<li>Prevents INSERT operations in those gaps</li>
-<li>Only applies to indexed columns</li>
-<li>Can be disabled (though not recommended)</li>
-</ul>
-<h3 id="Consistent-Nonlocking-Reads-MVCC"><a href="#Consistent-Nonlocking-Reads-MVCC" class="headerlink" title="Consistent Nonlocking Reads (MVCC)"></a>Consistent Nonlocking Reads (MVCC)</h3><p>For regular SELECT statements, MySQL uses MVCC snapshots:</p>
-<ul>
-<li>Each transaction sees a consistent view of data</li>
-<li>No locking overhead for read operations</li>
-<li>Phantom reads are prevented through snapshot isolation</li>
-</ul>
-<h2 id="Practical-Demonstration"><a href="#Practical-Demonstration" class="headerlink" title="Practical Demonstration"></a>Practical Demonstration</h2><h3 id="Setup-Creating-Test-Environment"><a href="#Setup-Creating-Test-Environment" class="headerlink" title="Setup: Creating Test Environment"></a>Setup: Creating Test Environment</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Create test table</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> employees (</span><br><span class="line">    id <span class="type">INT</span> <span class="keyword">PRIMARY KEY</span> AUTO_INCREMENT,</span><br><span class="line">    name <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    salary <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    department <span class="type">VARCHAR</span>(<span class="number">30</span>),</span><br><span class="line">    INDEX idx_salary (salary),</span><br><span class="line">    INDEX idx_department (department)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Insert initial data</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, salary, department) <span class="keyword">VALUES</span></span><br><span class="line">(<span class="string">&#x27;Alice&#x27;</span>, <span class="number">50000</span>, <span class="string">&#x27;Engineering&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Bob&#x27;</span>, <span class="number">60000</span>, <span class="string">&#x27;Engineering&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Charlie&#x27;</span>, <span class="number">55000</span>, <span class="string">&#x27;Marketing&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;Diana&#x27;</span>, <span class="number">70000</span>, <span class="string">&#x27;Engineering&#x27;</span>);</span><br></pre></td></tr></table></figure>
-
-<h3 id="Scenario-1-Regular-SELECT-MVCC-Protection"><a href="#Scenario-1-Regular-SELECT-MVCC-Protection" class="headerlink" title="Scenario 1: Regular SELECT (MVCC Protection)"></a>Scenario 1: Regular SELECT (MVCC Protection)</h3><p><strong>Session A (Transaction 1):</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Start transaction with REPEATABLE READ</span></span><br><span class="line"><span class="keyword">SET</span> TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- First query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">55000</span>;</span><br><span class="line"><span class="comment">-- Results: Bob (60000), Diana (70000)</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Session B (Transaction 2):</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Insert new high-salary employee</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, salary, department) </span><br><span class="line"><span class="keyword">VALUES</span> (<span class="string">&#x27;Eve&#x27;</span>, <span class="number">65000</span>, <span class="string">&#x27;Engineering&#x27;</span>);</span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Back to Session A:</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Repeat the same query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">55000</span>;</span><br><span class="line"><span class="comment">-- Results: Still Bob (60000), Diana (70000)</span></span><br><span class="line"><span class="comment">-- Eve is NOT visible - phantom read prevented!</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Scenario-2-SELECT-FOR-UPDATE-Next-Key-Locking"><a href="#Scenario-2-SELECT-FOR-UPDATE-Next-Key-Locking" class="headerlink" title="Scenario 2: SELECT FOR UPDATE (Next-Key Locking)"></a>Scenario 2: SELECT FOR UPDATE (Next-Key Locking)</h3><p><strong>Session A (Transaction 1):</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> TRANSACTION ISOLATION LEVEL REPEATABLE READ;</span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Query with FOR UPDATE</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="keyword">BETWEEN</span> <span class="number">50000</span> <span class="keyword">AND</span> <span class="number">60000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- This creates next-key locks on the range</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Session B (Transaction 2):</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Try to insert in the locked range</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, salary, department) </span><br><span class="line"><span class="keyword">VALUES</span> (<span class="string">&#x27;Frank&#x27;</span>, <span class="number">55000</span>, <span class="string">&#x27;Sales&#x27;</span>);</span><br><span class="line"><span class="comment">-- This will BLOCK until Transaction 1 commits</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Session A continues:</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Repeat the query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="keyword">BETWEEN</span> <span class="number">50000</span> <span class="keyword">AND</span> <span class="number">60000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Results remain consistent</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span>;</span><br><span class="line"><span class="comment">-- Now Session B&#x27;s INSERT will proceed</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Scenario-3-Gap-Locking-Visualization"><a href="#Scenario-3-Gap-Locking-Visualization" class="headerlink" title="Scenario 3: Gap Locking Visualization"></a>Scenario 3: Gap Locking Visualization</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Current salary values: 50000, 55000, 60000, 70000</span></span><br><span class="line"><span class="comment">-- Gap locks are placed between these values:</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Gaps protected by next-key locks:</span></span><br><span class="line"><span class="comment">-- (-∞, 50000)</span></span><br><span class="line"><span class="comment">-- (50000, 55000)</span></span><br><span class="line"><span class="comment">-- (55000, 60000)</span></span><br><span class="line"><span class="comment">-- (60000, 70000)</span></span><br><span class="line"><span class="comment">-- (70000, +∞)</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Types-of-Locks-Used"><a href="#Types-of-Locks-Used" class="headerlink" title="Types of Locks Used"></a>Types of Locks Used</h2><h3 id="Record-Locks"><a href="#Record-Locks" class="headerlink" title="Record Locks"></a>Record Locks</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Locks specific existing rows</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Locks only the row with id = 1</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Gap-Locks"><a href="#Gap-Locks" class="headerlink" title="Gap Locks"></a>Gap Locks</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Locks gaps between index values</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">55000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Locks gaps: (55000, 60000), (60000, 70000), (70000, +∞)</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Next-Key-Locks"><a href="#Next-Key-Locks" class="headerlink" title="Next-Key Locks"></a>Next-Key Locks</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Combination of record + gap locks</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;=</span> <span class="number">55000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- Locks: record(55000) + gap(55000, 60000) + record(60000) + gap(60000, 70000) + etc.</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Important-Limitations-and-Caveats"><a href="#Important-Limitations-and-Caveats" class="headerlink" title="Important Limitations and Caveats"></a>Important Limitations and Caveats</h2><h3 id="Index-Dependency"><a href="#Index-Dependency" class="headerlink" title="Index Dependency"></a>Index Dependency</h3><p>Gap locking only works effectively with indexed columns:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- This uses gap locking (salary is indexed)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">50000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- This may not prevent phantoms effectively (name is not indexed)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;A%&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Disabling-Gap-Locks"><a href="#Disabling-Gap-Locks" class="headerlink" title="Disabling Gap Locks"></a>Disabling Gap Locks</h3><p>Gap locking can be disabled, which reintroduces phantom read risks:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Disable gap locking (NOT recommended)</span></span><br><span class="line"><span class="keyword">SET</span> SESSION innodb_locks_unsafe_for_binlog <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="comment">-- or</span></span><br><span class="line"><span class="keyword">SET</span> SESSION transaction_isolation <span class="operator">=</span> <span class="string">&#x27;READ-COMMITTED&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Different-Behavior-by-Query-Type"><a href="#Different-Behavior-by-Query-Type" class="headerlink" title="Different Behavior by Query Type"></a>Different Behavior by Query Type</h3><table>
-<thead>
-<tr>
-<th>Query Type</th>
-<th>Locking Mechanism</th>
-<th>Phantom Prevention</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>SELECT</code></td>
-<td>MVCC snapshot</td>
-<td>✅ Yes</td>
-</tr>
-<tr>
-<td><code>SELECT FOR UPDATE</code></td>
-<td>Next-key locks</td>
-<td>✅ Yes</td>
-</tr>
-<tr>
-<td><code>SELECT FOR SHARE</code></td>
-<td>Next-key locks</td>
-<td>✅ Yes</td>
-</tr>
-<tr>
-<td><code>UPDATE</code></td>
-<td>Next-key locks</td>
-<td>✅ Yes</td>
-</tr>
-<tr>
-<td><code>DELETE</code></td>
-<td>Next-key locks</td>
-<td>✅ Yes</td>
-</tr>
-</tbody></table>
-<h3 id="4-Edge-Cases-Where-Phantoms-Can-Still-Occur"><a href="#4-Edge-Cases-Where-Phantoms-Can-Still-Occur" class="headerlink" title="4. Edge Cases Where Phantoms Can Still Occur"></a>4. Edge Cases Where Phantoms Can Still Occur</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Case 1: Non-indexed column queries</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;Z%&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"><span class="comment">-- May not prevent phantoms effectively</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Case 2: After updating a row in the same transaction</span></span><br><span class="line"><span class="keyword">START</span> TRANSACTION;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">50000</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> <span class="number">55000</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="operator">&gt;</span> <span class="number">50000</span>;</span><br><span class="line"><span class="comment">-- Second SELECT might see changes from other committed transactions</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Best-Practices"><a href="#Best-Practices" class="headerlink" title="Best Practices"></a>Best Practices</h2><h3 id="Use-Indexed-Columns-for-Range-Queries"><a href="#Use-Indexed-Columns-for-Range-Queries" class="headerlink" title="Use Indexed Columns for Range Queries"></a>Use Indexed Columns for Range Queries</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Good: Uses index for gap locking</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> salary <span class="keyword">BETWEEN</span> <span class="number">50000</span> <span class="keyword">AND</span> <span class="number">70000</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Less effective: No index on name</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> name <span class="keyword">BETWEEN</span> <span class="string">&#x27;A&#x27;</span> <span class="keyword">AND</span> <span class="string">&#x27;M&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Understand-Your-Query-Patterns"><a href="#Understand-Your-Query-Patterns" class="headerlink" title="Understand Your Query Patterns"></a>Understand Your Query Patterns</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- For read-only queries, regular SELECT is sufficient</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> department <span class="operator">=</span> <span class="string">&#x27;Engineering&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- For queries that need to prevent concurrent inserts</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> department <span class="operator">=</span> <span class="string">&#x27;Engineering&#x27;</span> <span class="keyword">FOR</span> <span class="keyword">UPDATE</span>;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Monitor-Lock-Contention"><a href="#Monitor-Lock-Contention" class="headerlink" title="Monitor Lock Contention"></a>Monitor Lock Contention</h3><p><strong>For MySQL 8.0+:</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check current locks</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> performance_schema.data_locks;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check lock waits</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> performance_schema.data_lock_waits;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- More detailed lock information</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    dl.OBJECT_SCHEMA,</span><br><span class="line">    dl.OBJECT_NAME,</span><br><span class="line">    dl.LOCK_TYPE,</span><br><span class="line">    dl.LOCK_MODE,</span><br><span class="line">    dl.LOCK_STATUS,</span><br><span class="line">    dl.LOCK_DATA</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.data_locks dl;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check which transactions are waiting</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    dlw.REQUESTING_ENGINE_TRANSACTION_ID <span class="keyword">as</span> waiting_trx,</span><br><span class="line">    dlw.BLOCKING_ENGINE_TRANSACTION_ID <span class="keyword">as</span> blocking_trx,</span><br><span class="line">    dl.LOCK_MODE <span class="keyword">as</span> waiting_lock_mode,</span><br><span class="line">    dl.LOCK_TYPE <span class="keyword">as</span> waiting_lock_type,</span><br><span class="line">    dl.OBJECT_NAME <span class="keyword">as</span> table_name</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.data_lock_waits dlw</span><br><span class="line"><span class="keyword">JOIN</span> performance_schema.data_locks dl </span><br><span class="line">    <span class="keyword">ON</span> dlw.REQUESTING_ENGINE_LOCK_ID <span class="operator">=</span> dl.ENGINE_LOCK_ID;</span><br></pre></td></tr></table></figure>
-
-<p><strong>For MySQL 5.7 and earlier:</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Check current locks (deprecated in 8.0)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_LOCKS;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Check lock waits (deprecated in 8.0)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.INNODB_LOCK_WAITS;</span><br></pre></td></tr></table></figure>
-
-<h2 id="Performance-Considerations"><a href="#Performance-Considerations" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h2><h3 id="Advantages"><a href="#Advantages" class="headerlink" title="Advantages"></a>Advantages</h3><ul>
-<li>Prevents phantom reads without full table locking</li>
-<li>MVCC provides excellent read performance</li>
-<li>Better concurrency than Serializable isolation</li>
-</ul>
-<h3 id="Trade-offs"><a href="#Trade-offs" class="headerlink" title="Trade-offs"></a>Trade-offs</h3><ul>
-<li>Gap locks can increase lock contention</li>
-<li>More complex lock management overhead</li>
-<li>Potential for deadlocks in high-concurrency scenarios</li>
-</ul>
-<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>MySQL InnoDB’s approach to preventing phantom reads is highly effective, combining:</p>
-<ul>
-<li><strong>MVCC snapshots</strong> for regular SELECT operations</li>
-<li><strong>Next-key locking</strong> for locking reads and modifications</li>
-<li><strong>Gap locking</strong> to prevent insertions in critical ranges</li>
-</ul>
-<p>This makes MySQL’s REPEATABLE READ isolation level more restrictive than the SQL standard, effectively preventing most phantom read scenarios while maintaining good performance characteristics. However, understanding the limitations and edge cases is crucial for designing robust database applications.</p>
-<h2 id="Testing-Your-Understanding"><a href="#Testing-Your-Understanding" class="headerlink" title="Testing Your Understanding"></a>Testing Your Understanding</h2><p>Try these scenarios in your own MySQL environment:</p>
-<ol>
-<li><strong>Test MVCC behavior</strong>: Use two sessions with regular SELECT statements</li>
-<li><strong>Test gap locking</strong>: Use SELECT FOR UPDATE with range queries</li>
-<li><strong>Test limitations</strong>: Try queries on non-indexed columns</li>
-<li><strong>Observe lock contention</strong>: Monitor <code>INFORMATION_SCHEMA.INNODB_LOCKS</code> during concurrent operations</li>
-</ol>
-<p>Understanding these mechanisms will help you design more robust database applications and troubleshoot concurrency issues effectively.</p>
 
       
     </div>
