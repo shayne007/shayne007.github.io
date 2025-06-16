@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="System Architecture OverviewThe Video Image Structure Analysis Platform is designed as a cloud-native, microservices-based system that processes video streams and images to extract structured metadata">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Design Video Image Structure Analysis Platform">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/16/Design-Video-Image-Structure-Analysis-Platform/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="System Architecture OverviewThe Video Image Structure Analysis Platform is designed as a cloud-native, microservices-based system that processes video streams and images to extract structured metadata">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-16T11:28:03.000Z">
+<meta property="article:modified_time" content="2025-06-16T11:29:35.743Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="system-design">
+<meta property="article:tag" content="structure analysis platform">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/16/Design-Video-Image-Structure-Analysis-Platform/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/16/Design-Video-Image-Structure-Analysis-Platform/","path":"2025/06/16/Design-Video-Image-Structure-Analysis-Platform/","title":"Design Video Image Structure Analysis Platform"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Design Video Image Structure Analysis Platform | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#System-Architecture-Overview"><span class="nav-number">1.</span> <span class="nav-text">System Architecture Overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Core-Services-Architecture"><span class="nav-number">2.</span> <span class="nav-text">Core Services Architecture</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#StreamingAccessService"><span class="nav-number">2.1.</span> <span class="nav-text">StreamingAccessService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#StructureAppService"><span class="nav-number">2.2.</span> <span class="nav-text">StructureAppService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TaskManagerService"><span class="nav-number">2.3.</span> <span class="nav-text">TaskManagerService</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#StorageAndSearchService"><span class="nav-number">2.4.</span> <span class="nav-text">StorageAndSearchService</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#API-Design"><span class="nav-number">3.</span> <span class="nav-text">API Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RESTful-API-Endpoints"><span class="nav-number">3.1.</span> <span class="nav-text">RESTful API Endpoints</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#API-Request-Response-Examples"><span class="nav-number">3.2.</span> <span class="nav-text">API Request&#x2F;Response Examples</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Message-Queue-Architecture"><span class="nav-number">4.</span> <span class="nav-text">Message Queue Architecture</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Kafka-Topic-Design"><span class="nav-number">4.1.</span> <span class="nav-text">Kafka Topic Design</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Microservices-Configuration"><span class="nav-number">5.</span> <span class="nav-text">Microservices Configuration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring-Cloud-Alibaba-Setup"><span class="nav-number">5.1.</span> <span class="nav-text">Spring Cloud Alibaba Setup</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Frontend-Architecture"><span class="nav-number">6.</span> <span class="nav-text">Frontend Architecture</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Modern-React-based-UI"><span class="nav-number">6.1.</span> <span class="nav-text">Modern React-based UI</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Deployment-and-DevOps"><span class="nav-number">7.</span> <span class="nav-text">Deployment and DevOps</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-Configuration"><span class="nav-number">7.1.</span> <span class="nav-text">Docker Configuration</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Optimization"><span class="nav-number">8.</span> <span class="nav-text">Performance Optimization</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Caching-Strategy"><span class="nav-number">8.1.</span> <span class="nav-text">Caching Strategy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Database-Optimization"><span class="nav-number">8.2.</span> <span class="nav-text">Database Optimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Observability"><span class="nav-number">9.</span> <span class="nav-text">Monitoring and Observability</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Comprehensive-Monitoring-Stack"><span class="nav-number">9.1.</span> <span class="nav-text">Comprehensive Monitoring Stack</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Security-Considerations"><span class="nav-number">10.</span> <span class="nav-text">Security Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Multi-layered-Security-Approach"><span class="nav-number">10.1.</span> <span class="nav-text">Multi-layered Security Approach</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Scalability-and-Resilience"><span class="nav-number">11.</span> <span class="nav-text">Scalability and Resilience</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Horizontal-Scaling-Strategies"><span class="nav-number">11.1.</span> <span class="nav-text">Horizontal Scaling Strategies</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Production-Deployment-Checklist"><span class="nav-number">12.</span> <span class="nav-text">Production Deployment Checklist</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">40</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/16/Design-Video-Image-Structure-Analysis-Platform/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Design Video Image Structure Analysis Platform | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Design Video Image Structure Analysis Platform
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-16 19:28:03 / Modified: 19:29:35" itemprop="dateCreated datePublished" datetime="2025-06-16T19:28:03+08:00">2025-06-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="System-Architecture-Overview"><a href="#System-Architecture-Overview" class="headerlink" title="System Architecture Overview"></a>System Architecture Overview</h2><p>The Video Image Structure Analysis Platform is designed as a cloud-native, microservices-based system that processes video streams and images to extract structured metadata about objects like people, vehicles, bikes, and motorbikes. The architecture emphasizes scalability, resilience, and real-time processing capabilities.</p>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Data Ingestion Layer&quot;
+    Camera[Cameras&#x2F;Video Sources]
+    StreamService[StreamingAccessService]
+    Camera --&gt; StreamService
+end
+
+subgraph &quot;Processing Layer&quot;
+    StructureApp[StructureAppService]
+    TaskManager[TaskManagerService]
+    StreamService --&gt; StructureApp
+    TaskManager --&gt; StructureApp
+end
+
+subgraph &quot;Message Queue&quot;
+    Kafka[Apache Kafka]
+    StructureApp --&gt; Kafka
+end
+
+subgraph &quot;Storage Layer&quot;
+    ElasticSearch[ElasticSearch]
+    FastDFS[FastDFS]
+    StorageService[StorageAndSearchService]
+    Kafka --&gt; StorageService
+    StorageService --&gt; ElasticSearch
+    StorageService --&gt; FastDFS
+end
+
+subgraph &quot;Application Layer&quot;
+    PlatformAPI[AnalysisPlatformService]
+    WebUI[AnalysisPlatformUI]
+    StorageService --&gt; PlatformAPI
+    PlatformAPI --&gt; WebUI
+end
+
+subgraph &quot;Infrastructure&quot;
+    Redis[Redis Cache]
+    Zookeeper[Zookeeper]
+    PlatformAPI --&gt; Redis
+    TaskManager --&gt; Zookeeper
+end
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: When designing distributed systems, the separation of concerns is crucial. Each service has a single responsibility, and communication patterns are well-defined through message queues and APIs.</p>
+<h2 id="Core-Services-Architecture"><a href="#Core-Services-Architecture" class="headerlink" title="Core Services Architecture"></a>Core Services Architecture</h2><h3 id="StreamingAccessService"><a href="#StreamingAccessService" class="headerlink" title="StreamingAccessService"></a>StreamingAccessService</h3><p>The StreamingAccessService acts as the gateway for all video inputs, managing camera connections and stream processing.</p>
+<p><strong>Key Responsibilities:</strong></p>
+<ul>
+<li>Real-time RTMP&#x2F;RTSP stream ingestion from multiple cameras</li>
+<li>Video transcoding and format normalization</li>
+<li>Frame extraction and batching for analysis</li>
+<li>Load balancing across multiple camera feeds</li>
+<li>Geographic distribution management with camera mapping</li>
+</ul>
+<p><strong>Technical Implementation:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StreamingAccessService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RedisTemplate&lt;String, Object&gt; redisTemplate;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processVideoStream</span><span class="params">(String cameraId, VideoStream stream)</span> &#123;</span><br><span class="line">        <span class="comment">// Frame extraction logic</span></span><br><span class="line">        List&lt;Frame&gt; frames = extractFrames(stream);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Cache camera metadata</span></span><br><span class="line">        cacheManager.put(<span class="string">&quot;camera:&quot;</span> + cameraId, getCameraMetadata(cameraId));</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Send frames for analysis</span></span><br><span class="line">        structureAppService.analyzeFrames(frames, cameraId);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Scaling Strategy</strong>: Use horizontal pod autoscaling based on CPU and memory metrics, with dedicated nodes for video processing to handle I&#x2F;O intensive operations.</p>
+<h3 id="StructureAppService"><a href="#StructureAppService" class="headerlink" title="StructureAppService"></a>StructureAppService</h3><p>This GPU-accelerated service performs the core computer vision analysis using deep learning models.</p>
+<p><strong>ML Pipeline Architecture:</strong></p>
+<pre>
+<code class="mermaid">
+flowchart LR
+Input[Frame Input] --&gt; Preprocess[Preprocessing]
+Preprocess --&gt; Detection[Object Detection]
+Detection --&gt; Classification[Classification]
+Classification --&gt; Attribution[Attribute Extraction]
+Attribution --&gt; Output[JSON Output]
+
+subgraph &quot;Models&quot;
+    YOLO[YOLO v8]
+    ResNet[ResNet-50]
+    Custom[Custom Models]
+end
+
+Detection --&gt; YOLO
+Classification --&gt; ResNet
+Attribution --&gt; Custom
+</code>
+</pre>
+
+<p><strong>Object Analysis Specifications:</strong></p>
+<p><em>Person Attributes:</em></p>
+<ul>
+<li>Age estimation (age ranges: 0-12, 13-17, 18-30, 31-50, 51-70, 70+)</li>
+<li>Gender classification (male, female, unknown)</li>
+<li>Height estimation using reference objects</li>
+<li>Clothing color detection (top, bottom)</li>
+<li>Body size estimation (small, medium, large)</li>
+<li>Pose estimation for activity recognition</li>
+</ul>
+<p><em>Vehicle Attributes:</em></p>
+<ul>
+<li>License plate recognition using OCR</li>
+<li>Vehicle type classification (sedan, SUV, truck, bus)</li>
+<li>Color detection using color histograms</li>
+<li>Brand recognition using CNN models</li>
+<li>Seatbelt detection for driver safety compliance</li>
+</ul>
+<p><strong>Interview Insight</strong>: GPU resource management is critical. Implement batch processing to maximize GPU utilization and use model optimization techniques like TensorRT for inference acceleration.</p>
+<h3 id="TaskManagerService"><a href="#TaskManagerService" class="headerlink" title="TaskManagerService"></a>TaskManagerService</h3><p>Coordinates analysis tasks across the distributed system using Zookeeper for consensus and resource management.</p>
+<p><strong>Resource Management:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TaskManagerService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> CuratorFramework zookeeperClient;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">scheduleAnalysisTask</span><span class="params">(AnalysisTask task)</span> &#123;</span><br><span class="line">        <span class="comment">// Get available nodes from Zookeeper</span></span><br><span class="line">        List&lt;String&gt; availableNodes = getAvailableNodes();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Select optimal node based on resources</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">selectedNode</span> <span class="operator">=</span> selectNodeByResources(availableNodes, task);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Create distributed lock for task assignment</span></span><br><span class="line">        <span class="type">InterProcessMutex</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InterProcessMutex</span>(zookeeperClient, </span><br><span class="line">            <span class="string">&quot;/tasks/locks/&quot;</span> + task.getId());</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            lock.acquire();</span><br><span class="line">            assignTaskToNode(task, selectedNode);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            lock.release();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Zookeeper Data Structure:</strong></p>
+<ul>
+<li><code>/nodes/available</code> - List of active processing nodes</li>
+<li><code>/nodes/resources</code> - Current resource utilization</li>
+<li><code>/tasks/pending</code> - Queue of pending analysis tasks</li>
+<li><code>/tasks/processing</code> - Currently executing tasks</li>
+<li><code>/cameras/registry</code> - Camera registration and metadata</li>
+</ul>
+<h3 id="StorageAndSearchService"><a href="#StorageAndSearchService" class="headerlink" title="StorageAndSearchService"></a>StorageAndSearchService</h3><p>Manages structured data storage and provides advanced search capabilities.</p>
+<p><strong>ElasticSearch Index Mapping:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;person_index&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;date&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;camera_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;location&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;geo_point&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;person_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;age_range&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;gender&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;height_cm&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;integer&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;clothing&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;top_color&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;bottom_color&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;style&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;text&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;body_size&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;image_path&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;confidence_score&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;float&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;feature_vector&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;dense_vector&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;dims&quot;</span><span class="punctuation">:</span> <span class="number">512</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;vehicle_index&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;date&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;camera_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;location&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;geo_point&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;vehicle_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;license_plate&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;vehicle_type&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;color&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;brand&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;model&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;text&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;driver_info&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;seatbelt_detected&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;boolean&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;phone_usage&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;boolean&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;image_path&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;confidence_score&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;float&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;feature_vector&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;dense_vector&quot;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;dims&quot;</span><span class="punctuation">:</span> <span class="number">512</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>FastDFS Integration:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ImageStorageService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">storeImage</span><span class="params">(<span class="type">byte</span>[] imageData, String objectType)</span> &#123;</span><br><span class="line">        <span class="comment">// Generate unique filename</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">filename</span> <span class="operator">=</span> generateUniqueFilename(objectType);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Store in FastDFS</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">fileId</span> <span class="operator">=</span> fastDFSClient.uploadFile(imageData, <span class="string">&quot;jpg&quot;</span>, <span class="literal">null</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Cache mapping in Redis for quick access</span></span><br><span class="line">        redisTemplate.opsForValue().set(<span class="string">&quot;image:&quot;</span> + filename, fileId, </span><br><span class="line">            Duration.ofHours(<span class="number">24</span>));</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> fileId;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: When designing search indices, consider both exact matches and fuzzy searches. Use appropriate analyzers for text fields and optimize for common query patterns.</p>
+<h2 id="API-Design"><a href="#API-Design" class="headerlink" title="API Design"></a>API Design</h2><h3 id="RESTful-API-Endpoints"><a href="#RESTful-API-Endpoints" class="headerlink" title="RESTful API Endpoints"></a>RESTful API Endpoints</h3><p><strong>Task Management APIs:</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">POST /api/v1/tasks</span><br><span class="line">GET /api/v1/tasks?status=&#123;status&#125;&amp;camera_id=&#123;id&#125;</span><br><span class="line">GET /api/v1/tasks/&#123;taskId&#125;</span><br><span class="line">PUT /api/v1/tasks/&#123;taskId&#125;</span><br><span class="line">DELETE /api/v1/tasks/&#123;taskId&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Camera Management APIs:</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">POST /api/v1/cameras</span><br><span class="line">GET /api/v1/cameras?location=&#123;lat,lng&#125;&amp;radius=&#123;km&#125;</span><br><span class="line">GET /api/v1/cameras/&#123;cameraId&#125;</span><br><span class="line">PUT /api/v1/cameras/&#123;cameraId&#125;</span><br><span class="line">DELETE /api/v1/cameras/&#123;cameraId&#125;</span><br><span class="line">GET /api/v1/cameras/&#123;cameraId&#125;/stream</span><br></pre></td></tr></table></figure>
+
+<p><strong>Search APIs:</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">POST /api/v1/search/persons</span><br><span class="line">POST /api/v1/search/vehicles</span><br><span class="line">POST /api/v1/search/similarity</span><br><span class="line">GET /api/v1/search/export?format=&#123;json|csv&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Real-time APIs:</strong></p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET /api/v1/stream/cameras/&#123;cameraId&#125;/ws</span><br><span class="line">GET /api/v1/alerts/ws</span><br></pre></td></tr></table></figure>
+
+<h3 id="API-Request-Response-Examples"><a href="#API-Request-Response-Examples" class="headerlink" title="API Request&#x2F;Response Examples"></a>API Request&#x2F;Response Examples</h3><p><strong>Person Search Request:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;filters&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;age_range&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;18-30&quot;</span><span class="punctuation">,</span> <span class="string">&quot;31-50&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;gender&quot;</span><span class="punctuation">:</span> <span class="string">&quot;male&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;clothing&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;top_color&quot;</span><span class="punctuation">:</span> <span class="string">&quot;blue&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;bottom_color&quot;</span><span class="punctuation">:</span> <span class="string">&quot;black&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;time_range&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;start&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-01-01T00:00:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;end&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-01-31T23:59:59Z&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;location&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;center&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;lat&quot;</span><span class="punctuation">:</span> <span class="number">40.7128</span><span class="punctuation">,</span> <span class="attr">&quot;lng&quot;</span><span class="punctuation">:</span> <span class="number">-74.0060</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;radius&quot;</span><span class="punctuation">:</span> <span class="string">&quot;5km&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;pagination&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;page&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">20</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;sort&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;field&quot;</span><span class="punctuation">:</span> <span class="string">&quot;timestamp&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;field&quot;</span><span class="punctuation">:</span> <span class="string">&quot;confidence_score&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Similarity Search Request:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;image&quot;</span><span class="punctuation">:</span> <span class="string">&quot;base64_encoded_image_data&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;object_type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;person&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;similarity_threshold&quot;</span><span class="punctuation">:</span> <span class="number">0.8</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;max_results&quot;</span><span class="punctuation">:</span> <span class="number">50</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;time_range&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;start&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-01-01T00:00:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;end&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-01-31T23:59:59Z&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Message-Queue-Architecture"><a href="#Message-Queue-Architecture" class="headerlink" title="Message Queue Architecture"></a>Message Queue Architecture</h2><h3 id="Kafka-Topic-Design"><a href="#Kafka-Topic-Design" class="headerlink" title="Kafka Topic Design"></a>Kafka Topic Design</h3><p><strong>Topic Structure:</strong></p>
+<ul>
+<li><code>video-frames</code>: Raw frame data for analysis</li>
+<li><code>analysis-results</code>: Structured analysis output</li>
+<li><code>alerts</code>: Real-time alerts and notifications</li>
+<li><code>system-metrics</code>: Performance and health metrics</li>
+</ul>
+<p><strong>Message Schema (Avro):</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;record&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;AnalysisResult&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;fields&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;messageId&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;string&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;timestamp&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;long&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;cameraId&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;string&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;frameId&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;string&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;objects&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;array&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;items&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;record&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;DetectedObject&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;fields&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;objectType&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;string&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;boundingBox&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;string&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;confidence&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;float&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="punctuation">&#123;</span><span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;attributes&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;string&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Schema evolution is important in production systems. Use Avro or Protocol Buffers for backward compatibility when message formats change.</p>
+<h2 id="Microservices-Configuration"><a href="#Microservices-Configuration" class="headerlink" title="Microservices Configuration"></a>Microservices Configuration</h2><h3 id="Spring-Cloud-Alibaba-Setup"><a href="#Spring-Cloud-Alibaba-Setup" class="headerlink" title="Spring Cloud Alibaba Setup"></a>Spring Cloud Alibaba Setup</h3><p><strong>Application Configuration:</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">video-analysis-platform</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">nacos:</span></span><br><span class="line">      <span class="attr">discovery:</span></span><br><span class="line">        <span class="attr">server-addr:</span> <span class="string">$&#123;NACOS_SERVER:localhost:8848&#125;</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="attr">server-addr:</span> <span class="string">$&#123;NACOS_SERVER:localhost:8848&#125;</span></span><br><span class="line">        <span class="attr">file-extension:</span> <span class="string">yaml</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">$&#123;SENTINEL_DASHBOARD:localhost:8080&#125;</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">streaming-service</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">lb://streaming-access-service</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/api/v1/streams/**</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">analysis-service</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">lb://structure-app-service</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/api/v1/analysis/**</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Service Discovery:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="meta">@EnableDiscoveryClient</span></span><br><span class="line"><span class="meta">@EnableCircuitBreaker</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">VideoAnalysisPlatformApplication</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@LoadBalanced</span></span><br><span class="line">    <span class="keyword">public</span> RestTemplate <span class="title function_">restTemplate</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RestTemplate</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Customizer&lt;Resilience4JCircuitBreakerFactory&gt; <span class="title function_">globalCustomConfiguration</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> factory -&gt; factory.configureDefault(id -&gt; <span class="keyword">new</span> <span class="title class_">Resilience4JConfigBuilder</span>(id)</span><br><span class="line">            .timeLimiterConfig(TimeLimiterConfig.custom()</span><br><span class="line">                .timeoutDuration(Duration.ofSeconds(<span class="number">10</span>))</span><br><span class="line">                .build())</span><br><span class="line">            .circuitBreakerConfig(CircuitBreakerConfig.custom()</span><br><span class="line">                .failureRateThreshold(<span class="number">50</span>)</span><br><span class="line">                .waitDurationInOpenState(Duration.ofMillis(<span class="number">1000</span>))</span><br><span class="line">                .slidingWindowSize(<span class="number">2</span>)</span><br><span class="line">                .build())</span><br><span class="line">            .build());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Frontend-Architecture"><a href="#Frontend-Architecture" class="headerlink" title="Frontend Architecture"></a>Frontend Architecture</h2><h3 id="Modern-React-based-UI"><a href="#Modern-React-based-UI" class="headerlink" title="Modern React-based UI"></a>Modern React-based UI</h3><p><strong>Key Components:</strong></p>
+<ul>
+<li>Camera Dashboard with real-time video feeds</li>
+<li>Interactive map showing camera locations</li>
+<li>Advanced search interface with filtering</li>
+<li>Task management console</li>
+<li>Real-time alerts and notifications</li>
+<li>Analytics dashboard with charts and metrics</li>
+</ul>
+<p><strong>Technology Stack:</strong></p>
+<ul>
+<li>React 18 with TypeScript</li>
+<li>Material-UI for component library</li>
+<li>React Query for state management</li>
+<li>Leaflet.js for mapping</li>
+<li>Socket.io for real-time updates</li>
+<li>Chart.js for data visualization</li>
+</ul>
+<p><strong>Map Integration Example:</strong></p>
+<figure class="highlight jsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">CameraMap</span> = (<span class="params"></span>) =&gt; &#123;</span><br><span class="line">  <span class="keyword">const</span> [cameras, setCameras] = <span class="title function_">useState</span>([]);</span><br><span class="line">  <span class="keyword">const</span> [selectedCamera, setSelectedCamera] = <span class="title function_">useState</span>(<span class="literal">null</span>);</span><br><span class="line">  </span><br><span class="line">  <span class="title function_">useEffect</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> socket = <span class="title function_">io</span>(<span class="string">&#x27;/camera-updates&#x27;</span>);</span><br><span class="line">    socket.<span class="title function_">on</span>(<span class="string">&#x27;camera-status&#x27;</span>, <span class="function">(<span class="params">data</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="title function_">setCameras</span>(<span class="function"><span class="params">prev</span> =&gt;</span> <span class="title function_">updateCameraStatus</span>(prev, data));</span><br><span class="line">    &#125;);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> <span class="function">() =&gt;</span> socket.<span class="title function_">disconnect</span>();</span><br><span class="line">  &#125;, []);</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">MapContainer</span> <span class="attr">center</span>=<span class="string">&#123;[40.7128,</span> <span class="attr">-74.0060</span>]&#125; <span class="attr">zoom</span>=<span class="string">&#123;13&#125;</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      <span class="tag">&lt;<span class="name">TileLayer</span> <span class="attr">url</span>=<span class="string">&quot;https://&#123;s&#125;.tile.openstreetmap.org/&#123;z&#125;/&#123;x&#125;/&#123;y&#125;.png&quot;</span> /&gt;</span></span></span><br><span class="line"><span class="language-xml">      &#123;cameras.map(camera =&gt; (</span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;<span class="name">Marker</span> </span></span></span><br><span class="line"><span class="tag"><span class="language-xml">          <span class="attr">key</span>=<span class="string">&#123;camera.id&#125;</span> </span></span></span><br><span class="line"><span class="tag"><span class="language-xml">          <span class="attr">position</span>=<span class="string">&#123;[camera.lat,</span> <span class="attr">camera.lng</span>]&#125;</span></span></span><br><span class="line"><span class="tag"><span class="language-xml">          <span class="attr">onClick</span>=<span class="string">&#123;()</span> =&gt;</span> setSelectedCamera(camera)&#125;</span></span><br><span class="line"><span class="language-xml">        &gt;</span></span><br><span class="line"><span class="language-xml">          <span class="tag">&lt;<span class="name">Popup</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;<span class="name">CameraDetails</span> <span class="attr">camera</span>=<span class="string">&#123;camera&#125;</span> /&gt;</span></span></span><br><span class="line"><span class="language-xml">          <span class="tag">&lt;/<span class="name">Popup</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">        <span class="tag">&lt;/<span class="name">Marker</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">      ))&#125;</span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;/<span class="name">MapContainer</span>&gt;</span></span></span><br><span class="line">  );</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Deployment-and-DevOps"><a href="#Deployment-and-DevOps" class="headerlink" title="Deployment and DevOps"></a>Deployment and DevOps</h2><h3 id="Docker-Configuration"><a href="#Docker-Configuration" class="headerlink" title="Docker Configuration"></a>Docker Configuration</h3><p><strong>Multi-stage Dockerfile for Analysis Service:</strong></p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> nvidia/cuda:<span class="number">11.8</span>-devel-ubuntu20.<span class="number">04</span> as builder</span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> /app</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> requirements.txt .</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> pip install --no-cache-dir -r requirements.txt</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">FROM</span> nvidia/cuda:<span class="number">11.8</span>-runtime-ubuntu20.<span class="number">04</span></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> /app</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> . .</span></span><br><span class="line"><span class="keyword">EXPOSE</span> <span class="number">8080</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> [<span class="string">&quot;python&quot;</span>, <span class="string">&quot;app.py&quot;</span>]</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Kubernetes Deployment:</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">structure-app-service</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">structure-app-service</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">structure-app-service</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">structure-app</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">video-analysis/structure-app:latest</span></span><br><span class="line">        <span class="attr">resources:</span></span><br><span class="line">          <span class="attr">requests:</span></span><br><span class="line">            <span class="attr">nvidia.com/gpu:</span> <span class="number">1</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">&quot;4Gi&quot;</span></span><br><span class="line">            <span class="attr">cpu:</span> <span class="string">&quot;2&quot;</span></span><br><span class="line">          <span class="attr">limits:</span></span><br><span class="line">            <span class="attr">nvidia.com/gpu:</span> <span class="number">1</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">&quot;8Gi&quot;</span></span><br><span class="line">            <span class="attr">cpu:</span> <span class="string">&quot;4&quot;</span></span><br><span class="line">        <span class="attr">env:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">KAFKA_BROKERS</span></span><br><span class="line">          <span class="attr">value:</span> <span class="string">&quot;kafka-cluster:9092&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">REDIS_URL</span></span><br><span class="line">          <span class="attr">value:</span> <span class="string">&quot;redis-cluster:6379&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Optimization"><a href="#Performance-Optimization" class="headerlink" title="Performance Optimization"></a>Performance Optimization</h2><h3 id="Caching-Strategy"><a href="#Caching-Strategy" class="headerlink" title="Caching Strategy"></a>Caching Strategy</h3><p><strong>Multi-level Caching:</strong></p>
+<ul>
+<li>L1: Application-level cache using Caffeine</li>
+<li>L2: Redis distributed cache for shared data</li>
+<li>L3: ElasticSearch query result caching</li>
+</ul>
+<p><strong>Redis Cache Patterns:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CacheService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Cacheable(value = &quot;camera-metadata&quot;, key = &quot;#cameraId&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> CameraMetadata <span class="title function_">getCameraMetadata</span><span class="params">(String cameraId)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> cameraRepository.findById(cameraId);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@CacheEvict(value = &quot;search-results&quot;, allEntries = true)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">evictSearchCache</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Triggered when new analysis results are added</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Database-Optimization"><a href="#Database-Optimization" class="headerlink" title="Database Optimization"></a>Database Optimization</h3><p><strong>ElasticSearch Performance Tuning:</strong></p>
+<ul>
+<li>Use index templates for consistent mapping</li>
+<li>Implement index lifecycle management (ILM)</li>
+<li>Configure appropriate shard and replica counts</li>
+<li>Use bulk operations for high-throughput indexing</li>
+</ul>
+<p><strong>Query Optimization:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;bool&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;filter&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="punctuation">&#123;</span><span class="attr">&quot;term&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;camera_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;camera_001&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="punctuation">&#123;</span><span class="attr">&quot;range&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;gte&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-01-01&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;lte&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2024-01-31&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;must&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="punctuation">&#123;</span><span class="attr">&quot;match&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;clothing.top_color&quot;</span><span class="punctuation">:</span> <span class="string">&quot;blue&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;sort&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">&#123;</span><span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">20</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Monitoring-and-Observability"><a href="#Monitoring-and-Observability" class="headerlink" title="Monitoring and Observability"></a>Monitoring and Observability</h2><h3 id="Comprehensive-Monitoring-Stack"><a href="#Comprehensive-Monitoring-Stack" class="headerlink" title="Comprehensive Monitoring Stack"></a>Comprehensive Monitoring Stack</h3><p><strong>Key Metrics:</strong></p>
+<ul>
+<li>Frame processing throughput (frames&#x2F;second)</li>
+<li>Analysis accuracy and confidence scores</li>
+<li>System resource utilization (CPU, GPU, memory)</li>
+<li>API response times and error rates</li>
+<li>Kafka message lag and throughput</li>
+</ul>
+<p><strong>Prometheus Metrics:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MetricsCollector</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Counter</span> <span class="variable">framesProcessed</span> <span class="operator">=</span> Counter.build()</span><br><span class="line">        .name(<span class="string">&quot;frames_processed_total&quot;</span>)</span><br><span class="line">        .help(<span class="string">&quot;Total number of frames processed&quot;</span>)</span><br><span class="line">        .labelNames(<span class="string">&quot;camera_id&quot;</span>, <span class="string">&quot;status&quot;</span>)</span><br><span class="line">        .register();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Histogram</span> <span class="variable">analysisLatency</span> <span class="operator">=</span> Histogram.build()</span><br><span class="line">        .name(<span class="string">&quot;analysis_latency_seconds&quot;</span>)</span><br><span class="line">        .help(<span class="string">&quot;Time taken for frame analysis&quot;</span>)</span><br><span class="line">        .register();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">recordFrameProcessed</span><span class="params">(String cameraId, String status)</span> &#123;</span><br><span class="line">        framesProcessed.labels(cameraId, status).inc();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: Observability is crucial in ML systems. Track both technical metrics (latency, throughput) and business metrics (accuracy, detection rates) to understand system health and model performance.</p>
+<h2 id="Security-Considerations"><a href="#Security-Considerations" class="headerlink" title="Security Considerations"></a>Security Considerations</h2><h3 id="Multi-layered-Security-Approach"><a href="#Multi-layered-Security-Approach" class="headerlink" title="Multi-layered Security Approach"></a>Multi-layered Security Approach</h3><p><strong>Authentication and Authorization:</strong></p>
+<ul>
+<li>JWT-based authentication with refresh tokens</li>
+<li>Role-based access control (RBAC)</li>
+<li>API rate limiting and throttling</li>
+<li>Secure video stream transmission using HTTPS&#x2F;WSS</li>
+</ul>
+<p><strong>Data Protection:</strong></p>
+<ul>
+<li>Encryption at rest for stored images and metadata</li>
+<li>PII anonymization for privacy compliance</li>
+<li>Audit logging for all system operations</li>
+<li>Network segmentation between services</li>
+</ul>
+<p><strong>Security Configuration:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableWebSecurity</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SecurityConfig</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> SecurityFilterChain <span class="title function_">filterChain</span><span class="params">(HttpSecurity http)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        http</span><br><span class="line">            .authorizeHttpRequests(authz -&gt; authz</span><br><span class="line">                .requestMatchers(<span class="string">&quot;/api/v1/public/**&quot;</span>).permitAll()</span><br><span class="line">                .requestMatchers(<span class="string">&quot;/api/v1/admin/**&quot;</span>).hasRole(<span class="string">&quot;ADMIN&quot;</span>)</span><br><span class="line">                .anyRequest().authenticated()</span><br><span class="line">            )</span><br><span class="line">            .oauth2ResourceServer(oauth2 -&gt; oauth2</span><br><span class="line">                .jwt(jwt -&gt; jwt.jwtDecoder(jwtDecoder()))</span><br><span class="line">            );</span><br><span class="line">        <span class="keyword">return</span> http.build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Scalability-and-Resilience"><a href="#Scalability-and-Resilience" class="headerlink" title="Scalability and Resilience"></a>Scalability and Resilience</h2><h3 id="Horizontal-Scaling-Strategies"><a href="#Horizontal-Scaling-Strategies" class="headerlink" title="Horizontal Scaling Strategies"></a>Horizontal Scaling Strategies</h3><p><strong>Auto-scaling Configuration:</strong></p>
+<ul>
+<li>HPA based on CPU, memory, and custom metrics</li>
+<li>Vertical Pod Autoscaler for optimal resource allocation</li>
+<li>Cluster autoscaling for node management</li>
+<li>Geographic distribution for disaster recovery</li>
+</ul>
+<p><strong>Resilience Patterns:</strong></p>
+<ul>
+<li>Circuit breaker for external service calls</li>
+<li>Retry mechanisms with exponential backoff</li>
+<li>Bulkhead isolation for critical components</li>
+<li>Graceful degradation during system overload</li>
+</ul>
+<p><strong>Load Balancing:</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">analysis-platform-service</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">analysis-platform</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">80</span></span><br><span class="line">    <span class="attr">targetPort:</span> <span class="number">8080</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">LoadBalancer</span></span><br><span class="line">  <span class="attr">sessionAffinity:</span> <span class="string">ClientIP</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Production-Deployment-Checklist"><a href="#Production-Deployment-Checklist" class="headerlink" title="Production Deployment Checklist"></a>Production Deployment Checklist</h2><p><strong>Pre-deployment Validation:</strong></p>
+<ul>
+<li>Model accuracy testing with validation datasets</li>
+<li>Performance benchmarking under expected load</li>
+<li>Security penetration testing</li>
+<li>Disaster recovery procedure validation</li>
+<li>Database backup and restore testing</li>
+</ul>
+<p><strong>Monitoring Setup:</strong></p>
+<ul>
+<li>Alert rules for critical system metrics</li>
+<li>Log aggregation and analysis</li>
+<li>Performance dashboards</li>
+<li>Health check endpoints</li>
+<li>SLA monitoring and reporting</li>
+</ul>
+<p><strong>Interview Insight</strong>: Production readiness involves more than just functional requirements. Consider operational aspects like monitoring, alerting, backup strategies, and incident response procedures from the design phase.</p>
+<p>This Video Image Structure Analysis Platform provides a robust, scalable solution for real-time video analysis with advanced object detection and attribute extraction capabilities. The microservices architecture ensures maintainability and scalability, while the comprehensive monitoring and security measures make it production-ready for large-scale deployments.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/system-design/" rel="tag"># system-design</a>
+              <a href="/tags/structure-analysis-platform/" rel="tag"># structure analysis platform</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/16/Elasticsearch-Underlying-Principles-Deep-Dive/" rel="prev" title="Elasticsearch Underlying Principles Deep Dive">
+                  <i class="fa fa-angle-left"></i> Elasticsearch Underlying Principles Deep Dive
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
