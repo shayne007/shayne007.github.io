@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="System-Level OptimizationsGarbage Collection (GC) TuningElasticsearch relies heavily on the JVM, making GC performance critical for query response times. Poor GC configuration can lead to query timeou">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Elasticsearch Query Performance Optimization Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/17/Elasticsearch-Query-Performance-Optimization-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="System-Level OptimizationsGarbage Collection (GC) TuningElasticsearch relies heavily on the JVM, making GC performance critical for query response times. Poor GC configuration can lead to query timeou">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-17T09:10:10.000Z">
+<meta property="article:modified_time" content="2025-06-17T09:11:28.139Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="elasticsearch">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/17/Elasticsearch-Query-Performance-Optimization-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/17/Elasticsearch-Query-Performance-Optimization-Guide/","path":"2025/06/17/Elasticsearch-Query-Performance-Optimization-Guide/","title":"Elasticsearch Query Performance Optimization Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Elasticsearch Query Performance Optimization Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#System-Level-Optimizations"><span class="nav-number">1.</span> <span class="nav-text">System-Level Optimizations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Garbage-Collection-GC-Tuning"><span class="nav-number">1.1.</span> <span class="nav-text">Garbage Collection (GC) Tuning</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Management-and-Swappiness"><span class="nav-number">1.2.</span> <span class="nav-text">Memory Management and Swappiness</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#File-Descriptors-Optimization"><span class="nav-number">1.3.</span> <span class="nav-text">File Descriptors Optimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Query-Optimization-Strategies"><span class="nav-number">2.</span> <span class="nav-text">Query Optimization Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Pagination-Performance"><span class="nav-number">2.1.</span> <span class="nav-text">Pagination Performance</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Problem-with-Traditional-Pagination"><span class="nav-number">2.1.1.</span> <span class="nav-text">Problem with Traditional Pagination</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Solution-1-Scroll-API"><span class="nav-number">2.1.2.</span> <span class="nav-text">Solution 1: Scroll API</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Solution-2-Search-After-API"><span class="nav-number">2.1.3.</span> <span class="nav-text">Solution 2: Search After API</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bulk-Operations-Optimization"><span class="nav-number">2.2.</span> <span class="nav-text">Bulk Operations Optimization</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Bulk-API-Best-Practices"><span class="nav-number">2.2.1.</span> <span class="nav-text">Bulk API Best Practices</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Index-Level-Optimizations"><span class="nav-number">3.</span> <span class="nav-text">Index-Level Optimizations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Refresh-Frequency-Optimization"><span class="nav-number">3.1.</span> <span class="nav-text">Refresh Frequency Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Field-Optimization-Strategies"><span class="nav-number">3.2.</span> <span class="nav-text">Field Optimization Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Source-Field-Optimization"><span class="nav-number">3.2.1.</span> <span class="nav-text">Source Field Optimization</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Doc-Values-Optimization"><span class="nav-number">3.2.2.</span> <span class="nav-text">Doc Values Optimization</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Lifecycle-Management"><span class="nav-number">3.3.</span> <span class="nav-text">Data Lifecycle Management</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Memory-and-Storage-Optimization"><span class="nav-number">4.</span> <span class="nav-text">Memory and Storage Optimization</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Off-Heap-Memory-Optimization"><span class="nav-number">4.1.</span> <span class="nav-text">Off-Heap Memory Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Shard-Optimization"><span class="nav-number">4.2.</span> <span class="nav-text">Shard Optimization</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Shard-Count-and-Size-Guidelines"><span class="nav-number">4.2.1.</span> <span class="nav-text">Shard Count and Size Guidelines</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Query-Performance-Patterns"><span class="nav-number">4.3.</span> <span class="nav-text">Query Performance Patterns</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Efficient-Query-Patterns"><span class="nav-number">4.3.1.</span> <span class="nav-text">Efficient Query Patterns</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Aggregation-Optimization"><span class="nav-number">4.3.2.</span> <span class="nav-text">Aggregation Optimization</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Monitoring-and-Troubleshooting"><span class="nav-number">5.</span> <span class="nav-text">Monitoring and Troubleshooting</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Metrics"><span class="nav-number">5.1.</span> <span class="nav-text">Performance Metrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Common-Performance-Anti-Patterns"><span class="nav-number">5.2.</span> <span class="nav-text">Common Performance Anti-Patterns</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Advanced-Optimization-Techniques"><span class="nav-number">6.</span> <span class="nav-text">Advanced Optimization Techniques</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Index-Templates-and-Aliases"><span class="nav-number">6.1.</span> <span class="nav-text">Index Templates and Aliases</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Machine-Learning-and-Anomaly-Detection"><span class="nav-number">6.2.</span> <span class="nav-text">Machine Learning and Anomaly Detection</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">7.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#External-Resources"><span class="nav-number">8.</span> <span class="nav-text">External Resources</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/17/Elasticsearch-Query-Performance-Optimization-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Elasticsearch Query Performance Optimization Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Elasticsearch Query Performance Optimization Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-17 17:10:10 / Modified: 17:11:28" itemprop="dateCreated datePublished" datetime="2025-06-17T17:10:10+08:00">2025-06-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/elasticsearch/" itemprop="url" rel="index"><span itemprop="name">elasticsearch</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="System-Level-Optimizations"><a href="#System-Level-Optimizations" class="headerlink" title="System-Level Optimizations"></a>System-Level Optimizations</h2><h3 id="Garbage-Collection-GC-Tuning"><a href="#Garbage-Collection-GC-Tuning" class="headerlink" title="Garbage Collection (GC) Tuning"></a>Garbage Collection (GC) Tuning</h3><p>Elasticsearch relies heavily on the JVM, making GC performance critical for query response times. Poor GC configuration can lead to query timeouts and cluster instability.</p>
+<p><strong>Production Best Practices:</strong></p>
+<ul>
+<li>Use G1GC for heaps larger than 6GB: <code>-XX:+UseG1GC</code></li>
+<li>Set heap size to 50% of available RAM, but never exceed 32GB</li>
+<li>Configure GC logging for monitoring: <code>-Xloggc:gc.log -XX:+PrintGCDetails</code></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Optimal JVM settings for production</span></span><br><span class="line">ES_JAVA_OPTS=<span class="string">&quot;-Xms16g -Xmx16g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+PrintGC -XX:+PrintGCTimeStamps&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“Why is 32GB the heap size limit?”</em> - Beyond 32GB, the JVM loses compressed OOPs (Ordinary Object Pointers), effectively doubling pointer sizes and reducing cache efficiency.</p>
+<h3 id="Memory-Management-and-Swappiness"><a href="#Memory-Management-and-Swappiness" class="headerlink" title="Memory Management and Swappiness"></a>Memory Management and Swappiness</h3><p>Swapping to disk can destroy Elasticsearch performance, turning millisecond operations into second-long delays.</p>
+<p><strong>Configuration Steps:</strong></p>
+<ol>
+<li>Disable swap entirely: <code>sudo swapoff -a</code></li>
+<li>Configure swappiness: <code>vm.swappiness=1</code></li>
+<li>Enable memory locking in Elasticsearch:</li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># elasticsearch.yml</span></span><br><span class="line"><span class="attr">bootstrap.memory_lock:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Example:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># /etc/sysctl.conf</span></span><br><span class="line">vm.swappiness=1</span><br><span class="line">vm.max_map_count=262144</span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify settings</span></span><br><span class="line">sysctl vm.swappiness</span><br><span class="line">sysctl vm.max_map_count</span><br></pre></td></tr></table></figure>
+
+<h3 id="File-Descriptors-Optimization"><a href="#File-Descriptors-Optimization" class="headerlink" title="File Descriptors Optimization"></a>File Descriptors Optimization</h3><p>Elasticsearch requires numerous file descriptors for index files, network connections, and internal operations.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># /etc/security/limits.conf</span></span><br><span class="line">elasticsearch soft nofile 65536</span><br><span class="line">elasticsearch hard nofile 65536</span><br><span class="line">elasticsearch soft <span class="built_in">nproc</span> 4096</span><br><span class="line">elasticsearch hard <span class="built_in">nproc</span> 4096</span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify current limits</span></span><br><span class="line"><span class="built_in">ulimit</span> -n</span><br><span class="line"><span class="built_in">ulimit</span> -u</span><br></pre></td></tr></table></figure>
+
+<p><strong>Monitoring Script:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Check file descriptor usage</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Current FD usage: <span class="subst">$(lsof -u elasticsearch | wc -l)</span>&quot;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;FD limit: <span class="subst">$(ulimit -n)</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Query-Optimization-Strategies"><a href="#Query-Optimization-Strategies" class="headerlink" title="Query Optimization Strategies"></a>Query Optimization Strategies</h2><h3 id="Pagination-Performance"><a href="#Pagination-Performance" class="headerlink" title="Pagination Performance"></a>Pagination Performance</h3><p>Deep pagination is one of the most common performance bottlenecks in Elasticsearch applications.</p>
+<h4 id="Problem-with-Traditional-Pagination"><a href="#Problem-with-Traditional-Pagination" class="headerlink" title="Problem with Traditional Pagination"></a>Problem with Traditional Pagination</h4><pre>
+<code class="mermaid">
+graph
+A[Client Request: from&#x3D;10000, size&#x3D;10] --&gt; B[Elasticsearch Coordinator]
+B --&gt; C[Shard 1: Fetch 10010 docs]
+B --&gt; D[Shard 2: Fetch 10010 docs]
+B --&gt; E[Shard 3: Fetch 10010 docs]
+C --&gt; F[Coordinator: Sort 30030 docs]
+D --&gt; F
+E --&gt; F
+F --&gt; G[Return 10 docs to client]
+</code>
+</pre>
+
+<h4 id="Solution-1-Scroll-API"><a href="#Solution-1-Scroll-API" class="headerlink" title="Solution 1: Scroll API"></a>Solution 1: Scroll API</h4><p>Best for processing large datasets sequentially:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># Initial scroll request</span><br><span class="line">POST /my_index/_search?scroll=<span class="number">1</span>m</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">1000</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;match_all&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line"># Subsequent scroll requests</span><br><span class="line">POST /_search/scroll</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;scroll&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1m&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scroll_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;your_scroll_id_here&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Use Case:</strong> Log processing pipeline handling millions of documents daily.</p>
+<h4 id="Solution-2-Search-After-API"><a href="#Solution-2-Search-After-API" class="headerlink" title="Solution 2: Search After API"></a>Solution 2: Search After API</h4><p>Ideal for real-time pagination with live data:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"># First request</span><br><span class="line">GET /my_index/_search</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">10</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;match&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;elasticsearch&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;sort&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line"># Next page using search_after</span><br><span class="line">GET /my_index/_search</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">10</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;match&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;elasticsearch&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;sort&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span><span class="attr">&quot;_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;order&quot;</span><span class="punctuation">:</span> <span class="string">&quot;desc&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;search_after&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;2023-10-01T10:00:00Z&quot;</span><span class="punctuation">,</span> <span class="string">&quot;doc_id_123&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“When would you choose search_after over scroll?”</em> - Search_after is stateless and handles live data changes better, while scroll is more efficient for complete dataset processing.</p>
+<h3 id="Bulk-Operations-Optimization"><a href="#Bulk-Operations-Optimization" class="headerlink" title="Bulk Operations Optimization"></a>Bulk Operations Optimization</h3><p>The <code>_bulk</code> API significantly reduces network overhead and improves indexing performance.</p>
+<h4 id="Bulk-API-Best-Practices"><a href="#Bulk-API-Best-Practices" class="headerlink" title="Bulk API Best Practices"></a>Bulk API Best Practices</h4><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">POST /_bulk</span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;index&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;_index&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my_index&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Document 1&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Content here&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;index&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;_index&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my_index&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Document 2&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;More content&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;update&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;_index&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my_index&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;3&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;doc&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;status&quot;</span><span class="punctuation">:</span> <span class="string">&quot;updated&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;delete&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;_index&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my_index&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;4&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Implementation:</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> elasticsearch <span class="keyword">import</span> Elasticsearch</span><br><span class="line"><span class="keyword">from</span> elasticsearch.helpers <span class="keyword">import</span> bulk</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bulk_index_documents</span>(<span class="params">es_client, documents, index_name</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Efficiently bulk index documents with error handling</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    actions = []</span><br><span class="line">    <span class="keyword">for</span> doc <span class="keyword">in</span> documents:</span><br><span class="line">        actions.append(&#123;</span><br><span class="line">            <span class="string">&quot;_index&quot;</span>: index_name,</span><br><span class="line">            <span class="string">&quot;_source&quot;</span>: doc</span><br><span class="line">        &#125;)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Process in batches of 1000</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(actions) &gt;= <span class="number">1000</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                bulk(es_client, actions)</span><br><span class="line">                actions = []</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&quot;Bulk indexing error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line">                </span><br><span class="line">    <span class="comment"># Process remaining documents</span></span><br><span class="line">    <span class="keyword">if</span> actions:</span><br><span class="line">        bulk(es_client, actions)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Performance Tuning:</strong></p>
+<ul>
+<li>Optimal batch size: 1000-5000 documents or 5-15MB</li>
+<li>Use multiple threads for parallel bulk requests</li>
+<li>Monitor queue sizes and adjust accordingly</li>
+</ul>
+<h2 id="Index-Level-Optimizations"><a href="#Index-Level-Optimizations" class="headerlink" title="Index-Level Optimizations"></a>Index-Level Optimizations</h2><h3 id="Refresh-Frequency-Optimization"><a href="#Refresh-Frequency-Optimization" class="headerlink" title="Refresh Frequency Optimization"></a>Refresh Frequency Optimization</h3><p>The refresh operation makes documents searchable but consumes significant resources.</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># elasticsearch.yml - Global setting</span></span><br><span class="line"><span class="attr">index.refresh_interval:</span> <span class="string">30s</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Index-specific setting</span></span><br><span class="line"><span class="string">PUT</span> <span class="string">/my_index/_settings</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="attr">&quot;refresh_interval&quot;:</span> <span class="string">&quot;30s&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Disable refresh for write-heavy workloads</span></span><br><span class="line"><span class="string">PUT</span> <span class="string">/my_index/_settings</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="attr">&quot;refresh_interval&quot;:</span> <span class="number">-1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Use Case Example:</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># High-volume logging scenario</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">setup_logging_index</span>():</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Configure index for write-heavy logging workload</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    index_settings = &#123;</span><br><span class="line">        <span class="string">&quot;settings&quot;</span>: &#123;</span><br><span class="line">            <span class="string">&quot;refresh_interval&quot;</span>: <span class="string">&quot;60s&quot;</span>,  <span class="comment"># Reduce refresh frequency</span></span><br><span class="line">            <span class="string">&quot;number_of_replicas&quot;</span>: <span class="number">0</span>,    <span class="comment"># Disable replicas during bulk load</span></span><br><span class="line">            <span class="string">&quot;translog.durability&quot;</span>: <span class="string">&quot;async&quot;</span>,  <span class="comment"># Async translog for speed</span></span><br><span class="line">            <span class="string">&quot;index.merge.policy.max_merge_at_once&quot;</span>: <span class="number">30</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> index_settings</span><br></pre></td></tr></table></figure>
+
+<h3 id="Field-Optimization-Strategies"><a href="#Field-Optimization-Strategies" class="headerlink" title="Field Optimization Strategies"></a>Field Optimization Strategies</h3><p>Disable unnecessary features to reduce index size and improve query performance.</p>
+<h4 id="Source-Field-Optimization"><a href="#Source-Field-Optimization" class="headerlink" title="Source Field Optimization"></a>Source Field Optimization</h4><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"># Disable _source for analytics-only indices</span><br><span class="line">PUT /analytics_index</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;_source&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;enabled&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;date&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;metric_value&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;double&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;category&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line"># Selective source inclusion</span><br><span class="line">PUT /selective_index</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;_source&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;includes&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;title&quot;</span><span class="punctuation">,</span> <span class="string">&quot;summary&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;excludes&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;large_content&quot;</span><span class="punctuation">,</span> <span class="string">&quot;binary_data&quot;</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Doc-Values-Optimization"><a href="#Doc-Values-Optimization" class="headerlink" title="Doc Values Optimization"></a>Doc Values Optimization</h4><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># Disable doc_values for fields that don&#x27;t need aggregations/sorting</span><br><span class="line">PUT /my_index</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;searchable_text&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;text&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;doc_values&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;aggregatable_field&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;doc_values&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“What are doc_values and when should you disable them?”</em> - Doc_values enable aggregations, sorting, and scripting but consume disk space. Disable for fields used only in queries, not aggregations.</p>
+<h3 id="Data-Lifecycle-Management"><a href="#Data-Lifecycle-Management" class="headerlink" title="Data Lifecycle Management"></a>Data Lifecycle Management</h3><p>Separate hot and cold data for optimal resource utilization.</p>
+<pre>
+<code class="mermaid">
+graph
+A[Hot Data&lt;br&#x2F;&gt;SSD Storage&lt;br&#x2F;&gt;Frequent Access] --&gt; B[Warm Data&lt;br&#x2F;&gt;HDD Storage&lt;br&#x2F;&gt;Occasional Access]
+B --&gt; C[Cold Data&lt;br&#x2F;&gt;Archive Storage&lt;br&#x2F;&gt;Rare Access]
+
+A --&gt; D[High Resources&lt;br&#x2F;&gt;More Replicas]
+B --&gt; E[Medium Resources&lt;br&#x2F;&gt;Fewer Replicas]
+C --&gt; F[Minimal Resources&lt;br&#x2F;&gt;Compressed Storage]
+</code>
+</pre>
+
+<p><strong>ILM Policy Example:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">PUT _ilm/policy/logs_policy</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;policy&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;phases&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;hot&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;rollover&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;max_size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1GB&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;max_age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1d&quot;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;warm&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;min_age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;7d&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;allocate&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">0</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;cold&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;min_age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;30d&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;allocate&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">0</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Memory-and-Storage-Optimization"><a href="#Memory-and-Storage-Optimization" class="headerlink" title="Memory and Storage Optimization"></a>Memory and Storage Optimization</h2><h3 id="Off-Heap-Memory-Optimization"><a href="#Off-Heap-Memory-Optimization" class="headerlink" title="Off-Heap Memory Optimization"></a>Off-Heap Memory Optimization</h3><p>Elasticsearch uses off-heap memory for various caches and operations.</p>
+<p><strong>Circuit Breaker Configuration:</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># elasticsearch.yml</span></span><br><span class="line"><span class="attr">indices.breaker.total.limit:</span> <span class="number">70</span><span class="string">%</span></span><br><span class="line"><span class="attr">indices.breaker.fielddata.limit:</span> <span class="number">40</span><span class="string">%</span></span><br><span class="line"><span class="attr">indices.breaker.request.limit:</span> <span class="number">60</span><span class="string">%</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Field Data Cache Management:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># Monitor field data usage</span><br><span class="line">GET /_nodes/stats/indices/fielddata</span><br><span class="line"></span><br><span class="line"># Clear field data cache</span><br><span class="line">POST /_cache/clear?fielddata=<span class="literal"><span class="keyword">true</span></span></span><br><span class="line"></span><br><span class="line"># Limit field data cache size</span><br><span class="line">PUT /_cluster/settings</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;persistent&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;indices.fielddata.cache.size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;30%&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Monitoring Script:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Monitor memory usage</span></span><br><span class="line">curl -s <span class="string">&quot;localhost:9200/_cat/nodes?v&amp;h=name,heap.percent,ram.percent,fielddata.memory_size,query_cache.memory_size&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Shard-Optimization"><a href="#Shard-Optimization" class="headerlink" title="Shard Optimization"></a>Shard Optimization</h3><p>Proper shard sizing is crucial for performance and cluster stability.</p>
+<h4 id="Shard-Count-and-Size-Guidelines"><a href="#Shard-Count-and-Size-Guidelines" class="headerlink" title="Shard Count and Size Guidelines"></a>Shard Count and Size Guidelines</h4><pre>
+<code class="mermaid">
+graph
+A[Determine Shard Strategy] --&gt; B{Index Size}
+B --&gt;|&lt; 1GB| C[1 Primary Shard]
+B --&gt;|1-50GB| D[1-5 Primary Shards]
+B --&gt;|&gt; 50GB| E[Calculate: Size&#x2F;50GB]
+
+C --&gt; F[Small Index Strategy]
+D --&gt; G[Medium Index Strategy]
+E --&gt; H[Large Index Strategy]
+
+F --&gt; I[Minimize Overhead]
+G --&gt; J[Balance Performance]
+H --&gt; K[Distribute Load]
+</code>
+</pre>
+
+<p><strong>Shard Calculation Formula:</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">calculate_optimal_shards</span>(<span class="params">index_size_gb, node_count</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Calculate optimal shard count based on index size and cluster size</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="comment"># Target shard size: 20-50GB</span></span><br><span class="line">    target_shard_size_gb = <span class="number">30</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Calculate based on size</span></span><br><span class="line">    size_based_shards = <span class="built_in">max</span>(<span class="number">1</span>, index_size_gb // target_shard_size_gb)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Don&#x27;t exceed node count (for primary shards)</span></span><br><span class="line">    optimal_shards = <span class="built_in">min</span>(size_based_shards, node_count)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> optimal_shards</span><br><span class="line"></span><br><span class="line"><span class="comment"># Example usage</span></span><br><span class="line">index_size = <span class="number">150</span>  <span class="comment"># GB</span></span><br><span class="line">nodes = <span class="number">5</span></span><br><span class="line">shards = calculate_optimal_shards(index_size, nodes)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Recommended shards: <span class="subst">&#123;shards&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Shard Settings:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">PUT /optimized_index</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.routing.allocation.total_shards_per_node&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Query-Performance-Patterns"><a href="#Query-Performance-Patterns" class="headerlink" title="Query Performance Patterns"></a>Query Performance Patterns</h3><h4 id="Efficient-Query-Patterns"><a href="#Efficient-Query-Patterns" class="headerlink" title="Efficient Query Patterns"></a>Efficient Query Patterns</h4><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"># Use filter context for exact matches (cacheable)</span><br><span class="line">GET /my_index/_search</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;query&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;bool&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;must&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="punctuation">&#123;</span><span class="attr">&quot;match&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;elasticsearch&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;filter&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="punctuation">&#123;</span><span class="attr">&quot;term&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;status&quot;</span><span class="punctuation">:</span> <span class="string">&quot;published&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="punctuation">&#123;</span><span class="attr">&quot;range&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;date&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;gte&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2023-01-01&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line"># Avoid wildcard queries on large datasets</span><br><span class="line"># BAD<span class="punctuation">:</span></span><br><span class="line"># <span class="punctuation">&#123;</span><span class="attr">&quot;wildcard&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;content&quot;</span><span class="punctuation">:</span> <span class="string">&quot;*elasticsearch*&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line"># GOOD<span class="punctuation">:</span> Use match_phrase_prefix for autocomplete</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;match_phrase_prefix&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;elasticsearch&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Aggregation-Optimization"><a href="#Aggregation-Optimization" class="headerlink" title="Aggregation Optimization"></a>Aggregation Optimization</h4><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># Use composite aggregations for large cardinality</span><br><span class="line">GET /my_index/_search</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aggs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;my_composite&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;composite&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;size&quot;</span><span class="punctuation">:</span> <span class="number">1000</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;sources&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">          <span class="punctuation">&#123;</span><span class="attr">&quot;category&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;terms&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;field&quot;</span><span class="punctuation">:</span> <span class="string">&quot;category.keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="punctuation">&#123;</span><span class="attr">&quot;date&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;date_histogram&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;field&quot;</span><span class="punctuation">:</span> <span class="string">&quot;timestamp&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1d&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span><span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">]</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Monitoring-and-Troubleshooting"><a href="#Monitoring-and-Troubleshooting" class="headerlink" title="Monitoring and Troubleshooting"></a>Monitoring and Troubleshooting</h2><h3 id="Performance-Metrics"><a href="#Performance-Metrics" class="headerlink" title="Performance Metrics"></a>Performance Metrics</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Key performance APIs</span></span><br><span class="line">curl <span class="string">&quot;localhost:9200/_cat/nodes?v&amp;h=name,heap.percent,cpu,load_1m&quot;</span></span><br><span class="line">curl <span class="string">&quot;localhost:9200/_cat/indices?v&amp;h=index,docs.count,store.size,pri,rep&quot;</span></span><br><span class="line">curl <span class="string">&quot;localhost:9200/_nodes/stats/indices/search,indices/indexing&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Slow Query Analysis:</strong></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># Enable slow query logging</span><br><span class="line">PUT /my_index/_settings</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;index.search.slowlog.threshold.query.warn&quot;</span><span class="punctuation">:</span> <span class="string">&quot;10s&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;index.search.slowlog.threshold.query.info&quot;</span><span class="punctuation">:</span> <span class="string">&quot;5s&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;index.search.slowlog.threshold.fetch.warn&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1s&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Common-Performance-Anti-Patterns"><a href="#Common-Performance-Anti-Patterns" class="headerlink" title="Common Performance Anti-Patterns"></a>Common Performance Anti-Patterns</h3><p><strong>Interview Questions &amp; Solutions:</strong></p>
+<ol>
+<li><p><strong>“Why are my deep pagination queries slow?”</strong></p>
+<ul>
+<li>Use scroll API for sequential processing</li>
+<li>Use search_after for real-time pagination</li>
+<li>Implement caching for frequently accessed pages</li>
+</ul>
+</li>
+<li><p><strong>“How do you handle high cardinality aggregations?”</strong></p>
+<ul>
+<li>Use composite aggregations with pagination</li>
+<li>Implement pre-aggregated indices for common queries</li>
+<li>Consider using terms aggregation with execution_hint</li>
+</ul>
+</li>
+<li><p><strong>“What causes high memory usage in Elasticsearch?”</strong></p>
+<ul>
+<li>Large field data caches from aggregations</li>
+<li>Too many shards causing overhead</li>
+<li>Inefficient query patterns causing cache thrashing</li>
+</ul>
+</li>
+</ol>
+<h2 id="Advanced-Optimization-Techniques"><a href="#Advanced-Optimization-Techniques" class="headerlink" title="Advanced Optimization Techniques"></a>Advanced Optimization Techniques</h2><h3 id="Index-Templates-and-Aliases"><a href="#Index-Templates-and-Aliases" class="headerlink" title="Index Templates and Aliases"></a>Index Templates and Aliases</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># Optimized index template</span><br><span class="line">PUT /_index_template/logs_template</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;index_patterns&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;logs-*&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;template&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;refresh_interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;30s&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;codec&quot;</span><span class="punctuation">:</span> <span class="string">&quot;best_compression&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;dynamic&quot;</span><span class="punctuation">:</span> <span class="string">&quot;strict&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;timestamp&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;date&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;message&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;text&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;norms&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;level&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;service&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Machine-Learning-and-Anomaly-Detection"><a href="#Machine-Learning-and-Anomaly-Detection" class="headerlink" title="Machine Learning and Anomaly Detection"></a>Machine Learning and Anomaly Detection</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"># Use ML for capacity planning</span><br><span class="line">PUT _ml/anomaly_detectors/high_search_rate</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;job_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;high_search_rate&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;analysis_config&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;bucket_span&quot;</span><span class="punctuation">:</span> <span class="string">&quot;15m&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;detectors&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">      <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;function&quot;</span><span class="punctuation">:</span> <span class="string">&quot;high_mean&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;field_name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;search_rate&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">]</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;data_description&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;time_field&quot;</span><span class="punctuation">:</span> <span class="string">&quot;timestamp&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Elasticsearch query performance optimization requires a holistic approach combining system-level tuning, query optimization, and proper index design. The key is to:</p>
+<ol>
+<li><strong>Monitor continuously</strong> - Use built-in monitoring and custom metrics</li>
+<li><strong>Test systematically</strong> - Benchmark changes in isolated environments</li>
+<li><strong>Scale progressively</strong> - Start with simple optimizations before complex ones</li>
+<li><strong>Plan for growth</strong> - Design with future data volumes in mind</li>
+</ol>
+<p><strong>Critical Interview Insight:</strong> <em>“Performance optimization is not a one-time task but an ongoing process that requires understanding your data patterns, query characteristics, and growth projections.”</em></p>
+<h2 id="External-Resources"><a href="#External-Resources" class="headerlink" title="External Resources"></a>External Resources</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html">Elasticsearch Official Performance Tuning Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html">Elasticsearch Heap Sizing Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html">Query Performance Best Practices</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-lifecycle-management.html">Index Lifecycle Management Documentation</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/elasticsearch/" rel="tag"># elasticsearch</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/17/Elasticsearch-High-Availability-Deep-Dive-Guide/" rel="prev" title="Elasticsearch High Availability: Deep Dive Guide">
+                  <i class="fa fa-angle-left"></i> Elasticsearch High Availability: Deep Dive Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
