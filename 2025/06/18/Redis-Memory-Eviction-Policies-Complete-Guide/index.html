@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Overview of Redis Memory ManagementRedis is an in-memory data structure store that requires careful memory management to maintain optimal performance. When Redis approaches its memory limit, it must d">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis Memory Eviction Policies - Complete Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/18/Redis-Memory-Eviction-Policies-Complete-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Overview of Redis Memory ManagementRedis is an in-memory data structure store that requires careful memory management to maintain optimal performance. When Redis approaches its memory limit, it must d">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-18T12:51:32.000Z">
+<meta property="article:modified_time" content="2025-06-18T12:54:01.685Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/18/Redis-Memory-Eviction-Policies-Complete-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/18/Redis-Memory-Eviction-Policies-Complete-Guide/","path":"2025/06/18/Redis-Memory-Eviction-Policies-Complete-Guide/","title":"Redis Memory Eviction Policies - Complete Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis Memory Eviction Policies - Complete Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Overview-of-Redis-Memory-Management"><span class="nav-number">1.</span> <span class="nav-text">Overview of Redis Memory Management</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Memory-Eviction-Policies"><span class="nav-number">2.</span> <span class="nav-text">Redis Memory Eviction Policies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LRU-Based-Policies"><span class="nav-number">2.1.</span> <span class="nav-text">LRU-Based Policies</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#allkeys-lru"><span class="nav-number">2.1.1.</span> <span class="nav-text">allkeys-lru</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile-lru"><span class="nav-number">2.1.2.</span> <span class="nav-text">volatile-lru</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LFU-Based-Policies"><span class="nav-number">2.2.</span> <span class="nav-text">LFU-Based Policies</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#allkeys-lfu"><span class="nav-number">2.2.1.</span> <span class="nav-text">allkeys-lfu</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile-lfu"><span class="nav-number">2.2.2.</span> <span class="nav-text">volatile-lfu</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Random-Policies"><span class="nav-number">2.3.</span> <span class="nav-text">Random Policies</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#allkeys-random"><span class="nav-number">2.3.1.</span> <span class="nav-text">allkeys-random</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile-random"><span class="nav-number">2.3.2.</span> <span class="nav-text">volatile-random</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TTL-Based-Policy"><span class="nav-number">2.4.</span> <span class="nav-text">TTL-Based Policy</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#volatile-ttl"><span class="nav-number">2.4.1.</span> <span class="nav-text">volatile-ttl</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#No-Eviction-Policy"><span class="nav-number">2.5.</span> <span class="nav-text">No Eviction Policy</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#noeviction"><span class="nav-number">2.5.1.</span> <span class="nav-text">noeviction</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Memory-Limitation-Strategies"><span class="nav-number">3.</span> <span class="nav-text">Memory Limitation Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Why-Limit-Cache-Memory"><span class="nav-number">3.1.</span> <span class="nav-text">Why Limit Cache Memory?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Basic-Memory-Configuration"><span class="nav-number">3.2.</span> <span class="nav-text">Basic Memory Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Using-Lua-Scripts-for-Advanced-Memory-Control"><span class="nav-number">3.3.</span> <span class="nav-text">Using Lua Scripts for Advanced Memory Control</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Limiting-Key-Value-Pairs"><span class="nav-number">3.3.1.</span> <span class="nav-text">Limiting Key-Value Pairs</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Limiting-Value-Size"><span class="nav-number">3.3.2.</span> <span class="nav-text">Limiting Value Size</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Memory-Aware-Key-Management"><span class="nav-number">3.3.3.</span> <span class="nav-text">Memory-Aware Key Management</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Practical-Cache-Eviction-Solutions"><span class="nav-number">4.</span> <span class="nav-text">Practical Cache Eviction Solutions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Big-Object-Evict-First-Strategy"><span class="nav-number">4.1.</span> <span class="nav-text">Big Object Evict First Strategy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Small-Object-Evict-First-Strategy"><span class="nav-number">4.2.</span> <span class="nav-text">Small Object Evict First Strategy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Low-Cost-Evict-First-Strategy"><span class="nav-number">4.3.</span> <span class="nav-text">Low Cost Evict First Strategy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cold-Data-Evict-First-Strategy"><span class="nav-number">4.4.</span> <span class="nav-text">Cold Data Evict First Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Algorithm-Deep-Dive"><span class="nav-number">5.</span> <span class="nav-text">Algorithm Deep Dive</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LRU-Implementation-Details"><span class="nav-number">5.1.</span> <span class="nav-text">LRU Implementation Details</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LFU-Implementation-Details"><span class="nav-number">5.2.</span> <span class="nav-text">LFU Implementation Details</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Choosing-the-Right-Eviction-Policy"><span class="nav-number">6.</span> <span class="nav-text">Choosing the Right Eviction Policy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Decision-Matrix"><span class="nav-number">6.1.</span> <span class="nav-text">Decision Matrix</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Use-Case-Recommendations"><span class="nav-number">6.2.</span> <span class="nav-text">Use Case Recommendations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Configuration-Example"><span class="nav-number">6.3.</span> <span class="nav-text">Production Configuration Example</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Monitoring-and-Tuning"><span class="nav-number">7.</span> <span class="nav-text">Performance Monitoring and Tuning</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Metrics-to-Monitor"><span class="nav-number">7.1.</span> <span class="nav-text">Key Metrics to Monitor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Alerting-Thresholds"><span class="nav-number">7.2.</span> <span class="nav-text">Alerting Thresholds</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Questions-and-Answers"><span class="nav-number">8.</span> <span class="nav-text">Interview Questions and Answers</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Advanced-Interview-Questions"><span class="nav-number">8.1.</span> <span class="nav-text">Advanced Interview Questions</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Best-Practices-Summary"><span class="nav-number">9.</span> <span class="nav-text">Best Practices Summary</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-Best-Practices"><span class="nav-number">9.1.</span> <span class="nav-text">Configuration Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Application-Integration-Best-Practices"><span class="nav-number">9.2.</span> <span class="nav-text">Application Integration Best Practices</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Operational-Best-Practices"><span class="nav-number">9.3.</span> <span class="nav-text">Operational Best Practices</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#External-Resources"><span class="nav-number">10.</span> <span class="nav-text">External Resources</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/18/Redis-Memory-Eviction-Policies-Complete-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Redis Memory Eviction Policies - Complete Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis Memory Eviction Policies - Complete Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-18 20:51:32 / Modified: 20:54:01" itemprop="dateCreated datePublished" datetime="2025-06-18T20:51:32+08:00">2025-06-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Overview-of-Redis-Memory-Management"><a href="#Overview-of-Redis-Memory-Management" class="headerlink" title="Overview of Redis Memory Management"></a>Overview of Redis Memory Management</h2><p>Redis is an in-memory data structure store that requires careful memory management to maintain optimal performance. When Redis approaches its memory limit, it must decide which keys to remove to make space for new data. This process is called <strong>memory eviction</strong>.</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[Redis Instance] --&gt; B{Memory Usage Check}
+B --&gt;|Below maxmemory| C[Accept New Data]
+B --&gt;|At maxmemory| D[Apply Eviction Policy]
+D --&gt; E[Select Keys to Evict]
+E --&gt; F[Remove Selected Keys]
+F --&gt; G[Accept New Data]
+
+style A fill:#f9f,stroke:#333,stroke-width:2px
+style D fill:#bbf,stroke:#333,stroke-width:2px
+style E fill:#fbb,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>Why is memory management crucial in Redis?</em></p>
+<ul>
+<li>Redis stores all data in RAM for fast access</li>
+<li>Uncontrolled memory growth can lead to system crashes</li>
+<li>Proper eviction prevents OOM (Out of Memory) errors</li>
+<li>Maintains predictable performance characteristics</li>
+</ul>
+<h2 id="Redis-Memory-Eviction-Policies"><a href="#Redis-Memory-Eviction-Policies" class="headerlink" title="Redis Memory Eviction Policies"></a>Redis Memory Eviction Policies</h2><p>Redis offers 8 different eviction policies, each serving different use cases:</p>
+<h3 id="LRU-Based-Policies"><a href="#LRU-Based-Policies" class="headerlink" title="LRU-Based Policies"></a>LRU-Based Policies</h3><h4 id="allkeys-lru"><a href="#allkeys-lru" class="headerlink" title="allkeys-lru"></a>allkeys-lru</h4><p>Evicts the least recently used keys across all keys in the database.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Configuration</span></span><br><span class="line">CONFIG SET maxmemory-policy allkeys-lru</span><br><span class="line"></span><br><span class="line"><span class="comment"># Example scenario</span></span><br><span class="line">SET user:1001 <span class="string">&quot;John Doe&quot;</span>     <span class="comment"># Time: T1</span></span><br><span class="line">GET user:1001               <span class="comment"># Access at T2</span></span><br><span class="line">SET user:1002 <span class="string">&quot;Jane Smith&quot;</span>  <span class="comment"># Time: T3</span></span><br><span class="line"><span class="comment"># If memory is full, user:1002 is more likely to be evicted</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Best Practice</strong>: Use when you have a natural access pattern where some data is accessed more frequently than others.</p>
+<h4 id="volatile-lru"><a href="#volatile-lru" class="headerlink" title="volatile-lru"></a>volatile-lru</h4><p>Evicts the least recently used keys only among keys with an expiration set.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Setup</span></span><br><span class="line">SET session:abc123 <span class="string">&quot;user_data&quot;</span> EX 3600  <span class="comment"># With expiration</span></span><br><span class="line">SET config:theme <span class="string">&quot;dark&quot;</span>                 <span class="comment"># Without expiration</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Only session:abc123 is eligible for LRU eviction</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Use Case</strong>: Session management where you want to preserve configuration data.</p>
+<h3 id="LFU-Based-Policies"><a href="#LFU-Based-Policies" class="headerlink" title="LFU-Based Policies"></a>LFU-Based Policies</h3><h4 id="allkeys-lfu"><a href="#allkeys-lfu" class="headerlink" title="allkeys-lfu"></a>allkeys-lfu</h4><p>Evicts the least frequently used keys across all keys.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Example: Access frequency tracking</span></span><br><span class="line">SET product:1 <span class="string">&quot;laptop&quot;</span>      <span class="comment"># Accessed 100 times</span></span><br><span class="line">SET product:2 <span class="string">&quot;mouse&quot;</span>       <span class="comment"># Accessed 5 times</span></span><br><span class="line">SET product:3 <span class="string">&quot;keyboard&quot;</span>    <span class="comment"># Accessed 50 times</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># product:2 (mouse) would be evicted first due to lowest frequency</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="volatile-lfu"><a href="#volatile-lfu" class="headerlink" title="volatile-lfu"></a>volatile-lfu</h4><p>Evicts the least frequently used keys only among keys with expiration.</p>
+<p><strong>Interview Insight</strong>: <em>When would you choose LFU over LRU?</em></p>
+<ul>
+<li>LFU is better for data with consistent access patterns</li>
+<li>LRU is better for data with temporal locality</li>
+<li>LFU prevents cache pollution from occasional bulk operations</li>
+</ul>
+<h3 id="Random-Policies"><a href="#Random-Policies" class="headerlink" title="Random Policies"></a>Random Policies</h3><h4 id="allkeys-random"><a href="#allkeys-random" class="headerlink" title="allkeys-random"></a>allkeys-random</h4><p>Randomly selects keys for eviction across all keys.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Simulation of random eviction</span></span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"></span><br><span class="line">keys = [<span class="string">&quot;user:1&quot;</span>, <span class="string">&quot;user:2&quot;</span>, <span class="string">&quot;user:3&quot;</span>, <span class="string">&quot;config:db&quot;</span>, <span class="string">&quot;session:xyz&quot;</span>]</span><br><span class="line">evict_key = random.choice(keys)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Evicting: <span class="subst">&#123;evict_key&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h4 id="volatile-random"><a href="#volatile-random" class="headerlink" title="volatile-random"></a>volatile-random</h4><p>Randomly selects keys for eviction only among keys with expiration.</p>
+<p><strong>When to Use Random Policies</strong>:</p>
+<ul>
+<li>When access patterns are completely unpredictable</li>
+<li>For testing and development environments</li>
+<li>When you need simple, fast eviction decisions</li>
+</ul>
+<h3 id="TTL-Based-Policy"><a href="#TTL-Based-Policy" class="headerlink" title="TTL-Based Policy"></a>TTL-Based Policy</h3><h4 id="volatile-ttl"><a href="#volatile-ttl" class="headerlink" title="volatile-ttl"></a>volatile-ttl</h4><p>Evicts keys with expiration, prioritizing those with shorter remaining TTL.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Example scenario</span></span><br><span class="line">SET cache:data1 <span class="string">&quot;value1&quot;</span> EX 3600  <span class="comment"># Expires in 1 hour</span></span><br><span class="line">SET cache:data2 <span class="string">&quot;value2&quot;</span> EX 1800  <span class="comment"># Expires in 30 minutes</span></span><br><span class="line">SET cache:data3 <span class="string">&quot;value3&quot;</span> EX 7200  <span class="comment"># Expires in 2 hours</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># cache:data2 will be evicted first (shortest TTL)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="No-Eviction-Policy"><a href="#No-Eviction-Policy" class="headerlink" title="No Eviction Policy"></a>No Eviction Policy</h3><h4 id="noeviction"><a href="#noeviction" class="headerlink" title="noeviction"></a>noeviction</h4><p>Returns errors when memory limit is reached instead of evicting keys.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CONFIG SET maxmemory-policy noeviction</span><br><span class="line"></span><br><span class="line"><span class="comment"># When memory is full:</span></span><br><span class="line">SET new_key <span class="string">&quot;value&quot;</span></span><br><span class="line"><span class="comment"># Error: OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Use Case</strong>: Critical systems where data loss is unacceptable.</p>
+<h2 id="Memory-Limitation-Strategies"><a href="#Memory-Limitation-Strategies" class="headerlink" title="Memory Limitation Strategies"></a>Memory Limitation Strategies</h2><h3 id="Why-Limit-Cache-Memory"><a href="#Why-Limit-Cache-Memory" class="headerlink" title="Why Limit Cache Memory?"></a>Why Limit Cache Memory?</h3><pre>
+<code class="mermaid">
+flowchart LR
+A[Unlimited Memory] --&gt; B[System Instability]
+A --&gt; C[Unpredictable Performance]
+A --&gt; D[Resource Contention]
+
+E[Limited Memory] --&gt; F[Predictable Behavior]
+E --&gt; G[System Stability]
+E --&gt; H[Better Resource Planning]
+
+style A fill:#fbb,stroke:#333,stroke-width:2px
+style E fill:#bfb,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Production Reasons</strong>:</p>
+<ul>
+<li><strong>System Stability</strong>: Prevents Redis from consuming all available RAM</li>
+<li><strong>Performance Predictability</strong>: Maintains consistent response times</li>
+<li><strong>Multi-tenancy</strong>: Allows multiple services to coexist</li>
+<li><strong>Cost Control</strong>: Manages infrastructure costs effectively</li>
+</ul>
+<h3 id="Basic-Memory-Configuration"><a href="#Basic-Memory-Configuration" class="headerlink" title="Basic Memory Configuration"></a>Basic Memory Configuration</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Set maximum memory limit (512MB)</span></span><br><span class="line">CONFIG SET maxmemory 536870912</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set eviction policy</span></span><br><span class="line">CONFIG SET maxmemory-policy allkeys-lru</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check current memory usage</span></span><br><span class="line">INFO memory</span><br></pre></td></tr></table></figure>
+
+<h3 id="Using-Lua-Scripts-for-Advanced-Memory-Control"><a href="#Using-Lua-Scripts-for-Advanced-Memory-Control" class="headerlink" title="Using Lua Scripts for Advanced Memory Control"></a>Using Lua Scripts for Advanced Memory Control</h3><h4 id="Limiting-Key-Value-Pairs"><a href="#Limiting-Key-Value-Pairs" class="headerlink" title="Limiting Key-Value Pairs"></a>Limiting Key-Value Pairs</h4><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- limit_keys.lua: Limit total number of keys</span></span><br><span class="line"><span class="keyword">local</span> max_keys = <span class="built_in">tonumber</span>(ARGV[<span class="number">1</span>])</span><br><span class="line"><span class="keyword">local</span> current_keys = redis.call(<span class="string">&#x27;DBSIZE&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> current_keys &gt;= max_keys <span class="keyword">then</span></span><br><span class="line">    <span class="comment">-- Get random key and delete it</span></span><br><span class="line">    <span class="keyword">local</span> keys = redis.call(<span class="string">&#x27;RANDOMKEY&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> keys <span class="keyword">then</span></span><br><span class="line">        redis.call(<span class="string">&#x27;DEL&#x27;</span>, keys)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Evicted key: &quot;</span> .. keys</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Add the new key</span></span><br><span class="line">redis.call(<span class="string">&#x27;SET&#x27;</span>, KEYS[<span class="number">1</span>], ARGV[<span class="number">2</span>])</span><br><span class="line"><span class="keyword">return</span> <span class="string">&quot;Key added successfully&quot;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Usage</span></span><br><span class="line">EVAL <span class="string">&quot;<span class="subst">$(cat limit_keys.lua)</span>&quot;</span> 1 <span class="string">&quot;new_key&quot;</span> 1000 <span class="string">&quot;new_value&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Limiting-Value-Size"><a href="#Limiting-Value-Size" class="headerlink" title="Limiting Value Size"></a>Limiting Value Size</h4><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- limit_value_size.lua: Reject large values</span></span><br><span class="line"><span class="keyword">local</span> max_size = <span class="built_in">tonumber</span>(ARGV[<span class="number">2</span>])</span><br><span class="line"><span class="keyword">local</span> value = ARGV[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">local</span> value_size = <span class="built_in">string</span>.<span class="built_in">len</span>(value)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> value_size &gt; max_size <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">return</span> redis.error_reply(<span class="string">&quot;Value size &quot;</span> .. value_size .. <span class="string">&quot; exceeds limit &quot;</span> .. max_size)</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">redis.call(<span class="string">&#x27;SET&#x27;</span>, KEYS[<span class="number">1</span>], value)</span><br><span class="line"><span class="keyword">return</span> <span class="string">&quot;OK&quot;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Usage: Limit values to 1KB</span></span><br><span class="line">EVAL <span class="string">&quot;<span class="subst">$(cat limit_value_size.lua)</span>&quot;</span> 1 <span class="string">&quot;my_key&quot;</span> <span class="string">&quot;my_value&quot;</span> 1024</span><br></pre></td></tr></table></figure>
+
+<h4 id="Memory-Aware-Key-Management"><a href="#Memory-Aware-Key-Management" class="headerlink" title="Memory-Aware Key Management"></a>Memory-Aware Key Management</h4><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- memory_aware_set.lua: Check memory before setting</span></span><br><span class="line"><span class="keyword">local</span> key = KEYS[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">local</span> value = ARGV[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">local</span> memory_threshold = <span class="built_in">tonumber</span>(ARGV[<span class="number">2</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Get current memory usage</span></span><br><span class="line"><span class="keyword">local</span> memory_info = redis.call(<span class="string">&#x27;MEMORY&#x27;</span>, <span class="string">&#x27;USAGE&#x27;</span>, <span class="string">&#x27;SAMPLES&#x27;</span>, <span class="string">&#x27;0&#x27;</span>)</span><br><span class="line"><span class="keyword">local</span> used_memory = memory_info[<span class="string">&#x27;used_memory&#x27;</span>]</span><br><span class="line"><span class="keyword">local</span> max_memory = memory_info[<span class="string">&#x27;maxmemory&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> max_memory &gt; <span class="number">0</span> <span class="keyword">and</span> used_memory &gt; (max_memory * memory_threshold / <span class="number">100</span>) <span class="keyword">then</span></span><br><span class="line">    <span class="comment">-- Trigger manual cleanup</span></span><br><span class="line">    <span class="keyword">local</span> keys_to_check = redis.call(<span class="string">&#x27;RANDOMKEY&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> keys_to_check <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">local</span> key_memory = redis.call(<span class="string">&#x27;MEMORY&#x27;</span>, <span class="string">&#x27;USAGE&#x27;</span>, keys_to_check)</span><br><span class="line">        <span class="keyword">if</span> key_memory &gt; <span class="number">1000</span> <span class="keyword">then</span>  <span class="comment">-- If key uses more than 1KB</span></span><br><span class="line">            redis.call(<span class="string">&#x27;DEL&#x27;</span>, keys_to_check)</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">redis.call(<span class="string">&#x27;SET&#x27;</span>, key, value)</span><br><span class="line"><span class="keyword">return</span> <span class="string">&quot;Key set with memory check&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Practical-Cache-Eviction-Solutions"><a href="#Practical-Cache-Eviction-Solutions" class="headerlink" title="Practical Cache Eviction Solutions"></a>Practical Cache Eviction Solutions</h2><h3 id="Big-Object-Evict-First-Strategy"><a href="#Big-Object-Evict-First-Strategy" class="headerlink" title="Big Object Evict First Strategy"></a>Big Object Evict First Strategy</h3><p>This strategy prioritizes evicting large objects to free maximum memory quickly.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Python implementation for big object eviction</span></span><br><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BigObjectEvictionRedis</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.size_threshold = <span class="number">10240</span>  <span class="comment"># 10KB threshold</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_with_size_check</span>(<span class="params">self, key, value</span>):</span><br><span class="line">        <span class="comment"># Calculate value size</span></span><br><span class="line">        value_size = <span class="built_in">len</span>(<span class="built_in">str</span>(value).encode(<span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Store size metadata</span></span><br><span class="line">        <span class="variable language_">self</span>.redis.hset(<span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:meta&quot;</span>, <span class="string">&quot;size&quot;</span>, value_size)</span><br><span class="line">        <span class="variable language_">self</span>.redis.hset(<span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:meta&quot;</span>, <span class="string">&quot;created&quot;</span>, <span class="built_in">int</span>(time.time()))</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Set the actual value</span></span><br><span class="line">        <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(key, value)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Track large objects</span></span><br><span class="line">        <span class="keyword">if</span> value_size &gt; <span class="variable language_">self</span>.size_threshold:</span><br><span class="line">            <span class="variable language_">self</span>.redis.sadd(<span class="string">&quot;large_objects&quot;</span>, key)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">evict_large_objects</span>(<span class="params">self, target_memory_mb</span>):</span><br><span class="line">        large_objects = <span class="variable language_">self</span>.redis.smembers(<span class="string">&quot;large_objects&quot;</span>)</span><br><span class="line">        freed_memory = <span class="number">0</span></span><br><span class="line">        target_bytes = target_memory_mb * <span class="number">1024</span> * <span class="number">1024</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Sort by size (largest first)</span></span><br><span class="line">        objects_with_size = []</span><br><span class="line">        <span class="keyword">for</span> obj <span class="keyword">in</span> large_objects:</span><br><span class="line">            size = <span class="variable language_">self</span>.redis.hget(<span class="string">f&quot;<span class="subst">&#123;obj&#125;</span>:meta&quot;</span>, <span class="string">&quot;size&quot;</span>)</span><br><span class="line">            <span class="keyword">if</span> size:</span><br><span class="line">                objects_with_size.append((obj, <span class="built_in">int</span>(size)))</span><br><span class="line">        </span><br><span class="line">        objects_with_size.sort(key=<span class="keyword">lambda</span> x: x[<span class="number">1</span>], reverse=<span class="literal">True</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> obj, size <span class="keyword">in</span> objects_with_size:</span><br><span class="line">            <span class="keyword">if</span> freed_memory &gt;= target_bytes:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">                </span><br><span class="line">            <span class="variable language_">self</span>.redis.delete(obj)</span><br><span class="line">            <span class="variable language_">self</span>.redis.delete(<span class="string">f&quot;<span class="subst">&#123;obj&#125;</span>:meta&quot;</span>)</span><br><span class="line">            <span class="variable language_">self</span>.redis.srem(<span class="string">&quot;large_objects&quot;</span>, obj)</span><br><span class="line">            freed_memory += size</span><br><span class="line">            </span><br><span class="line">        <span class="keyword">return</span> freed_memory</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">r = redis.Redis()</span><br><span class="line">big_obj_redis = BigObjectEvictionRedis(r)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set some large objects</span></span><br><span class="line">big_obj_redis.set_with_size_check(<span class="string">&quot;large_data:1&quot;</span>, <span class="string">&quot;x&quot;</span> * <span class="number">50000</span>)</span><br><span class="line">big_obj_redis.set_with_size_check(<span class="string">&quot;large_data:2&quot;</span>, <span class="string">&quot;y&quot;</span> * <span class="number">30000</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Evict to free 100MB</span></span><br><span class="line">freed = big_obj_redis.evict_large_objects(<span class="number">100</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Freed <span class="subst">&#123;freed&#125;</span> bytes&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Small-Object-Evict-First-Strategy"><a href="#Small-Object-Evict-First-Strategy" class="headerlink" title="Small Object Evict First Strategy"></a>Small Object Evict First Strategy</h3><p>Useful when you want to preserve large, expensive-to-recreate objects.</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- small_object_evict.lua</span></span><br><span class="line"><span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">get_object_size</span><span class="params">(key)</span></span></span><br><span class="line">    <span class="keyword">return</span> redis.call(<span class="string">&#x27;MEMORY&#x27;</span>, <span class="string">&#x27;USAGE&#x27;</span>, key) <span class="keyword">or</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">evict_small_objects</span><span class="params">(count)</span></span></span><br><span class="line">    <span class="keyword">local</span> all_keys = redis.call(<span class="string">&#x27;KEYS&#x27;</span>, <span class="string">&#x27;*&#x27;</span>)</span><br><span class="line">    <span class="keyword">local</span> small_keys = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i, key <span class="keyword">in</span> <span class="built_in">ipairs</span>(all_keys) <span class="keyword">do</span></span><br><span class="line">        <span class="keyword">local</span> size = get_object_size(key)</span><br><span class="line">        <span class="keyword">if</span> size &lt; <span class="number">1000</span> <span class="keyword">then</span>  <span class="comment">-- Less than 1KB</span></span><br><span class="line">            <span class="built_in">table</span>.<span class="built_in">insert</span>(small_keys, &#123;key, size&#125;)</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">-- Sort by size (smallest first)</span></span><br><span class="line">    <span class="built_in">table</span>.<span class="built_in">sort</span>(small_keys, <span class="function"><span class="keyword">function</span><span class="params">(a, b)</span></span> <span class="keyword">return</span> a[<span class="number">2</span>] &lt; b[<span class="number">2</span>] <span class="keyword">end</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">local</span> evicted = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i = <span class="number">1</span>, <span class="built_in">math</span>.<span class="built_in">min</span>(count, #small_keys) <span class="keyword">do</span></span><br><span class="line">        redis.call(<span class="string">&#x27;DEL&#x27;</span>, small_keys[i][<span class="number">1</span>])</span><br><span class="line">        evicted = evicted + <span class="number">1</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> evicted</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> evict_small_objects(<span class="built_in">tonumber</span>(ARGV[<span class="number">1</span>]))</span><br></pre></td></tr></table></figure>
+
+<h3 id="Low-Cost-Evict-First-Strategy"><a href="#Low-Cost-Evict-First-Strategy" class="headerlink" title="Low Cost Evict First Strategy"></a>Low Cost Evict First Strategy</h3><p>Evicts data that’s cheap to regenerate or reload.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">CostBasedEviction</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.cost_factors = &#123;</span><br><span class="line">            <span class="string">&#x27;cache:&#x27;</span>: <span class="number">1</span>,      <span class="comment"># Low cost - can regenerate</span></span><br><span class="line">            <span class="string">&#x27;session:&#x27;</span>: <span class="number">5</span>,    <span class="comment"># Medium cost - user experience impact</span></span><br><span class="line">            <span class="string">&#x27;computed:&#x27;</span>: <span class="number">10</span>,  <span class="comment"># High cost - expensive computation</span></span><br><span class="line">            <span class="string">&#x27;external:&#x27;</span>: <span class="number">8</span>    <span class="comment"># High cost - external API call</span></span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_with_cost</span>(<span class="params">self, key, value, custom_cost=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="comment"># Determine cost based on key prefix</span></span><br><span class="line">        cost = custom_cost <span class="keyword">or</span> <span class="variable language_">self</span>._calculate_cost(key)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Store with cost metadata</span></span><br><span class="line">        pipe = <span class="variable language_">self</span>.redis.pipeline()</span><br><span class="line">        pipe.<span class="built_in">set</span>(key, value)</span><br><span class="line">        pipe.hset(<span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:meta&quot;</span>, <span class="string">&quot;cost&quot;</span>, cost)</span><br><span class="line">        pipe.hset(<span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:meta&quot;</span>, <span class="string">&quot;timestamp&quot;</span>, <span class="built_in">int</span>(time.time()))</span><br><span class="line">        pipe.execute()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_calculate_cost</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="keyword">for</span> prefix, cost <span class="keyword">in</span> <span class="variable language_">self</span>.cost_factors.items():</span><br><span class="line">            <span class="keyword">if</span> key.startswith(prefix):</span><br><span class="line">                <span class="keyword">return</span> cost</span><br><span class="line">        <span class="keyword">return</span> <span class="number">3</span>  <span class="comment"># Default medium cost</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">evict_low_cost_items</span>(<span class="params">self, target_count</span>):</span><br><span class="line">        <span class="comment"># Get all keys with metadata</span></span><br><span class="line">        pattern = <span class="string">&quot;*:meta&quot;</span></span><br><span class="line">        meta_keys = <span class="variable language_">self</span>.redis.keys(pattern)</span><br><span class="line">        </span><br><span class="line">        items_with_cost = []</span><br><span class="line">        <span class="keyword">for</span> meta_key <span class="keyword">in</span> meta_keys:</span><br><span class="line">            original_key = meta_key.replace(<span class="string">&#x27;:meta&#x27;</span>, <span class="string">&#x27;&#x27;</span>)</span><br><span class="line">            cost = <span class="variable language_">self</span>.redis.hget(meta_key, <span class="string">&#x27;cost&#x27;</span>)</span><br><span class="line">            <span class="keyword">if</span> cost:</span><br><span class="line">                items_with_cost.append((original_key, <span class="built_in">int</span>(cost)))</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Sort by cost (lowest first)</span></span><br><span class="line">        items_with_cost.sort(key=<span class="keyword">lambda</span> x: x[<span class="number">1</span>])</span><br><span class="line">        </span><br><span class="line">        evicted = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> key, cost <span class="keyword">in</span> items_with_cost[:target_count]:</span><br><span class="line">            <span class="variable language_">self</span>.redis.delete(key)</span><br><span class="line">            <span class="variable language_">self</span>.redis.delete(<span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:meta&quot;</span>)</span><br><span class="line">            evicted += <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> evicted</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage</span></span><br><span class="line">cost_eviction = CostBasedEviction(redis.Redis())</span><br><span class="line">cost_eviction.set_with_cost(<span class="string">&quot;cache:user:1001&quot;</span>, user_data)</span><br><span class="line">cost_eviction.set_with_cost(<span class="string">&quot;computed:analytics:daily&quot;</span>, expensive_computation)</span><br><span class="line">cost_eviction.evict_low_cost_items(<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Cold-Data-Evict-First-Strategy"><a href="#Cold-Data-Evict-First-Strategy" class="headerlink" title="Cold Data Evict First Strategy"></a>Cold Data Evict First Strategy</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime, timedelta</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ColdDataEviction</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        <span class="variable language_">self</span>.access_tracking_key = <span class="string">&quot;access_log&quot;</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_with_tracking</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="comment"># Record access</span></span><br><span class="line">        now = <span class="built_in">int</span>(time.time())</span><br><span class="line">        <span class="variable language_">self</span>.redis.zadd(<span class="variable language_">self</span>.access_tracking_key, &#123;key: now&#125;)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Get value</span></span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.redis.get(key)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_with_tracking</span>(<span class="params">self, key, value</span>):</span><br><span class="line">        now = <span class="built_in">int</span>(time.time())</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Set value and track access</span></span><br><span class="line">        pipe = <span class="variable language_">self</span>.redis.pipeline()</span><br><span class="line">        pipe.<span class="built_in">set</span>(key, value)</span><br><span class="line">        pipe.zadd(<span class="variable language_">self</span>.access_tracking_key, &#123;key: now&#125;)</span><br><span class="line">        pipe.execute()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">evict_cold_data</span>(<span class="params">self, days_threshold=<span class="number">7</span>, max_evict=<span class="number">100</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Evict data not accessed within threshold days&quot;&quot;&quot;</span></span><br><span class="line">        cutoff_time = <span class="built_in">int</span>(time.time()) - (days_threshold * <span class="number">24</span> * <span class="number">3600</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Get cold keys (accessed before cutoff time)</span></span><br><span class="line">        cold_keys = <span class="variable language_">self</span>.redis.zrangebyscore(</span><br><span class="line">            <span class="variable language_">self</span>.access_tracking_key, </span><br><span class="line">            <span class="number">0</span>, </span><br><span class="line">            cutoff_time,</span><br><span class="line">            start=<span class="number">0</span>,</span><br><span class="line">            num=max_evict</span><br><span class="line">        )</span><br><span class="line">        </span><br><span class="line">        evicted_count = <span class="number">0</span></span><br><span class="line">        <span class="keyword">if</span> cold_keys:</span><br><span class="line">            pipe = <span class="variable language_">self</span>.redis.pipeline()</span><br><span class="line">            <span class="keyword">for</span> key <span class="keyword">in</span> cold_keys:</span><br><span class="line">                pipe.delete(key)</span><br><span class="line">                pipe.zrem(<span class="variable language_">self</span>.access_tracking_key, key)</span><br><span class="line">                evicted_count += <span class="number">1</span></span><br><span class="line">                </span><br><span class="line">            pipe.execute()</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> evicted_count</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_access_stats</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Get access statistics&quot;&quot;&quot;</span></span><br><span class="line">        now = <span class="built_in">int</span>(time.time())</span><br><span class="line">        day_ago = now - <span class="number">86400</span></span><br><span class="line">        week_ago = now - (<span class="number">7</span> * <span class="number">86400</span>)</span><br><span class="line">        </span><br><span class="line">        recent_keys = <span class="variable language_">self</span>.redis.zrangebyscore(<span class="variable language_">self</span>.access_tracking_key, day_ago, now)</span><br><span class="line">        weekly_keys = <span class="variable language_">self</span>.redis.zrangebyscore(<span class="variable language_">self</span>.access_tracking_key, week_ago, now)</span><br><span class="line">        total_keys = <span class="variable language_">self</span>.redis.zcard(<span class="variable language_">self</span>.access_tracking_key)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> &#123;</span><br><span class="line">            <span class="string">&#x27;total_tracked_keys&#x27;</span>: total_keys,</span><br><span class="line">            <span class="string">&#x27;accessed_last_day&#x27;</span>: <span class="built_in">len</span>(recent_keys),</span><br><span class="line">            <span class="string">&#x27;accessed_last_week&#x27;</span>: <span class="built_in">len</span>(weekly_keys),</span><br><span class="line">            <span class="string">&#x27;cold_keys&#x27;</span>: total_keys - <span class="built_in">len</span>(weekly_keys)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">cold_eviction = ColdDataEviction(redis.Redis())</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use with tracking</span></span><br><span class="line">cold_eviction.set_with_tracking(<span class="string">&quot;user:1001&quot;</span>, <span class="string">&quot;user_data&quot;</span>)</span><br><span class="line">value = cold_eviction.get_with_tracking(<span class="string">&quot;user:1001&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Evict data not accessed in 7 days</span></span><br><span class="line">evicted = cold_eviction.evict_cold_data(days_threshold=<span class="number">7</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Evicted <span class="subst">&#123;evicted&#125;</span> cold data items&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Get statistics</span></span><br><span class="line">stats = cold_eviction.get_access_stats()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Access stats: <span class="subst">&#123;stats&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Algorithm-Deep-Dive"><a href="#Algorithm-Deep-Dive" class="headerlink" title="Algorithm Deep Dive"></a>Algorithm Deep Dive</h2><h3 id="LRU-Implementation-Details"><a href="#LRU-Implementation-Details" class="headerlink" title="LRU Implementation Details"></a>LRU Implementation Details</h3><p>Redis uses an approximate LRU algorithm for efficiency:</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[Key Access] --&gt; B[Update LRU Clock]
+B --&gt; C{Memory Full?}
+C --&gt;|No| D[Operation Complete]
+C --&gt;|Yes| E[Sample Random Keys]
+E --&gt; F[Calculate LRU Score]
+F --&gt; G[Select Oldest Key]
+G --&gt; H[Evict Key]
+H --&gt; I[Operation Complete]
+
+style E fill:#bbf,stroke:#333,stroke-width:2px
+style F fill:#fbb,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<p><strong>Interview Question</strong>: <em>Why doesn’t Redis use true LRU?</em></p>
+<ul>
+<li>True LRU requires maintaining a doubly-linked list of all keys</li>
+<li>This would consume significant memory overhead</li>
+<li>Approximate LRU samples random keys and picks the best candidate</li>
+<li>Provides good enough results with much better performance</li>
+</ul>
+<h3 id="LFU-Implementation-Details"><a href="#LFU-Implementation-Details" class="headerlink" title="LFU Implementation Details"></a>LFU Implementation Details</h3><p>Redis LFU uses a probabilistic counter that decays over time:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Simplified LFU counter simulation</span></span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LFUCounter</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.counter = <span class="number">0</span></span><br><span class="line">        <span class="variable language_">self</span>.last_access = time.time()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">increment</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="comment"># Probabilistic increment based on current counter</span></span><br><span class="line">        <span class="comment"># Higher counters increment less frequently</span></span><br><span class="line">        probability = <span class="number">1.0</span> / (<span class="variable language_">self</span>.counter * <span class="number">10</span> + <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> random.random() &lt; probability:</span><br><span class="line">            <span class="variable language_">self</span>.counter += <span class="number">1</span></span><br><span class="line">        <span class="variable language_">self</span>.last_access = time.time()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">decay</span>(<span class="params">self, decay_time_minutes=<span class="number">1</span></span>):</span><br><span class="line">        <span class="comment"># Decay counter over time</span></span><br><span class="line">        now = time.time()</span><br><span class="line">        minutes_passed = (now - <span class="variable language_">self</span>.last_access) / <span class="number">60</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> minutes_passed &gt; decay_time_minutes:</span><br><span class="line">            decay_amount = <span class="built_in">int</span>(minutes_passed / decay_time_minutes)</span><br><span class="line">            <span class="variable language_">self</span>.counter = <span class="built_in">max</span>(<span class="number">0</span>, <span class="variable language_">self</span>.counter - decay_amount)</span><br><span class="line">            <span class="variable language_">self</span>.last_access = now</span><br><span class="line"></span><br><span class="line"><span class="comment"># Example usage</span></span><br><span class="line">counter = LFUCounter()</span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">100</span>):</span><br><span class="line">    counter.increment()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Counter after 100 accesses: <span class="subst">&#123;counter.counter&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Choosing-the-Right-Eviction-Policy"><a href="#Choosing-the-Right-Eviction-Policy" class="headerlink" title="Choosing the Right Eviction Policy"></a>Choosing the Right Eviction Policy</h2><h3 id="Decision-Matrix"><a href="#Decision-Matrix" class="headerlink" title="Decision Matrix"></a>Decision Matrix</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Choose Eviction Policy] --&gt; B{Data has TTL?}
+B --&gt;|Yes| C{Preserve non-expiring data?}
+B --&gt;|No| D{Access pattern known?}
+
+C --&gt;|Yes| E[volatile-lru&#x2F;lfu&#x2F;ttl]
+C --&gt;|No| F[allkeys-lru&#x2F;lfu]
+
+D --&gt;|Temporal locality| G[allkeys-lru]
+D --&gt;|Frequency based| H[allkeys-lfu]
+D --&gt;|Unknown&#x2F;Random| I[allkeys-random]
+
+J{Can tolerate data loss?} --&gt; K[No eviction]
+J --&gt;|Yes| L[Choose based on pattern]
+
+style E fill:#bfb,stroke:#333,stroke-width:2px
+style G fill:#bbf,stroke:#333,stroke-width:2px
+style H fill:#fbb,stroke:#333,stroke-width:2px
+</code>
+</pre>
+
+<h3 id="Use-Case-Recommendations"><a href="#Use-Case-Recommendations" class="headerlink" title="Use Case Recommendations"></a>Use Case Recommendations</h3><table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Recommended Policy</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Web session store</td>
+<td><code>volatile-lru</code></td>
+<td>Sessions have TTL, preserve config data</td>
+</tr>
+<tr>
+<td>Cache layer</td>
+<td><code>allkeys-lru</code></td>
+<td>Recent data more likely to be accessed</td>
+</tr>
+<tr>
+<td>Analytics cache</td>
+<td><code>allkeys-lfu</code></td>
+<td>Popular queries accessed frequently</td>
+</tr>
+<tr>
+<td>Rate limiting</td>
+<td><code>volatile-ttl</code></td>
+<td>Remove expired limits first</td>
+</tr>
+<tr>
+<td>Database cache</td>
+<td><code>allkeys-lfu</code></td>
+<td>Hot data accessed repeatedly</td>
+</tr>
+</tbody></table>
+<h3 id="Production-Configuration-Example"><a href="#Production-Configuration-Example" class="headerlink" title="Production Configuration Example"></a>Production Configuration Example</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># redis.conf production settings</span></span><br><span class="line">maxmemory 2gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br><span class="line">maxmemory-samples 10</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitor memory usage</span></span><br><span class="line">redis-cli --latency-history -i 1</span><br><span class="line">redis-cli INFO memory | grep used_memory_human</span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Monitoring-and-Tuning"><a href="#Performance-Monitoring-and-Tuning" class="headerlink" title="Performance Monitoring and Tuning"></a>Performance Monitoring and Tuning</h2><h3 id="Key-Metrics-to-Monitor"><a href="#Key-Metrics-to-Monitor" class="headerlink" title="Key Metrics to Monitor"></a>Key Metrics to Monitor</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># monitoring_script.py</span></span><br><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">monitor_eviction_performance</span>(<span class="params">redis_client</span>):</span><br><span class="line">    info = redis_client.info(<span class="string">&#x27;stats&#x27;</span>)</span><br><span class="line">    memory_info = redis_client.info(<span class="string">&#x27;memory&#x27;</span>)</span><br><span class="line">    </span><br><span class="line">    metrics = &#123;</span><br><span class="line">        <span class="string">&#x27;evicted_keys&#x27;</span>: info.get(<span class="string">&#x27;evicted_keys&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">        <span class="string">&#x27;keyspace_hits&#x27;</span>: info.get(<span class="string">&#x27;keyspace_hits&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">        <span class="string">&#x27;keyspace_misses&#x27;</span>: info.get(<span class="string">&#x27;keyspace_misses&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">        <span class="string">&#x27;used_memory&#x27;</span>: memory_info.get(<span class="string">&#x27;used_memory&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">        <span class="string">&#x27;used_memory_peak&#x27;</span>: memory_info.get(<span class="string">&#x27;used_memory_peak&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">        <span class="string">&#x27;mem_fragmentation_ratio&#x27;</span>: memory_info.get(<span class="string">&#x27;mem_fragmentation_ratio&#x27;</span>, <span class="number">0</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Calculate hit ratio</span></span><br><span class="line">    total_requests = metrics[<span class="string">&#x27;keyspace_hits&#x27;</span>] + metrics[<span class="string">&#x27;keyspace_misses&#x27;</span>]</span><br><span class="line">    hit_ratio = metrics[<span class="string">&#x27;keyspace_hits&#x27;</span>] / total_requests <span class="keyword">if</span> total_requests &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">    </span><br><span class="line">    metrics[<span class="string">&#x27;hit_ratio&#x27;</span>] = hit_ratio</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> metrics</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage</span></span><br><span class="line">r = redis.Redis()</span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    stats = monitor_eviction_performance(r)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Hit Ratio: <span class="subst">&#123;stats[<span class="string">&#x27;hit_ratio&#x27;</span>]:<span class="number">.2</span>%&#125;</span>, Evicted: <span class="subst">&#123;stats[<span class="string">&#x27;evicted_keys&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">    time.sleep(<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Alerting-Thresholds"><a href="#Alerting-Thresholds" class="headerlink" title="Alerting Thresholds"></a>Alerting Thresholds</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># alerts.yml (Prometheus/Grafana style)</span></span><br><span class="line"><span class="attr">alerts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">redis_hit_ratio_low</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">redis_hit_ratio</span> <span class="string">&lt;</span> <span class="number">0.90</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">warning</span></span><br><span class="line">    </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">redis_eviction_rate_high</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">rate(redis_evicted_keys[5m])</span> <span class="string">&gt;</span> <span class="number">100</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">critical</span></span><br><span class="line">    </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">redis_memory_usage_high</span></span><br><span class="line">    <span class="attr">condition:</span> <span class="string">redis_used_memory</span> <span class="string">/</span> <span class="string">redis_maxmemory</span> <span class="string">&gt;</span> <span class="number">0.90</span></span><br><span class="line">    <span class="attr">severity:</span> <span class="string">warning</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Questions-and-Answers"><a href="#Interview-Questions-and-Answers" class="headerlink" title="Interview Questions and Answers"></a>Interview Questions and Answers</h2><h3 id="Advanced-Interview-Questions"><a href="#Advanced-Interview-Questions" class="headerlink" title="Advanced Interview Questions"></a>Advanced Interview Questions</h3><p><strong>Q: How would you handle a scenario where your cache hit ratio drops significantly after implementing LRU eviction?</strong></p>
+<p><strong>A</strong>: This suggests the working set is larger than available memory. Solutions:</p>
+<ol>
+<li>Increase memory allocation if possible</li>
+<li>Switch to LFU if there’s a frequency-based access pattern</li>
+<li>Implement application-level partitioning</li>
+<li>Use Redis Cluster for horizontal scaling</li>
+<li>Optimize data structures (use hashes for small objects)</li>
+</ol>
+<p><strong>Q: Explain the trade-offs between different sampling sizes in Redis LRU implementation.</strong></p>
+<p><strong>A</strong>: </p>
+<ul>
+<li>Small samples (3-5): Fast eviction, less accurate LRU approximation</li>
+<li>Large samples (10+): Better LRU approximation, higher CPU overhead</li>
+<li>Default (5): Good balance for most use cases</li>
+<li>Monitor <code>evicted_keys</code> and <code>keyspace_misses</code> to tune</li>
+</ul>
+<p><strong>Q: How would you implement a custom eviction policy for a specific business requirement?</strong></p>
+<p><strong>A</strong>: Use Lua scripts or application-level logic:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Custom: Evict based on business priority</span></span><br><span class="line"><span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">business_priority_evict</span><span class="params">()</span></span></span><br><span class="line">    <span class="keyword">local</span> keys = redis.call(<span class="string">&#x27;KEYS&#x27;</span>, <span class="string">&#x27;*&#x27;</span>)</span><br><span class="line">    <span class="keyword">local</span> priorities = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i, key <span class="keyword">in</span> <span class="built_in">ipairs</span>(keys) <span class="keyword">do</span></span><br><span class="line">        <span class="keyword">local</span> priority = redis.call(<span class="string">&#x27;HGET&#x27;</span>, key .. <span class="string">&#x27;:meta&#x27;</span>, <span class="string">&#x27;business_priority&#x27;</span>)</span><br><span class="line">        <span class="keyword">if</span> priority <span class="keyword">then</span></span><br><span class="line">            <span class="built_in">table</span>.<span class="built_in">insert</span>(priorities, &#123;key, <span class="built_in">tonumber</span>(priority)&#125;)</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    </span><br><span class="line">    <span class="built_in">table</span>.<span class="built_in">sort</span>(priorities, <span class="function"><span class="keyword">function</span><span class="params">(a, b)</span></span> <span class="keyword">return</span> a[<span class="number">2</span>] &lt; b[<span class="number">2</span>] <span class="keyword">end</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> #priorities &gt; <span class="number">0</span> <span class="keyword">then</span></span><br><span class="line">        redis.call(<span class="string">&#x27;DEL&#x27;</span>, priorities[<span class="number">1</span>][<span class="number">1</span>])</span><br><span class="line">        <span class="keyword">return</span> priorities[<span class="number">1</span>][<span class="number">1</span>]</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Best-Practices-Summary"><a href="#Best-Practices-Summary" class="headerlink" title="Best Practices Summary"></a>Best Practices Summary</h2><h3 id="Configuration-Best-Practices"><a href="#Configuration-Best-Practices" class="headerlink" title="Configuration Best Practices"></a>Configuration Best Practices</h3><ol>
+<li><strong>Set appropriate maxmemory</strong>: 80% of available RAM for dedicated Redis instances</li>
+<li><strong>Choose policy based on use case</strong>: LRU for temporal, LFU for frequency patterns</li>
+<li><strong>Monitor continuously</strong>: Track hit ratios, eviction rates, and memory usage</li>
+<li><strong>Test under load</strong>: Verify eviction behavior matches expectations</li>
+</ol>
+<h3 id="Application-Integration-Best-Practices"><a href="#Application-Integration-Best-Practices" class="headerlink" title="Application Integration Best Practices"></a>Application Integration Best Practices</h3><ol>
+<li><strong>Graceful degradation</strong>: Handle cache misses gracefully</li>
+<li><strong>TTL strategy</strong>: Set appropriate expiration times</li>
+<li><strong>Key naming</strong>: Use consistent patterns for better policy effectiveness</li>
+<li><strong>Size awareness</strong>: Monitor and limit large values</li>
+</ol>
+<h3 id="Operational-Best-Practices"><a href="#Operational-Best-Practices" class="headerlink" title="Operational Best Practices"></a>Operational Best Practices</h3><ol>
+<li><strong>Regular monitoring</strong>: Set up alerts for key metrics</li>
+<li><strong>Capacity planning</strong>: Plan for growth and peak loads</li>
+<li><strong>Testing</strong>: Regularly test eviction scenarios</li>
+<li><strong>Documentation</strong>: Document policy choices and rationale</li>
+</ol>
+<h2 id="External-Resources"><a href="#External-Resources" class="headerlink" title="External Resources"></a>External Resources</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://redis.io/docs/manual/eviction/">Redis Memory Optimization Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/docs/manual/config/">Redis Configuration Best Practices</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/docs/manual/admin/">Redis Monitoring Tools</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/docs/manual/optimization/">Performance Tuning Guide</a></li>
+</ul>
+<p>This comprehensive guide provides the foundation for implementing effective memory eviction strategies in Redis production environments. The combination of theoretical understanding and practical implementation examples ensures robust cache management that scales with your application needs.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/17/Redis-Data-Persistence-Mechanism/" rel="prev" title="Redis Data Persistence Mechanism">
+                  <i class="fa fa-angle-left"></i> Redis Data Persistence Mechanism
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
