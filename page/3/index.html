@@ -2694,7 +2694,7 @@ ReorderingLogic -- &quot;Emits Globally Ordered Events&quot; --&gt; DownstreamSy
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-06-18 18:02:53" itemprop="dateModified" datetime="2025-06-18T18:02:53+08:00">2025-06-18</time>
+      <time title="Modified: 2025-06-18 19:46:45" itemprop="dateModified" datetime="2025-06-18T19:46:45+08:00">2025-06-18</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -2769,6 +2769,11 @@ F --&gt; I[buffer overflow risk]
 <li><strong>Buffer overflow prevention</strong>: Automatic memory management</li>
 <li><strong>Binary safe</strong>: Can store any byte sequence</li>
 <li><strong>Space pre-allocation</strong>: Reduces memory reallocations</li>
+</ul>
+<h3 id="String’s-Internal-encoding-representation"><a href="#String’s-Internal-encoding-representation" class="headerlink" title="String’s Internal encoding&#x2F;representation"></a>String’s Internal encoding&#x2F;representation</h3><ul>
+<li><strong>RAW</strong><br>Used for strings longer than 44 bytes (in Redis 6.0+, previously 39 bytes)<br>Stores the string data in a separate memory allocation<br>Uses a standard SDS (Simple Dynamic String) structure<br>More memory overhead due to separate allocation, but handles large strings efficiently</li>
+<li><strong>EMBSTR (Embedded String)</strong><br>Used for strings 44 bytes or shorter that cannot be represented as integers<br>Embeds the string data directly within the Redis object structure in a single memory allocation<br>More memory-efficient than RAW for short strings<br>Read-only - if you modify an EMBSTR, Redis converts it to RAW encoding</li>
+<li><strong>INT</strong><br>Used when the string value can be represented as a 64-bit signed integer<br>Examples: “123”, “-456”, “0”<br>Stores the integer directly in the Redis object structure<br>Most memory-efficient encoding for numeric strings<br>Redis can perform certain operations (like INCR) directly on the integer without conversion</li>
 </ul>
 <h3 id="String-Use-Cases-and-Examples"><a href="#String-Use-Cases-and-Examples" class="headerlink" title="String Use Cases and Examples"></a>String Use Cases and Examples</h3><h4 id="User-Session-Caching"><a href="#User-Session-Caching" class="headerlink" title="User Session Caching"></a>User Session Caching</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Store user session data</span></span><br><span class="line">SET user:session:12345 <span class="string">&#x27;&#123;&quot;user_id&quot;:12345,&quot;username&quot;:&quot;john&quot;,&quot;role&quot;:&quot;admin&quot;&#125;&#x27;</span></span><br><span class="line">EXPIRE user:session:12345 3600</span><br><span class="line"></span><br><span class="line"><span class="comment"># Retrieve session</span></span><br><span class="line">GET user:session:12345</span><br></pre></td></tr></table></figure>
 
