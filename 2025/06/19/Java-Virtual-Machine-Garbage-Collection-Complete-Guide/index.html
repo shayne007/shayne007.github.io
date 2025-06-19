@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Memory Management FundamentalsJava’s automatic memory management through garbage collection is one of its key features that differentiates it from languages like C and C++. The JVM automatically handl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java Virtual Machine Garbage Collection - Complete Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/19/Java-Virtual-Machine-Garbage-Collection-Complete-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Memory Management FundamentalsJava’s automatic memory management through garbage collection is one of its key features that differentiates it from languages like C and C++. The JVM automatically handl">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-19T12:00:34.000Z">
+<meta property="article:modified_time" content="2025-06-19T12:02:55.491Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="garbage collection">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/19/Java-Virtual-Machine-Garbage-Collection-Complete-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/19/Java-Virtual-Machine-Garbage-Collection-Complete-Guide/","path":"2025/06/19/Java-Virtual-Machine-Garbage-Collection-Complete-Guide/","title":"Java Virtual Machine Garbage Collection - Complete Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Java Virtual Machine Garbage Collection - Complete Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Memory-Management-Fundamentals"><span class="nav-number">1.</span> <span class="nav-text">Memory Management Fundamentals</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Layout-Overview"><span class="nav-number">1.1.</span> <span class="nav-text">Memory Layout Overview</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GC-Roots-and-Object-Reachability"><span class="nav-number">2.</span> <span class="nav-text">GC Roots and Object Reachability</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Understanding-GC-Roots"><span class="nav-number">2.1.</span> <span class="nav-text">Understanding GC Roots</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Object-Reachability-Algorithm"><span class="nav-number">2.2.</span> <span class="nav-text">Object Reachability Algorithm</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Object-Reference-Types"><span class="nav-number">3.</span> <span class="nav-text">Object Reference Types</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Strong-References"><span class="nav-number">3.1.</span> <span class="nav-text">Strong References</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Weak-References"><span class="nav-number">3.2.</span> <span class="nav-text">Weak References</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Soft-References"><span class="nav-number">3.3.</span> <span class="nav-text">Soft References</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Phantom-References"><span class="nav-number">3.4.</span> <span class="nav-text">Phantom References</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Generational-Garbage-Collection"><span class="nav-number">4.</span> <span class="nav-text">Generational Garbage Collection</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#The-Generational-Hypothesis"><span class="nav-number">4.1.</span> <span class="nav-text">The Generational Hypothesis</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Young-Generation-Structure"><span class="nav-number">4.2.</span> <span class="nav-text">Young Generation Structure</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Minor-GC-Process"><span class="nav-number">4.3.</span> <span class="nav-text">Minor GC Process</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Major-GC-and-Old-Generation"><span class="nav-number">4.4.</span> <span class="nav-text">Major GC and Old Generation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Garbage-Collection-Algorithms"><span class="nav-number">5.</span> <span class="nav-text">Garbage Collection Algorithms</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Mark-and-Sweep"><span class="nav-number">5.1.</span> <span class="nav-text">Mark and Sweep</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Copying-Algorithm"><span class="nav-number">5.2.</span> <span class="nav-text">Copying Algorithm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Mark-Compact-Algorithm"><span class="nav-number">5.3.</span> <span class="nav-text">Mark-Compact Algorithm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Incremental-and-Concurrent-Algorithms"><span class="nav-number">5.4.</span> <span class="nav-text">Incremental and Concurrent Algorithms</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Garbage-Collectors-Evolution"><span class="nav-number">6.</span> <span class="nav-text">Garbage Collectors Evolution</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Serial-GC-XX-UseSerialGC"><span class="nav-number">6.1.</span> <span class="nav-text">Serial GC (-XX:+UseSerialGC)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Parallel-GC-XX-UseParallelGC"><span class="nav-number">6.2.</span> <span class="nav-text">Parallel GC (-XX:+UseParallelGC)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CMS-GC-XX-UseConcMarkSweepGC-Deprecated-in-Java-14"><span class="nav-number">6.3.</span> <span class="nav-text">CMS GC (-XX:+UseConcMarkSweepGC) [Deprecated in Java 14]</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#G1-GC-XX-UseG1GC"><span class="nav-number">6.4.</span> <span class="nav-text">G1 GC (-XX:+UseG1GC)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ZGC-XX-UseZGC-Java-11"><span class="nav-number">6.5.</span> <span class="nav-text">ZGC (-XX:+UseZGC) [Java 11+]</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Shenandoah-GC-XX-UseShenandoahGC-Java-12"><span class="nav-number">6.6.</span> <span class="nav-text">Shenandoah GC (-XX:+UseShenandoahGC) [Java 12+]</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Collector-Comparison"><span class="nav-number">6.7.</span> <span class="nav-text">Collector Comparison</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GC-Tuning-Parameters-and-Best-Practices"><span class="nav-number">7.</span> <span class="nav-text">GC Tuning Parameters and Best Practices</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Heap-Sizing-Parameters"><span class="nav-number">7.1.</span> <span class="nav-text">Heap Sizing Parameters</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Young-Generation-Tuning"><span class="nav-number">7.2.</span> <span class="nav-text">Young Generation Tuning</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitoring-and-Logging"><span class="nav-number">7.3.</span> <span class="nav-text">Monitoring and Logging</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Tuning-Checklist"><span class="nav-number">7.4.</span> <span class="nav-text">Production Tuning Checklist</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Advanced-GC-Concepts"><span class="nav-number">8.</span> <span class="nav-text">Advanced GC Concepts</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Escape-Analysis-and-TLAB"><span class="nav-number">8.1.</span> <span class="nav-text">Escape Analysis and TLAB</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#String-Deduplication-G1"><span class="nav-number">8.2.</span> <span class="nav-text">String Deduplication (G1)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Compressed-OOPs"><span class="nav-number">8.3.</span> <span class="nav-text">Compressed OOPs</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Questions-and-Advanced-Scenarios"><span class="nav-number">9.</span> <span class="nav-text">Interview Questions and Advanced Scenarios</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Scenario-Based-Questions"><span class="nav-number">9.1.</span> <span class="nav-text">Scenario-Based Questions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Leak-Detection"><span class="nav-number">9.2.</span> <span class="nav-text">Memory Leak Detection</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Production-Best-Practices"><span class="nav-number">10.</span> <span class="nav-text">Production Best Practices</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitoring-and-Alerting"><span class="nav-number">10.1.</span> <span class="nav-text">Monitoring and Alerting</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Planning"><span class="nav-number">10.2.</span> <span class="nav-text">Capacity Planning</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Testing"><span class="nav-number">10.3.</span> <span class="nav-text">Performance Testing</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion-and-Future-Directions"><span class="nav-number">11.</span> <span class="nav-text">Conclusion and Future Directions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#External-References"><span class="nav-number">12.</span> <span class="nav-text">External References</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">47</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/19/Java-Virtual-Machine-Garbage-Collection-Complete-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Java Virtual Machine Garbage Collection - Complete Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java Virtual Machine Garbage Collection - Complete Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-19 20:00:34 / Modified: 20:02:55" itemprop="dateCreated datePublished" datetime="2025-06-19T20:00:34+08:00">2025-06-19</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Memory-Management-Fundamentals"><a href="#Memory-Management-Fundamentals" class="headerlink" title="Memory Management Fundamentals"></a>Memory Management Fundamentals</h2><p>Java’s automatic memory management through garbage collection is one of its key features that differentiates it from languages like C and C++. The JVM automatically handles memory allocation and deallocation, freeing developers from manual memory management while preventing memory leaks and dangling pointer issues.</p>
+<h3 id="Memory-Layout-Overview"><a href="#Memory-Layout-Overview" class="headerlink" title="Memory Layout Overview"></a>Memory Layout Overview</h3><p>The JVM heap is divided into several regions, each serving specific purposes in the garbage collection process:</p>
+<pre>
+<code class="mermaid">
+flowchart TB
+subgraph &quot;JVM Memory Structure&quot;
+    subgraph &quot;Heap Memory&quot;
+        subgraph &quot;Young Generation&quot;
+            Eden[&quot;Eden Space&quot;]
+            S0[&quot;Survivor 0&quot;]
+            S1[&quot;Survivor 1&quot;]
+        end
+        
+        subgraph &quot;Old Generation&quot;
+            OldGen[&quot;Old Generation (Tenured)&quot;]
+        end
+        
+        MetaSpace[&quot;Metaspace (Java 8+)&quot;]
+    end
+    
+    subgraph &quot;Non-Heap Memory&quot;
+        PC[&quot;Program Counter&quot;]
+        Stack[&quot;Java Stacks&quot;]
+        Native[&quot;Native Method Stacks&quot;]
+        Direct[&quot;Direct Memory&quot;]
+    end
+end
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>“Can you explain the difference between heap and non-heap memory in JVM?”</em></p>
+<p><strong>Answer</strong>: Heap memory stores object instances and arrays, managed by GC. Non-heap includes method area (storing class metadata), program counter registers, and stack memory (storing method calls and local variables). Only heap memory is subject to garbage collection.</p>
+<h2 id="GC-Roots-and-Object-Reachability"><a href="#GC-Roots-and-Object-Reachability" class="headerlink" title="GC Roots and Object Reachability"></a>GC Roots and Object Reachability</h2><h3 id="Understanding-GC-Roots"><a href="#Understanding-GC-Roots" class="headerlink" title="Understanding GC Roots"></a>Understanding GC Roots</h3><p>GC Roots are the starting points for garbage collection algorithms to determine object reachability. An object is considered “reachable” if there’s a path from any GC Root to that object.</p>
+<p><strong>Primary GC Roots include:</strong></p>
+<ul>
+<li><strong>Local Variables</strong>: Variables in currently executing methods</li>
+<li><strong>Static Variables</strong>: Class-level static references</li>
+<li><strong>JNI References</strong>: Objects referenced from native code</li>
+<li><strong>Monitor Objects</strong>: Objects used for synchronization</li>
+<li><strong>Thread Objects</strong>: Active thread instances</li>
+<li><strong>Class Objects</strong>: Loaded class instances in Metaspace</li>
+</ul>
+<pre>
+<code class="mermaid">
+flowchart TD
+subgraph &quot;GC Roots&quot;
+    LV[&quot;Local Variables&quot;]
+    SV[&quot;Static Variables&quot;]
+    JNI[&quot;JNI References&quot;]
+    TO[&quot;Thread Objects&quot;]
+end
+
+subgraph &quot;Heap Objects&quot;
+    A[&quot;Object A&quot;]
+    B[&quot;Object B&quot;]
+    C[&quot;Object C&quot;]
+    D[&quot;Object D (Unreachable)&quot;]
+end
+
+LV --&gt; A
+SV --&gt; B
+A --&gt; C
+B --&gt; C
+
+style D fill:#ff6b6b
+style A fill:#51cf66
+style B fill:#51cf66
+style C fill:#51cf66
+</code>
+</pre>
+
+<h3 id="Object-Reachability-Algorithm"><a href="#Object-Reachability-Algorithm" class="headerlink" title="Object Reachability Algorithm"></a>Object Reachability Algorithm</h3><p>The reachability analysis works through a mark-and-sweep approach:</p>
+<ol>
+<li><strong>Mark Phase</strong>: Starting from GC Roots, mark all reachable objects</li>
+<li><strong>Sweep Phase</strong>: Reclaim memory of unmarked (unreachable) objects</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example: Object Reachability</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ReachabilityExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Object staticRef;  <span class="comment">// GC Root</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">demonstrateReachability</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">localRef</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();     <span class="comment">// GC Root (local variable)</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">chainedObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Creating reference chain</span></span><br><span class="line">        localRef.someField = chainedObj;    <span class="comment">// chainedObj is reachable</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Breaking reference chain</span></span><br><span class="line">        localRef = <span class="literal">null</span>;                    <span class="comment">// chainedObj becomes unreachable</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>“How does JVM determine if an object is eligible for garbage collection?”</em></p>
+<p><strong>Answer</strong>: JVM uses reachability analysis starting from GC Roots. If an object cannot be reached through any path from GC Roots, it becomes eligible for GC. This is more reliable than reference counting as it handles circular references correctly.</p>
+<h2 id="Object-Reference-Types"><a href="#Object-Reference-Types" class="headerlink" title="Object Reference Types"></a>Object Reference Types</h2><p>Java provides different reference types that interact with garbage collection in distinct ways:</p>
+<h3 id="Strong-References"><a href="#Strong-References" class="headerlink" title="Strong References"></a>Strong References</h3><p>Default reference type that prevents garbage collection:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();  <span class="comment">// Strong reference</span></span><br><span class="line"><span class="comment">// obj will not be collected while this reference exists</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Weak-References"><a href="#Weak-References" class="headerlink" title="Weak References"></a>Weak References</h3><p>Allow garbage collection even when references exist:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.lang.ref.WeakReference;</span><br><span class="line"></span><br><span class="line">WeakReference&lt;Object&gt; weakRef = <span class="keyword">new</span> <span class="title class_">WeakReference</span>&lt;&gt;(<span class="keyword">new</span> <span class="title class_">Object</span>());</span><br><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> weakRef.get();  <span class="comment">// May return null if collected</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Common use case: Cache implementation</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WeakCache</span>&lt;K, V&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> Map&lt;K, WeakReference&lt;V&gt;&gt; cache = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> V <span class="title function_">get</span><span class="params">(K key)</span> &#123;</span><br><span class="line">        WeakReference&lt;V&gt; ref = cache.get(key);</span><br><span class="line">        <span class="keyword">return</span> (ref != <span class="literal">null</span>) ? ref.get() : <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Soft-References"><a href="#Soft-References" class="headerlink" title="Soft References"></a>Soft References</h3><p>More aggressive than weak references, collected only when memory is low:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.lang.ref.SoftReference;</span><br><span class="line"></span><br><span class="line">SoftReference&lt;LargeObject&gt; softRef = <span class="keyword">new</span> <span class="title class_">SoftReference</span>&lt;&gt;(<span class="keyword">new</span> <span class="title class_">LargeObject</span>());</span><br><span class="line"><span class="comment">// Collected only when JVM needs memory</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Phantom-References"><a href="#Phantom-References" class="headerlink" title="Phantom References"></a>Phantom References</h3><p>Used for cleanup operations, cannot retrieve the object:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.lang.ref.PhantomReference;</span><br><span class="line"><span class="keyword">import</span> java.lang.ref.ReferenceQueue;</span><br><span class="line"></span><br><span class="line">ReferenceQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">ReferenceQueue</span>&lt;&gt;();</span><br><span class="line">PhantomReference&lt;Object&gt; phantomRef = <span class="keyword">new</span> <span class="title class_">PhantomReference</span>&lt;&gt;(obj, queue);</span><br><span class="line"><span class="comment">// Used for resource cleanup notification</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>“When would you use WeakReference vs SoftReference?”</em></p>
+<p><strong>Answer</strong>: Use WeakReference for cache entries that can be recreated easily (like parsed data). Use SoftReference for memory-sensitive caches where you want to keep objects as long as possible but allow collection under memory pressure.</p>
+<h2 id="Generational-Garbage-Collection"><a href="#Generational-Garbage-Collection" class="headerlink" title="Generational Garbage Collection"></a>Generational Garbage Collection</h2><h3 id="The-Generational-Hypothesis"><a href="#The-Generational-Hypothesis" class="headerlink" title="The Generational Hypothesis"></a>The Generational Hypothesis</h3><p>Most objects die young - this fundamental observation drives generational GC design:</p>
+<pre>
+<code class="mermaid">
+flowchart LR
+subgraph &quot;Object Lifecycle&quot;
+    A[&quot;Object Creation&quot;] --&gt; B[&quot;Short-lived Objects (90%+)&quot;]
+    A --&gt; C[&quot;Long-lived Objects (&lt;10%)&quot;]
+    B --&gt; D[&quot;Die in Young Generation&quot;]
+    C --&gt; E[&quot;Promoted to Old Generation&quot;]
+end
+</code>
+</pre>
+
+<h3 id="Young-Generation-Structure"><a href="#Young-Generation-Structure" class="headerlink" title="Young Generation Structure"></a>Young Generation Structure</h3><p><strong>Eden Space</strong>: Where new objects are allocated<br><strong>Survivor Spaces (S0, S1)</strong>: Hold objects that survived at least one GC cycle</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example: Object allocation flow</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AllocationExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">demonstrateAllocation</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Objects allocated in Eden space</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();  <span class="comment">// Allocated in Eden</span></span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (i % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// Some objects may survive longer</span></span><br><span class="line">                longLivedList.add(obj);  <span class="comment">// May get promoted to Old Gen</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Minor-GC-Process"><a href="#Minor-GC-Process" class="headerlink" title="Minor GC Process"></a>Minor GC Process</h3><ol>
+<li><strong>Allocation</strong>: New objects go to Eden</li>
+<li><strong>Eden Full</strong>: Triggers Minor GC</li>
+<li><strong>Survival</strong>: Live objects move to Survivor space</li>
+<li><strong>Age Increment</strong>: Survivor objects get age incremented</li>
+<li><strong>Promotion</strong>: Old enough objects move to Old Generation</li>
+</ol>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant E as Eden Space
+participant S0 as Survivor 0
+participant S1 as Survivor 1
+participant O as Old Generation
+
+E-&gt;&gt;S0: First GC: Move live objects
+Note over S0: Age &#x3D; 1
+E-&gt;&gt;S0: Second GC: New objects to S0
+S0-&gt;&gt;S1: Move aged objects
+Note over S1: Age &#x3D; 2
+S1-&gt;&gt;O: Promotion (Age &gt;&#x3D; threshold)
+</code>
+</pre>
+
+<h3 id="Major-GC-and-Old-Generation"><a href="#Major-GC-and-Old-Generation" class="headerlink" title="Major GC and Old Generation"></a>Major GC and Old Generation</h3><p>Old Generation uses different algorithms optimized for long-lived objects:</p>
+<ul>
+<li><strong>Concurrent Collection</strong>: Minimize application pause times</li>
+<li><strong>Compaction</strong>: Reduce fragmentation</li>
+<li><strong>Different Triggers</strong>: Based on Old Gen occupancy or allocation failure</li>
+</ul>
+<p><strong>Interview Insight</strong>: <em>“Why is Minor GC faster than Major GC?”</em></p>
+<p><strong>Answer</strong>: Minor GC only processes Young Generation (smaller space, most objects are dead). Major GC processes entire heap or Old Generation (larger space, more live objects), often requiring more complex algorithms like concurrent marking or compaction.</p>
+<h2 id="Garbage-Collection-Algorithms"><a href="#Garbage-Collection-Algorithms" class="headerlink" title="Garbage Collection Algorithms"></a>Garbage Collection Algorithms</h2><h3 id="Mark-and-Sweep"><a href="#Mark-and-Sweep" class="headerlink" title="Mark and Sweep"></a>Mark and Sweep</h3><p>The fundamental GC algorithm:</p>
+<p><strong>Mark Phase</strong>: Identify live objects starting from GC Roots<br><strong>Sweep Phase</strong>: Reclaim memory from dead objects</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+subgraph &quot;Mark Phase&quot;
+    A[&quot;Start from GC Roots&quot;] --&gt; B[&quot;Mark Reachable Objects&quot;]
+    B --&gt; C[&quot;Traverse Reference Graph&quot;]
+end
+
+subgraph &quot;Sweep Phase&quot;
+    D[&quot;Scan Heap&quot;] --&gt; E[&quot;Identify Unmarked Objects&quot;]
+    E --&gt; F[&quot;Reclaim Memory&quot;]
+end
+
+C --&gt; D
+</code>
+</pre>
+
+<p><strong>Advantages</strong>: Simple, handles circular references<br><strong>Disadvantages</strong>: Stop-the-world pauses, fragmentation</p>
+<h3 id="Copying-Algorithm"><a href="#Copying-Algorithm" class="headerlink" title="Copying Algorithm"></a>Copying Algorithm</h3><p>Used primarily in Young Generation:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Conceptual representation</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CopyingGC</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Space fromSpace;</span><br><span class="line">    <span class="keyword">private</span> Space toSpace;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">collect</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Copy live objects from &#x27;from&#x27; to &#x27;to&#x27; space</span></span><br><span class="line">        <span class="keyword">for</span> (Object obj : fromSpace.getLiveObjects()) &#123;</span><br><span class="line">            toSpace.copy(obj);</span><br><span class="line">            updateReferences(obj);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Swap spaces</span></span><br><span class="line">        <span class="type">Space</span> <span class="variable">temp</span> <span class="operator">=</span> fromSpace;</span><br><span class="line">        fromSpace = toSpace;</span><br><span class="line">        toSpace = temp;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Clear old space</span></span><br><span class="line">        temp.clear();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Advantages</strong>: No fragmentation, fast allocation<br><strong>Disadvantages</strong>: Requires double memory, inefficient for high survival rates</p>
+<h3 id="Mark-Compact-Algorithm"><a href="#Mark-Compact-Algorithm" class="headerlink" title="Mark-Compact Algorithm"></a>Mark-Compact Algorithm</h3><p>Combines marking with compaction:</p>
+<ol>
+<li><strong>Mark</strong>: Identify live objects</li>
+<li><strong>Compact</strong>: Move live objects to eliminate fragmentation</li>
+</ol>
+<pre>
+<code class="mermaid">
+flowchart LR
+subgraph &quot;Before Compaction&quot;
+    A[&quot;Live&quot;] --&gt; B[&quot;Dead&quot;] --&gt; C[&quot;Live&quot;] --&gt; D[&quot;Dead&quot;] --&gt; E[&quot;Live&quot;]
+end
+</code>
+</pre>
+<pre>
+<code class="mermaid">
+flowchart LR
+subgraph &quot;After Compaction&quot;
+    F[&quot;Live&quot;] --&gt; G[&quot;Live&quot;] --&gt; H[&quot;Live&quot;] --&gt; I[&quot;Free Space&quot;]
+end
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>“Why doesn’t Young Generation use Mark-Compact algorithm?”</em></p>
+<p><strong>Answer</strong>: Young Generation has high mortality rate (90%+ objects die), making copying algorithm more efficient. Mark-Compact is better for Old Generation where most objects survive and fragmentation is a concern.</p>
+<h3 id="Incremental-and-Concurrent-Algorithms"><a href="#Incremental-and-Concurrent-Algorithms" class="headerlink" title="Incremental and Concurrent Algorithms"></a>Incremental and Concurrent Algorithms</h3><p><strong>Incremental GC</strong>: Breaks GC work into small increments<br><strong>Concurrent GC</strong>: Runs GC concurrently with application threads</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Tri-color marking for concurrent GC</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">ObjectColor</span> &#123;</span><br><span class="line">    WHITE,  <span class="comment">// Not visited</span></span><br><span class="line">    GRAY,   <span class="comment">// Visited but children not processed</span></span><br><span class="line">    BLACK   <span class="comment">// Visited and children processed</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConcurrentMarking</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">concurrentMark</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Mark roots as gray</span></span><br><span class="line">        <span class="keyword">for</span> (Object root : gcRoots) &#123;</span><br><span class="line">            root.color = GRAY;</span><br><span class="line">            grayQueue.add(root);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Process gray objects concurrently</span></span><br><span class="line">        <span class="keyword">while</span> (!grayQueue.isEmpty() &amp;&amp; !shouldYield()) &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> grayQueue.poll();</span><br><span class="line">            <span class="keyword">for</span> (Object child : obj.getReferences()) &#123;</span><br><span class="line">                <span class="keyword">if</span> (child.color == WHITE) &#123;</span><br><span class="line">                    child.color = GRAY;</span><br><span class="line">                    grayQueue.add(child);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            obj.color = BLACK;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Garbage-Collectors-Evolution"><a href="#Garbage-Collectors-Evolution" class="headerlink" title="Garbage Collectors Evolution"></a>Garbage Collectors Evolution</h2><h3 id="Serial-GC-XX-UseSerialGC"><a href="#Serial-GC-XX-UseSerialGC" class="headerlink" title="Serial GC (-XX:+UseSerialGC)"></a>Serial GC (-XX:+UseSerialGC)</h3><p><strong>Characteristics</strong>: Single-threaded, stop-the-world<br><strong>Best for</strong>: Small applications, client-side applications<br><strong>JVM Versions</strong>: All versions</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># JVM flags for Serial GC</span></span><br><span class="line">java -XX:+UseSerialGC -Xmx512m MyApplication</span><br></pre></td></tr></table></figure>
+
+<p><strong>Use Case Example</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Small desktop application</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CalculatorApp</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// Serial GC sufficient for small heap sizes</span></span><br><span class="line">        SwingUtilities.invokeLater(() -&gt; <span class="keyword">new</span> <span class="title class_">Calculator</span>().setVisible(<span class="literal">true</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Parallel-GC-XX-UseParallelGC"><a href="#Parallel-GC-XX-UseParallelGC" class="headerlink" title="Parallel GC (-XX:+UseParallelGC)"></a>Parallel GC (-XX:+UseParallelGC)</h3><p><strong>Characteristics</strong>: Multi-threaded, throughput-focused<br><strong>Best for</strong>: Batch processing, throughput-sensitive applications<br><strong>Default</strong>: Java 8 (server-class machines)</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Parallel GC configuration</span></span><br><span class="line">java -XX:+UseParallelGC -XX:ParallelGCThreads=4 -Xmx2g MyBatchJob</span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Example</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Data processing application</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DataProcessor</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processBatch</span><span class="params">(List&lt;Record&gt; records)</span> &#123;</span><br><span class="line">        <span class="comment">// High throughput processing</span></span><br><span class="line">        records.parallelStream()</span><br><span class="line">               .map(<span class="built_in">this</span>::transform)</span><br><span class="line">               .collect(Collectors.toList());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="CMS-GC-XX-UseConcMarkSweepGC-Deprecated-in-Java-14"><a href="#CMS-GC-XX-UseConcMarkSweepGC-Deprecated-in-Java-14" class="headerlink" title="CMS GC (-XX:+UseConcMarkSweepGC) [Deprecated in Java 14]"></a>CMS GC (-XX:+UseConcMarkSweepGC) [Deprecated in Java 14]</h3><p><strong>Phases</strong>:</p>
+<ol>
+<li>Initial Mark (STW)</li>
+<li>Concurrent Mark</li>
+<li>Concurrent Preclean</li>
+<li>Remark (STW)</li>
+<li>Concurrent Sweep</li>
+</ol>
+<p><strong>Characteristics</strong>: Concurrent, low-latency focused<br><strong>Best for</strong>: Web applications requiring low pause times</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># CMS configuration (legacy)</span></span><br><span class="line">java -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -Xmx4g WebApp</span><br></pre></td></tr></table></figure>
+
+<h3 id="G1-GC-XX-UseG1GC"><a href="#G1-GC-XX-UseG1GC" class="headerlink" title="G1 GC (-XX:+UseG1GC)"></a>G1 GC (-XX:+UseG1GC)</h3><p><strong>Characteristics</strong>: Low-latency, region-based, predictable pause times<br><strong>Best for</strong>: Large heaps (&gt;4GB), latency-sensitive applications<br><strong>Default</strong>: Java 9+</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># G1 GC tuning</span></span><br><span class="line">java -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:G1HeapRegionSize=16m -Xmx8g</span><br></pre></td></tr></table></figure>
+
+<p><strong>Region-based Architecture</strong>:</p>
+<pre>
+<code class="mermaid">
+flowchart TB
+subgraph &quot;G1 Heap Regions&quot;
+    subgraph &quot;Young Regions&quot;
+        E1[&quot;Eden 1&quot;]
+        E2[&quot;Eden 2&quot;]
+        S1[&quot;Survivor 1&quot;]
+    end
+    
+    subgraph &quot;Old Regions&quot;
+        O1[&quot;Old 1&quot;]
+        O2[&quot;Old 2&quot;]
+        O3[&quot;Old 3&quot;]
+    end
+    
+    subgraph &quot;Special Regions&quot;
+        H[&quot;Humongous&quot;]
+        F[&quot;Free&quot;]
+    end
+end
+</code>
+</pre>
+
+<p><strong>Interview Insight</strong>: <em>“When would you choose G1 over Parallel GC?”</em></p>
+<p><strong>Answer</strong>: Choose G1 for applications requiring predictable low pause times (&lt;200ms) with large heaps (&gt;4GB). Use Parallel GC for batch processing where throughput is more important than latency.</p>
+<h3 id="ZGC-XX-UseZGC-Java-11"><a href="#ZGC-XX-UseZGC-Java-11" class="headerlink" title="ZGC (-XX:+UseZGC) [Java 11+]"></a>ZGC (-XX:+UseZGC) [Java 11+]</h3><p><strong>Characteristics</strong>: Ultra-low latency (&lt;10ms), colored pointers<br><strong>Best for</strong>: Applications requiring consistent low latency</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ZGC configuration</span></span><br><span class="line">java -XX:+UseZGC -XX:+UseTransparentHugePages -Xmx32g LatencyCriticalApp</span><br></pre></td></tr></table></figure>
+
+<h3 id="Shenandoah-GC-XX-UseShenandoahGC-Java-12"><a href="#Shenandoah-GC-XX-UseShenandoahGC-Java-12" class="headerlink" title="Shenandoah GC (-XX:+UseShenandoahGC) [Java 12+]"></a>Shenandoah GC (-XX:+UseShenandoahGC) [Java 12+]</h3><p><strong>Characteristics</strong>: Low pause times, concurrent collection<br><strong>Best for</strong>: Applications with large heaps requiring consistent performance</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Shenandoah configuration</span></span><br><span class="line">-XX:+UseShenandoahGC</span><br><span class="line">-XX:ShenandoahGCHeuristics=adaptive</span><br></pre></td></tr></table></figure>
+<h3 id="Collector-Comparison"><a href="#Collector-Comparison" class="headerlink" title="Collector Comparison"></a>Collector Comparison</h3><p><strong>Collector Comparison Table</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Collector</th>
+<th>Java Version</th>
+<th>Best Heap Size</th>
+<th>Pause Time</th>
+<th>Throughput</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Serial</td>
+<td>All</td>
+<td>&lt; 100MB</td>
+<td>High</td>
+<td>Low</td>
+<td>Single-core, client apps</td>
+</tr>
+<tr>
+<td>Parallel</td>
+<td>All (default 8)</td>
+<td>&lt; 8GB</td>
+<td>Medium-High</td>
+<td>High</td>
+<td>Multi-core, batch processing</td>
+</tr>
+<tr>
+<td>G1</td>
+<td>7+ (default 9+)</td>
+<td>&gt; 4GB</td>
+<td>Low-Medium</td>
+<td>Medium-High</td>
+<td>Server applications</td>
+</tr>
+<tr>
+<td>ZGC</td>
+<td>11+</td>
+<td>&gt; 8GB</td>
+<td>Ultra-low</td>
+<td>Medium</td>
+<td>Latency-critical applications</td>
+</tr>
+<tr>
+<td>Shenandoah</td>
+<td>12+</td>
+<td>&gt; 8GB</td>
+<td>Ultra-low</td>
+<td>Medium</td>
+<td>Real-time applications</td>
+</tr>
+</tbody></table>
+<h2 id="GC-Tuning-Parameters-and-Best-Practices"><a href="#GC-Tuning-Parameters-and-Best-Practices" class="headerlink" title="GC Tuning Parameters and Best Practices"></a>GC Tuning Parameters and Best Practices</h2><h3 id="Heap-Sizing-Parameters"><a href="#Heap-Sizing-Parameters" class="headerlink" title="Heap Sizing Parameters"></a>Heap Sizing Parameters</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Basic heap configuration</span></span><br><span class="line">-Xms2g          <span class="comment"># Initial heap size</span></span><br><span class="line">-Xmx8g          <span class="comment"># Maximum heap size</span></span><br><span class="line">-XX:NewRatio=3  <span class="comment"># Old/Young generation ratio</span></span><br><span class="line">-XX:SurvivorRatio=8  <span class="comment"># Eden/Survivor ratio</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Young-Generation-Tuning"><a href="#Young-Generation-Tuning" class="headerlink" title="Young Generation Tuning"></a>Young Generation Tuning</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Young generation specific tuning</span></span><br><span class="line">-Xmn2g                    <span class="comment"># Set young generation size</span></span><br><span class="line">-XX:MaxTenuringThreshold=7 <span class="comment"># Promotion threshold</span></span><br><span class="line">-XX:TargetSurvivorRatio=90 <span class="comment"># Survivor space target utilization</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Real-world Example</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Web application tuning scenario</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebAppTuning</span> &#123;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * Application characteristics:</span></span><br><span class="line"><span class="comment">     * - High request rate</span></span><br><span class="line"><span class="comment">     * - Short-lived request objects</span></span><br><span class="line"><span class="comment">     * - Some cached data</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * Tuning strategy:</span></span><br><span class="line"><span class="comment">     * - Larger young generation for short-lived objects</span></span><br><span class="line"><span class="comment">     * - G1GC for predictable pause times</span></span><br><span class="line"><span class="comment">     * - Monitoring allocation rate</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// JVM flags:</span></span><br><span class="line"><span class="comment">// -XX:+UseG1GC -Xmx4g -XX:MaxGCPauseMillis=100 </span></span><br><span class="line"><span class="comment">// -XX:G1HeapRegionSize=8m -XX:NewRatio=2</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Monitoring-and-Logging"><a href="#Monitoring-and-Logging" class="headerlink" title="Monitoring and Logging"></a>Monitoring and Logging</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GC logging (Java 8)</span></span><br><span class="line">-Xloggc:gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps</span><br><span class="line"></span><br><span class="line"><span class="comment"># GC logging (Java 9+)</span></span><br><span class="line">-Xlog:gc*:gc.log:<span class="keyword">time</span>,tags</span><br><span class="line"></span><br><span class="line"><span class="comment"># Additional monitoring</span></span><br><span class="line">-XX:+PrintGCApplicationStoppedTime</span><br><span class="line">-XX:+PrintStringDeduplicationStatistics (G1)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Production-Tuning-Checklist"><a href="#Production-Tuning-Checklist" class="headerlink" title="Production Tuning Checklist"></a>Production Tuning Checklist</h3><p><strong>Memory Allocation</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Monitor allocation patterns</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AllocationMonitoring</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">trackAllocationRate</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">MemoryMXBean</span> <span class="variable">memoryBean</span> <span class="operator">=</span> ManagementFactory.getMemoryMXBean();</span><br><span class="line">        </span><br><span class="line">        <span class="type">long</span> <span class="variable">beforeGC</span> <span class="operator">=</span> memoryBean.getHeapMemoryUsage().getUsed();</span><br><span class="line">        <span class="comment">// ... application work</span></span><br><span class="line">        <span class="type">long</span> <span class="variable">afterGC</span> <span class="operator">=</span> memoryBean.getHeapMemoryUsage().getUsed();</span><br><span class="line">        </span><br><span class="line">        <span class="type">long</span> <span class="variable">allocatedBytes</span> <span class="operator">=</span> calculateAllocationRate(beforeGC, afterGC);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>GC Overhead Analysis</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Acceptable GC overhead typically &lt; 5%</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GCOverheadCalculator</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">calculateGCOverhead</span><span class="params">(List&lt;GCEvent&gt; events, <span class="type">long</span> totalTime)</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">gcTime</span> <span class="operator">=</span> events.stream()</span><br><span class="line">                           .mapToLong(GCEvent::getDuration)</span><br><span class="line">                           .sum();</span><br><span class="line">        <span class="keyword">return</span> (<span class="type">double</span>) gcTime / totalTime * <span class="number">100</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Advanced-GC-Concepts"><a href="#Advanced-GC-Concepts" class="headerlink" title="Advanced GC Concepts"></a>Advanced GC Concepts</h2><h3 id="Escape-Analysis-and-TLAB"><a href="#Escape-Analysis-and-TLAB" class="headerlink" title="Escape Analysis and TLAB"></a>Escape Analysis and TLAB</h3><p><strong>Thread Local Allocation Buffers (TLAB)</strong> optimize object allocation:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TLABExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">demonstrateTLAB</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Objects allocated in thread-local buffer</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();  <span class="comment">// Fast TLAB allocation</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Escape analysis may eliminate allocation entirely</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">noEscapeAllocation</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();  <span class="comment">// May be stack-allocated</span></span><br><span class="line">        sb.append(<span class="string">&quot;Hello&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> sb.toString();  <span class="comment">// Object doesn&#x27;t escape method</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="String-Deduplication-G1"><a href="#String-Deduplication-G1" class="headerlink" title="String Deduplication (G1)"></a>String Deduplication (G1)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Enable string deduplication</span></span><br><span class="line">-XX:+UseG1GC -XX:+UseStringDeduplication</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// String deduplication example</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StringDeduplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">demonstrateDeduplication</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;String&gt; strings = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// These strings have same content but different instances</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">            strings.add(<span class="keyword">new</span> <span class="title class_">String</span>(<span class="string">&quot;duplicate content&quot;</span>));  <span class="comment">// Candidates for deduplication</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Compressed-OOPs"><a href="#Compressed-OOPs" class="headerlink" title="Compressed OOPs"></a>Compressed OOPs</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Enable compressed ordinary object pointers (default on 64-bit with heap &lt; 32GB)</span></span><br><span class="line">-XX:+UseCompressedOops</span><br><span class="line">-XX:+UseCompressedClassPointers</span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Questions-and-Advanced-Scenarios"><a href="#Interview-Questions-and-Advanced-Scenarios" class="headerlink" title="Interview Questions and Advanced Scenarios"></a>Interview Questions and Advanced Scenarios</h2><h3 id="Scenario-Based-Questions"><a href="#Scenario-Based-Questions" class="headerlink" title="Scenario-Based Questions"></a>Scenario-Based Questions</h3><p><strong>Question</strong>: <em>“Your application experiences long GC pauses during peak traffic. How would you diagnose and fix this?”</em></p>
+<p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Analysis</strong>: Enable GC logging, analyze pause times and frequency</li>
+<li><strong>Identification</strong>: Check if Major GC is causing long pauses</li>
+<li><strong>Solutions</strong>:<ul>
+<li>Switch to G1GC for predictable pause times</li>
+<li>Increase heap size to reduce GC frequency</li>
+<li>Tune young generation size</li>
+<li>Consider object pooling for frequently allocated objects</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example diagnostic approach</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GCDiagnostics</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">diagnoseGCIssues</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Monitor GC metrics</span></span><br><span class="line">        List&lt;GarbageCollectorMXBean&gt; gcBeans = </span><br><span class="line">            ManagementFactory.getGarbageCollectorMXBeans();</span><br><span class="line">            </span><br><span class="line">        <span class="keyword">for</span> (GarbageCollectorMXBean gcBean : gcBeans) &#123;</span><br><span class="line">            System.out.printf(<span class="string">&quot;GC Name: %s, Collections: %d, Time: %d ms%n&quot;</span>,</span><br><span class="line">                gcBean.getName(),</span><br><span class="line">                gcBean.getCollectionCount(),</span><br><span class="line">                gcBean.getCollectionTime());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Question</strong>: <em>“Explain the trade-offs between throughput and latency in GC selection.”</em></p>
+<p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Throughput-focused</strong>: Parallel GC maximizes application processing time</li>
+<li><strong>Latency-focused</strong>: G1&#x2F;ZGC minimizes pause times but may reduce overall throughput</li>
+<li><strong>Choice depends on</strong>: Application requirements, SLA constraints, heap size</li>
+</ul>
+<h3 id="Memory-Leak-Detection"><a href="#Memory-Leak-Detection" class="headerlink" title="Memory Leak Detection"></a>Memory Leak Detection</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Common memory leak patterns</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MemoryLeakExamples</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Set&lt;Object&gt; cache = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();  <span class="comment">// Static collection</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">potentialLeak</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Listeners not removed</span></span><br><span class="line">        someComponent.addListener(event -&gt; &#123;&#125;);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// ThreadLocal not cleaned</span></span><br><span class="line">        ThreadLocal&lt;ExpensiveObject&gt; threadLocal = <span class="keyword">new</span> <span class="title class_">ThreadLocal</span>&lt;&gt;();</span><br><span class="line">        threadLocal.set(<span class="keyword">new</span> <span class="title class_">ExpensiveObject</span>());</span><br><span class="line">        <span class="comment">// threadLocal.remove(); // Missing cleanup</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Proper cleanup</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">properCleanup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// Use try-with-resources</span></span><br><span class="line">            <span class="keyword">try</span> (<span class="type">AutoCloseable</span> <span class="variable">resource</span> <span class="operator">=</span> createResource()) &#123;</span><br><span class="line">                <span class="comment">// Work with resource</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="comment">// Handle exception</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Production-Best-Practices"><a href="#Production-Best-Practices" class="headerlink" title="Production Best Practices"></a>Production Best Practices</h2><h3 id="Monitoring-and-Alerting"><a href="#Monitoring-and-Alerting" class="headerlink" title="Monitoring and Alerting"></a>Monitoring and Alerting</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JMX-based GC monitoring</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GCMonitor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;GarbageCollectorMXBean&gt; gcBeans;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">GCMonitor</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.gcBeans = ManagementFactory.getGarbageCollectorMXBeans();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setupAlerts</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Alert if GC overhead &gt; 5%</span></span><br><span class="line">        <span class="comment">// Alert if pause times &gt; SLA limits</span></span><br><span class="line">        <span class="comment">// Monitor allocation rate trends</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> GCMetrics <span class="title function_">collectMetrics</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">GCMetrics</span>(</span><br><span class="line">            getTotalGCTime(),</span><br><span class="line">            getGCFrequency(),</span><br><span class="line">            getLongestPause(),</span><br><span class="line">            getAllocationRate()</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Capacity-Planning"><a href="#Capacity-Planning" class="headerlink" title="Capacity Planning"></a>Capacity Planning</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Capacity planning calculations</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CapacityPlanning</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> HeapSizeRecommendation <span class="title function_">calculateHeapSize</span><span class="params">(</span></span><br><span class="line"><span class="params">            <span class="type">long</span> allocationRate, </span></span><br><span class="line"><span class="params">            <span class="type">int</span> targetGCFrequency,</span></span><br><span class="line"><span class="params">            <span class="type">double</span> survivorRatio)</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Rule of thumb: Heap size should accommodate </span></span><br><span class="line">        <span class="comment">// allocation rate * GC interval * safety factor</span></span><br><span class="line">        <span class="type">long</span> <span class="variable">recommendedHeap</span> <span class="operator">=</span> allocationRate * targetGCFrequency * <span class="number">3</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">HeapSizeRecommendation</span>(</span><br><span class="line">            recommendedHeap,</span><br><span class="line">            calculateYoungGenSize(recommendedHeap, survivorRatio),</span><br><span class="line">            calculateOldGenSize(recommendedHeap, survivorRatio)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Performance-Testing"><a href="#Performance-Testing" class="headerlink" title="Performance Testing"></a>Performance Testing</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// GC performance testing framework</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GCPerformanceTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">runGCStressTest</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Measure allocation patterns</span></span><br><span class="line">        <span class="type">AllocationProfiler</span> <span class="variable">profiler</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AllocationProfiler</span>();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Simulate production load</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">iteration</span> <span class="operator">=</span> <span class="number">0</span>; iteration &lt; <span class="number">1000</span>; iteration++) &#123;</span><br><span class="line">            simulateWorkload();</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (iteration % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                profiler.recordMetrics();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Analyze results</span></span><br><span class="line">        profiler.generateReport();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">simulateWorkload</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Create realistic object allocation patterns</span></span><br><span class="line">        List&lt;Object&gt; shortLived = createShortLivedObjects();</span><br><span class="line">        <span class="type">Object</span> <span class="variable">longLived</span> <span class="operator">=</span> createLongLivedObject();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Process data</span></span><br><span class="line">        processData(shortLived, longLived);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Conclusion-and-Future-Directions"><a href="#Conclusion-and-Future-Directions" class="headerlink" title="Conclusion and Future Directions"></a>Conclusion and Future Directions</h2><p>Java’s garbage collection continues to evolve with new collectors like ZGC and Shenandoah pushing the boundaries of low-latency collection. Understanding GC fundamentals, choosing appropriate collectors, and proper tuning remain critical for production Java applications.</p>
+<p><strong>Key Takeaways</strong>:</p>
+<ul>
+<li>Choose GC based on application requirements (throughput vs latency)</li>
+<li>Monitor and measure before optimizing</li>
+<li>Understand object lifecycle and allocation patterns</li>
+<li>Use appropriate reference types for memory-sensitive applications</li>
+<li>Regular capacity planning and performance testing</li>
+</ul>
+<p><strong>Future Trends</strong>:</p>
+<ul>
+<li>Ultra-low latency collectors (sub-millisecond pauses)</li>
+<li>Better integration with container environments</li>
+<li>Machine learning-assisted GC tuning</li>
+<li>Region-based collectors becoming mainstream</li>
+</ul>
+<p>The evolution of GC technology continues to make Java more suitable for a wider range of applications, from high-frequency trading systems requiring microsecond latencies to large-scale data processing systems prioritizing throughput.</p>
+<h2 id="External-References"><a href="#External-References" class="headerlink" title="External References"></a>External References</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/en/java/javase/17/gctuning/">Oracle JVM Tuning Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/en/java/javase/17/gctuning/garbage-first-g1-garbage-collector1.html">G1 Garbage Collector Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.openjdk.org/display/zgc/Main">ZGC Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.openjdk.org/display/shenandoah/Main">Shenandoah GC</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/openjdk/jdk">GC Algorithms Implementations</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jls/se17/html/jls-17.html#jls-17.4">Java Memory Model Specification</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/garbage-collection/" rel="tag"># garbage collection</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/19/Redis-Cache-Expiration-Deletion-Policies-Complete-Guide/" rel="prev" title="Redis Cache Expiration Deletion Policies - Complete Guide">
+                  <i class="fa fa-angle-left"></i> Redis Cache Expiration Deletion Policies - Complete Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

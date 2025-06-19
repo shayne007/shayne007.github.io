@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">47</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -151,7 +151,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-count">20</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -168,6 +168,277 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/14/Java-OOM-Troubleshooting-Guide-Production-Best-Practices/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/14/Java-OOM-Troubleshooting-Guide-Production-Best-Practices/" class="post-title-link" itemprop="url">Java OOM Troubleshooting Guide - Production Best Practices</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-14 17:50:06 / Modified: 17:52:14" itemprop="dateCreated datePublished" datetime="2025-06-14T17:50:06+08:00">2025-06-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Types-of-OutOfMemoryError-in-Production-Environments"><a href="#Types-of-OutOfMemoryError-in-Production-Environments" class="headerlink" title="Types of OutOfMemoryError in Production Environments"></a>Types of OutOfMemoryError in Production Environments</h2><h3 id="Java-Heap-Space-OOM"><a href="#Java-Heap-Space-OOM" class="headerlink" title="Java Heap Space OOM"></a>Java Heap Space OOM</h3><p>The most common OOM error occurs when the JVM cannot allocate objects in the heap due to insufficient memory.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example code that can cause heap OOM</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HeapOOMExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> List&lt;<span class="type">byte</span>[]&gt; memoryEater = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Continuously allocate 1MB arrays</span></span><br><span class="line">                memoryEater.add(<span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span> * <span class="number">1024</span>]);</span><br><span class="line">                System.out.println(<span class="string">&quot;Allocated arrays: &quot;</span> + memoryEater.size());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (OutOfMemoryError e) &#123;</span><br><span class="line">            System.err.println(<span class="string">&quot;java.lang.OutOfMemoryError: Java heap space&quot;</span>);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Case Study</strong>: An e-commerce application experienced heap OOM during Black Friday sales due to caching user sessions without proper expiration policies.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Problematic session cache implementation</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SessionManager</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;String, UserSession&gt; sessions = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createSession</span><span class="params">(String sessionId, UserSession session)</span> &#123;</span><br><span class="line">        <span class="comment">// Problem: No expiration mechanism</span></span><br><span class="line">        sessions.put(sessionId, session);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Fixed version with expiration</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;String, SessionWithTimestamp&gt; sessionsFixed = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">createSessionFixed</span><span class="params">(String sessionId, UserSession session)</span> &#123;</span><br><span class="line">        sessionsFixed.put(sessionId, <span class="keyword">new</span> <span class="title class_">SessionWithTimestamp</span>(session, System.currentTimeMillis()));</span><br><span class="line">        cleanupExpiredSessions();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="PermGen-Metaspace-OOM"><a href="#PermGen-Metaspace-OOM" class="headerlink" title="PermGen&#x2F;Metaspace OOM"></a>PermGen&#x2F;Metaspace OOM</h3><p>Occurs when the permanent generation (Java 7 and earlier) or Metaspace (Java 8+) runs out of memory.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Dynamic class generation causing Metaspace OOM</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MetaspaceOOMExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">ClassPool</span> <span class="variable">pool</span> <span class="operator">=</span> ClassPool.getDefault();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100000</span>; i++) &#123;</span><br><span class="line">            <span class="type">CtClass</span> <span class="variable">cc</span> <span class="operator">=</span> pool.makeClass(<span class="string">&quot;GeneratedClass&quot;</span> + i);</span><br><span class="line">            cc.addMethod(CtNewMethod.make(<span class="string">&quot;public void test() &#123;&#125;&quot;</span>, cc));</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Loading classes without proper cleanup</span></span><br><span class="line">            Class&lt;?&gt; clazz = cc.toClass();</span><br><span class="line">            System.out.println(<span class="string">&quot;Created class: &quot;</span> + clazz.getName());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>“How would you differentiate between heap OOM and Metaspace OOM in production logs?”</em></p>
+<ul>
+<li>Heap OOM: <code>java.lang.OutOfMemoryError: Java heap space</code></li>
+<li>Metaspace OOM: <code>java.lang.OutOfMemoryError: Metaspace</code></li>
+</ul>
+<h3 id="Direct-Memory-OOM"><a href="#Direct-Memory-OOM" class="headerlink" title="Direct Memory OOM"></a>Direct Memory OOM</h3><p>Occurs when off-heap memory allocated by NIO or unsafe operations exceeds limits.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Direct memory allocation example</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DirectMemoryOOM</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        List&lt;ByteBuffer&gt; buffers = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Allocate 1MB direct memory buffers</span></span><br><span class="line">                <span class="type">ByteBuffer</span> <span class="variable">buffer</span> <span class="operator">=</span> ByteBuffer.allocateDirect(<span class="number">1024</span> * <span class="number">1024</span>);</span><br><span class="line">                buffers.add(buffer);</span><br><span class="line">                System.out.println(<span class="string">&quot;Allocated direct buffers: &quot;</span> + buffers.size());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (OutOfMemoryError e) &#123;</span><br><span class="line">            System.err.println(<span class="string">&quot;java.lang.OutOfMemoryError: Direct buffer memory&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Production Case Study: Big Data Processing</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Scenario: Apache Kafka consumer processing large messages</span><br><span class="line">Symptoms: Intermittent failures during peak message processing</span><br><span class="line">Root Cause: NIO operations consuming direct memory without proper cleanup</span><br><span class="line">Fix: Increased -XX:MaxDirectMemorySize and improved buffer management</span><br></pre></td></tr></table></figure>
+
+<h2 id="Generating-Heap-Dumps-When-OOM-Occurs"><a href="#Generating-Heap-Dumps-When-OOM-Occurs" class="headerlink" title="Generating Heap Dumps When OOM Occurs"></a>Generating Heap Dumps When OOM Occurs</h2><h3 id="Automatic-Heap-Dump-Generation"><a href="#Automatic-Heap-Dump-Generation" class="headerlink" title="Automatic Heap Dump Generation"></a>Automatic Heap Dump Generation</h3><p>Configure JVM parameters to automatically generate heap dumps on OOM:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># JVM flags for automatic heap dump generation</span></span><br><span class="line">java -XX:+HeapDumpOnOutOfMemoryError \</span><br><span class="line">     -XX:HeapDumpPath=/opt/app/heapdumps/ \</span><br><span class="line">     -XX:+PrintGCDetails \</span><br><span class="line">     -XX:+PrintGCTimeStamps \</span><br><span class="line">     -Xloggc:/opt/app/logs/gc.log \</span><br><span class="line">     -jar your-application.jar</span><br></pre></td></tr></table></figure>
+
+<h3 id="Manual-Heap-Dump-Generation"><a href="#Manual-Heap-Dump-Generation" class="headerlink" title="Manual Heap Dump Generation"></a>Manual Heap Dump Generation</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Using jmap (requires application PID)</span></span><br><span class="line">jmap -dump:format=b,file=heap-dump.hprof &lt;PID&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Using jcmd (Java 8+)</span></span><br><span class="line">jcmd &lt;PID&gt; GC.run_finalization</span><br><span class="line">jcmd &lt;PID&gt; VM.gc</span><br><span class="line">jcmd &lt;PID&gt; GC.heap_dump /path/to/heap-dump.hprof</span><br><span class="line"></span><br><span class="line"><span class="comment"># Using kill signal (if configured)</span></span><br><span class="line"><span class="built_in">kill</span> -3 &lt;PID&gt;  <span class="comment"># Generates thread dump, not heap dump</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Production-Ready-Heap-Dump-Script"><a href="#Production-Ready-Heap-Dump-Script" class="headerlink" title="Production-Ready Heap Dump Script"></a>Production-Ready Heap Dump Script</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># heap-dump-collector.sh</span></span><br><span class="line"></span><br><span class="line">APP_PID=$(pgrep -f <span class="string">&quot;your-application.jar&quot;</span>)</span><br><span class="line">DUMP_DIR=<span class="string">&quot;/opt/app/heapdumps&quot;</span></span><br><span class="line">TIMESTAMP=$(<span class="built_in">date</span> +%Y%m%d_%H%M%S)</span><br><span class="line">DUMP_FILE=<span class="string">&quot;<span class="variable">$&#123;DUMP_DIR&#125;</span>/heap-dump-<span class="variable">$&#123;TIMESTAMP&#125;</span>.hprof&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ -z <span class="string">&quot;<span class="variable">$APP_PID</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Application not running&quot;</span></span><br><span class="line">    <span class="built_in">exit</span> 1</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Generating heap dump for PID: <span class="variable">$APP_PID</span>&quot;</span></span><br><span class="line">jmap -dump:format=b,file=<span class="string">&quot;<span class="variable">$DUMP_FILE</span>&quot;</span> <span class="string">&quot;<span class="variable">$APP_PID</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Heap dump generated: <span class="variable">$DUMP_FILE</span>&quot;</span></span><br><span class="line">    <span class="comment"># Compress the dump file to save space</span></span><br><span class="line">    gzip <span class="string">&quot;<span class="variable">$DUMP_FILE</span>&quot;</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Heap dump compressed: <span class="variable">$&#123;DUMP_FILE&#125;</span>.gz&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Failed to generate heap dump&quot;</span></span><br><span class="line">    <span class="built_in">exit</span> 1</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Analyzing-Problems-with-MAT-and-VisualVM"><a href="#Analyzing-Problems-with-MAT-and-VisualVM" class="headerlink" title="Analyzing Problems with MAT and VisualVM"></a>Analyzing Problems with MAT and VisualVM</h2><h3 id="Memory-Analyzer-Tool-MAT-Analysis"><a href="#Memory-Analyzer-Tool-MAT-Analysis" class="headerlink" title="Memory Analyzer Tool (MAT) Analysis"></a>Memory Analyzer Tool (MAT) Analysis</h3><p><strong>Step-by-step MAT Analysis Process:</strong></p>
+<ol>
+<li><strong>Load the heap dump</strong> into MAT</li>
+<li><strong>Automatic Leak Suspects Report</strong> - MAT automatically identifies potential memory leaks</li>
+<li><strong>Dominator Tree Analysis</strong> - Shows objects and their retained heap sizes</li>
+<li><strong>Histogram View</strong> - Groups objects by class and shows instance counts</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Example of analyzing a suspected memory leak</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LeakyClass</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;String&gt; dataList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> List&lt;LeakyClass&gt; instances = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">LeakyClass</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Problem: Adding to static list without removal</span></span><br><span class="line">        instances.add(<span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addData</span><span class="params">(String data)</span> &#123;</span><br><span class="line">        dataList.add(data);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Missing cleanup method</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cleanup</span><span class="params">()</span> &#123;</span><br><span class="line">        instances.remove(<span class="built_in">this</span>);</span><br><span class="line">        dataList.clear();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>MAT Analysis Results Interpretation:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Leak Suspects Report:</span><br><span class="line">┌─────────────────────────────────────────────────────────────┐</span><br><span class="line">│ Problem Suspect 1                                           │</span><br><span class="line">│ 45,234 instances of &quot;LeakyClass&quot;                           │</span><br><span class="line">│ Accumulated objects in cluster have total size 89.2 MB     │</span><br><span class="line">│ Keywords: java.util.ArrayList                               │</span><br><span class="line">└─────────────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="VisualVM-Analysis-Approach"><a href="#VisualVM-Analysis-Approach" class="headerlink" title="VisualVM Analysis Approach"></a>VisualVM Analysis Approach</h3><p><strong>Real-time Monitoring Setup:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Enable JMX for VisualVM connection</span></span><br><span class="line">java -Dcom.sun.management.jmxremote \</span><br><span class="line">     -Dcom.sun.management.jmxremote.port=9999 \</span><br><span class="line">     -Dcom.sun.management.jmxremote.authenticate=<span class="literal">false</span> \</span><br><span class="line">     -Dcom.sun.management.jmxremote.ssl=<span class="literal">false</span> \</span><br><span class="line">     -jar your-application.jar</span><br></pre></td></tr></table></figure>
+
+<p><strong>VisualVM Analysis Workflow:</strong></p>
+<ol>
+<li><strong>Connect to running application</strong></li>
+<li><strong>Monitor heap usage patterns</strong></li>
+<li><strong>Perform heap dumps during high memory usage</strong></li>
+<li><strong>Analyze object retention paths</strong></li>
+</ol>
+<h2 id="Common-Causes-of-OOM-and-Solutions"><a href="#Common-Causes-of-OOM-and-Solutions" class="headerlink" title="Common Causes of OOM and Solutions"></a>Common Causes of OOM and Solutions</h2><h3 id="Memory-Leaks"><a href="#Memory-Leaks" class="headerlink" title="Memory Leaks"></a>Memory Leaks</h3><p><strong>Listener&#x2F;Observer Pattern Leaks:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Problematic code</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EventPublisher</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;EventListener&gt; listeners = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addListener</span><span class="params">(EventListener listener)</span> &#123;</span><br><span class="line">        listeners.add(listener);</span><br><span class="line">        <span class="comment">// Problem: No removal mechanism</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Fixed version</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeListener</span><span class="params">(EventListener listener)</span> &#123;</span><br><span class="line">        listeners.remove(listener);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Proper cleanup in listener implementations</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyEventListener</span> <span class="keyword">implements</span> <span class="title class_">EventListener</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> EventPublisher publisher;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">MyEventListener</span><span class="params">(EventPublisher publisher)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.publisher = publisher;</span><br><span class="line">        publisher.addListener(<span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cleanup</span><span class="params">()</span> &#123;</span><br><span class="line">        publisher.removeListener(<span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Question</strong>: <em>“How would you identify and fix a listener leak in production?”</em></p>
+<p><strong>Answer approach</strong>: Monitor heap dumps for increasing listener collections, implement weak references, or ensure proper cleanup in lifecycle methods.</p>
+<h3 id="Connection-Pool-Leaks"><a href="#Connection-Pool-Leaks" class="headerlink" title="Connection Pool Leaks"></a>Connection Pool Leaks</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Database connection leak example</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> DataSource dataSource;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Problematic method</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsers</span><span class="params">()</span> <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">        <span class="type">Connection</span> <span class="variable">conn</span> <span class="operator">=</span> dataSource.getConnection();</span><br><span class="line">        <span class="type">PreparedStatement</span> <span class="variable">stmt</span> <span class="operator">=</span> conn.prepareStatement(<span class="string">&quot;SELECT * FROM users&quot;</span>);</span><br><span class="line">        <span class="type">ResultSet</span> <span class="variable">rs</span> <span class="operator">=</span> stmt.executeQuery();</span><br><span class="line">        </span><br><span class="line">        List&lt;User&gt; users = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (rs.next()) &#123;</span><br><span class="line">            users.add(<span class="keyword">new</span> <span class="title class_">User</span>(rs.getString(<span class="string">&quot;name&quot;</span>), rs.getString(<span class="string">&quot;email&quot;</span>)));</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Problem: Resources not closed properly</span></span><br><span class="line">        <span class="keyword">return</span> users;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Fixed version with try-with-resources</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsersFixed</span><span class="params">()</span> <span class="keyword">throws</span> SQLException &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">Connection</span> <span class="variable">conn</span> <span class="operator">=</span> dataSource.getConnection();</span><br><span class="line">             <span class="type">PreparedStatement</span> <span class="variable">stmt</span> <span class="operator">=</span> conn.prepareStatement(<span class="string">&quot;SELECT * FROM users&quot;</span>);</span><br><span class="line">             <span class="type">ResultSet</span> <span class="variable">rs</span> <span class="operator">=</span> stmt.executeQuery()) &#123;</span><br><span class="line">            </span><br><span class="line">            List&lt;User&gt; users = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">            <span class="keyword">while</span> (rs.next()) &#123;</span><br><span class="line">                users.add(<span class="keyword">new</span> <span class="title class_">User</span>(rs.getString(<span class="string">&quot;name&quot;</span>), rs.getString(<span class="string">&quot;email&quot;</span>)));</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> users;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Oversized-Objects"><a href="#Oversized-Objects" class="headerlink" title="Oversized Objects"></a>Oversized Objects</h3><p><strong>Large Collection Handling:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Problematic approach for large datasets</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DataProcessor</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processLargeDataset</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;String&gt; allData = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Problem: Loading entire dataset into memory</span></span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> Files.newBufferedReader(Paths.get(<span class="string">&quot;large-file.txt&quot;</span>))) &#123;</span><br><span class="line">            String line;</span><br><span class="line">            <span class="keyword">while</span> ((line = reader.readLine()) != <span class="literal">null</span>) &#123;</span><br><span class="line">                allData.add(line);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Process all data at once</span></span><br><span class="line">        processData(allData);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Streaming approach to handle large datasets</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processLargeDatasetStreaming</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="keyword">try</span> (Stream&lt;String&gt; lines = Files.lines(Paths.get(<span class="string">&quot;large-file.txt&quot;</span>))) &#123;</span><br><span class="line">            lines.parallel()</span><br><span class="line">                 .filter(line -&gt; !line.isEmpty())</span><br><span class="line">                 .map(<span class="built_in">this</span>::transformLine)</span><br><span class="line">                 .forEach(<span class="built_in">this</span>::processLine);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Large Object Example:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Memory-intensive operation</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ReportGenerator</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> List&lt;CustomerReport&gt; <span class="title function_">generateMonthlyReports</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;CustomerReport&gt; reports = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        <span class="comment">// Loading 100K+ customer records into memory</span></span><br><span class="line">        List&lt;Customer&gt; allCustomers = customerRepository.findAll();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> (Customer customer : allCustomers) &#123;</span><br><span class="line">            reports.add(generateReport(customer)); <span class="comment">// Each report ~50KB</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> reports; <span class="comment">// Total: ~5GB in memory</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Optimized Solution:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Stream-based processing</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OptimizedReportGenerator</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> CustomerRepository customerRepository;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">generateMonthlyReports</span><span class="params">(ReportWriter writer)</span> &#123;</span><br><span class="line">        customerRepository.findAllByStream()</span><br><span class="line">            .map(<span class="built_in">this</span>::generateReport)</span><br><span class="line">            .forEach(writer::writeReport);</span><br><span class="line">        <span class="comment">// Memory usage: ~50KB per iteration</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Container-Resource-Constraints"><a href="#Container-Resource-Constraints" class="headerlink" title="Container Resource Constraints"></a>Container Resource Constraints</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Kubernetes deployment</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">app</span></span><br><span class="line">        <span class="attr">resources:</span></span><br><span class="line">          <span class="attr">limits:</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">&quot;2Gi&quot;</span>  <span class="comment"># Container limit</span></span><br><span class="line">          <span class="attr">requests:</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">&quot;1Gi&quot;</span></span><br><span class="line">        <span class="attr">env:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">JAVA_OPTS</span></span><br><span class="line">          <span class="attr">value:</span> <span class="string">&quot;-Xmx1536m&quot;</span>  <span class="comment"># JVM heap should be ~75% of container limit</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight:</strong> <em>“How do you size JVM heap in containerized environments? What’s the relationship between container memory limits and JVM heap size?”</em></p>
+<h2 id="Tuning-Object-Promotion-and-GC-Parameters"><a href="#Tuning-Object-Promotion-and-GC-Parameters" class="headerlink" title="Tuning Object Promotion and GC Parameters"></a>Tuning Object Promotion and GC Parameters</h2><h3 id="Understanding-Object-Lifecycle"><a href="#Understanding-Object-Lifecycle" class="headerlink" title="Understanding Object Lifecycle"></a>Understanding Object Lifecycle</h3><pre>
+<code class="mermaid">
+graph TD
+A[Object Creation] --&gt; B[Eden Space]
+B --&gt; C{Minor GC}
+C --&gt;|Survives| D[Survivor Space S0]
+D --&gt; E{Minor GC}
+E --&gt;|Survives| F[Survivor Space S1]
+F --&gt; G{Age Threshold?}
+G --&gt;|Yes| H[Old Generation]
+G --&gt;|No| I[Back to Survivor]
+C --&gt;|Dies| J[Garbage Collected]
+E --&gt;|Dies| J
+H --&gt; K{Major GC}
+K --&gt; L[Garbage Collected or Retained]
+</code>
+</pre>
+
+<h3 id="GC-Tuning-Parameters"><a href="#GC-Tuning-Parameters" class="headerlink" title="GC Tuning Parameters"></a>GC Tuning Parameters</h3><p><strong>G1GC Configuration for Production:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># G1GC tuning for 8GB heap</span></span><br><span class="line">java -Xms8g -Xmx8g \</span><br><span class="line">     -XX:+UseG1GC \</span><br><span class="line">     -XX:MaxGCPauseMillis=200 \</span><br><span class="line">     -XX:G1HeapRegionSize=16m \</span><br><span class="line">     -XX:G1NewSizePercent=20 \</span><br><span class="line">     -XX:G1MaxNewSizePercent=30 \</span><br><span class="line">     -XX:InitiatingHeapOccupancyPercent=45 \</span><br><span class="line">     -XX:G1MixedGCCountTarget=8 \</span><br><span class="line">     -XX:G1MixedGCLiveThresholdPercent=85 \</span><br><span class="line">     -jar your-application.jar</span><br></pre></td></tr></table></figure>
+
+<p><strong>Parallel GC Configuration:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ParallelGC tuning for high-throughput applications</span></span><br><span class="line">java -Xms4g -Xmx4g \</span><br><span class="line">     -XX:+UseParallelGC \</span><br><span class="line">     -XX:ParallelGCThreads=8 \</span><br><span class="line">     -XX:NewRatio=3 \</span><br><span class="line">     -XX:SurvivorRatio=8 \</span><br><span class="line">     -XX:MaxTenuringThreshold=15 \</span><br><span class="line">     -XX:PretenureSizeThreshold=1048576 \</span><br><span class="line">     -jar your-application.jar</span><br></pre></td></tr></table></figure>
+
+<h3 id="Object-Promotion-Threshold-Tuning"><a href="#Object-Promotion-Threshold-Tuning" class="headerlink" title="Object Promotion Threshold Tuning"></a>Object Promotion Threshold Tuning</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Monitor object age distribution</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ObjectAgeMonitoring</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// JVM flag to print tenuring distribution</span></span><br><span class="line">    <span class="comment">// -XX:+PrintTenuringDistribution</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">demonstrateObjectPromotion</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;<span class="type">byte</span>[]&gt; shortLived = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        List&lt;<span class="type">byte</span>[]&gt; longLived = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">            <span class="comment">// Short-lived objects (should stay in young generation)</span></span><br><span class="line">            <span class="type">byte</span>[] temp = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span>];</span><br><span class="line">            shortLived.add(temp);</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (i % <span class="number">10</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// Long-lived objects (will be promoted to old generation)</span></span><br><span class="line">                longLived.add(<span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">1024</span>]);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Clear short-lived objects periodically</span></span><br><span class="line">            <span class="keyword">if</span> (i % <span class="number">100</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                shortLived.clear();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="GC-Performance-Monitoring"><a href="#GC-Performance-Monitoring" class="headerlink" title="GC Performance Monitoring"></a>GC Performance Monitoring</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Comprehensive GC logging (Java 11+)</span></span><br><span class="line">java -Xlog:gc*:gc.log:<span class="keyword">time</span>,tags \</span><br><span class="line">     -XX:+UnlockExperimentalVMOptions \</span><br><span class="line">     -XX:+UseEpsilonGC \  <span class="comment"># For testing only</span></span><br><span class="line">     -jar your-application.jar</span><br><span class="line"></span><br><span class="line"><span class="comment"># GC analysis script</span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"><span class="comment"># gc-analyzer.sh</span></span><br><span class="line"></span><br><span class="line">GC_LOG_FILE=<span class="string">&quot;gc.log&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;=== GC Performance Analysis ===&quot;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Total GC events:&quot;</span></span><br><span class="line">grep -c <span class="string">&quot;GC(&quot;</span> <span class="string">&quot;<span class="variable">$GC_LOG_FILE</span>&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Average pause time:&quot;</span></span><br><span class="line">grep <span class="string">&quot;GC(&quot;</span> <span class="string">&quot;<span class="variable">$GC_LOG_FILE</span>&quot;</span> | awk -F<span class="string">&#x27;,&#x27;</span> <span class="string">&#x27;&#123;sum+=$2; count++&#125; END &#123;print sum/count &quot;ms&quot;&#125;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;Memory before/after GC:&quot;</span></span><br><span class="line">grep -E <span class="string">&quot;-&gt;.*\(&quot;</span> <span class="string">&quot;<span class="variable">$GC_LOG_FILE</span>&quot;</span> | <span class="built_in">tail</span> -10</span><br></pre></td></tr></table></figure>
+
+<h2 id="Advanced-OOM-Prevention-Strategies"><a href="#Advanced-OOM-Prevention-Strategies" class="headerlink" title="Advanced OOM Prevention Strategies"></a>Advanced OOM Prevention Strategies</h2><h3 id="Memory-Efficient-Data-Structures"><a href="#Memory-Efficient-Data-Structures" class="headerlink" title="Memory-Efficient Data Structures"></a>Memory-Efficient Data Structures</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Using primitive collections to reduce memory overhead</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MemoryEfficientStorage</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Instead of HashMap&lt;Integer, Integer&gt;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">TIntIntHashMap</span> <span class="variable">primitiveMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TIntIntHashMap</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Instead of List&lt;Integer&gt;</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">TIntArrayList</span> <span class="variable">primitiveList</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TIntArrayList</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Object pooling for frequently created objects</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ObjectPool&lt;StringBuilder&gt; stringBuilderPool = </span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">GenericObjectPool</span>&lt;&gt;(<span class="keyword">new</span> <span class="title class_">StringBuilderFactory</span>());</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">processData</span><span class="params">(List&lt;String&gt; data)</span> &#123;</span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            sb = stringBuilderPool.borrowObject();</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">for</span> (String item : data) &#123;</span><br><span class="line">                sb.append(item).append(<span class="string">&quot;,&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span> sb.toString();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (sb != <span class="literal">null</span>) &#123;</span><br><span class="line">                stringBuilderPool.returnObject(sb);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Circuit-Breaker-Pattern-for-Memory-Protection"><a href="#Circuit-Breaker-Pattern-for-Memory-Protection" class="headerlink" title="Circuit Breaker Pattern for Memory Protection"></a>Circuit Breaker Pattern for Memory Protection</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Circuit breaker to prevent memory exhaustion</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MemoryCircuitBreaker</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">MemoryMXBean</span> <span class="variable">memoryBean</span> <span class="operator">=</span> ManagementFactory.getMemoryMXBean();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">double</span> <span class="variable">memoryThreshold</span> <span class="operator">=</span> <span class="number">0.85</span>; <span class="comment">// 85% of heap</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> <span class="variable">circuitOpen</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isMemoryAvailable</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">MemoryUsage</span> <span class="variable">heapUsage</span> <span class="operator">=</span> memoryBean.getHeapMemoryUsage();</span><br><span class="line">        <span class="type">double</span> <span class="variable">usedPercentage</span> <span class="operator">=</span> (<span class="type">double</span>) heapUsage.getUsed() / heapUsage.getMax();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (usedPercentage &gt; memoryThreshold) &#123;</span><br><span class="line">            circuitOpen = <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (circuitOpen &amp;&amp; usedPercentage &lt; (memoryThreshold - <span class="number">0.1</span>)) &#123;</span><br><span class="line">            circuitOpen = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> !circuitOpen;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T <span class="title function_">executeWithMemoryCheck</span><span class="params">(Supplier&lt;T&gt; operation)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!isMemoryAvailable()) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;Circuit breaker open: Memory usage too high&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> operation.get();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Production-Monitoring-and-Alerting"><a href="#Production-Monitoring-and-Alerting" class="headerlink" title="Production Monitoring and Alerting"></a>Production Monitoring and Alerting</h2><h3 id="JVM-Metrics-Collection"><a href="#JVM-Metrics-Collection" class="headerlink" title="JVM Metrics Collection"></a>JVM Metrics Collection</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Custom JVM metrics collector</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JVMMetricsCollector</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">MemoryMXBean</span> <span class="variable">memoryBean</span> <span class="operator">=</span> ManagementFactory.getMemoryMXBean();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> List&lt;GarbageCollectorMXBean&gt; gcBeans = ManagementFactory.getGarbageCollectorMXBeans();</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Scheduled(fixedRate = 30000)</span> <span class="comment">// Every 30 seconds</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">collectMetrics</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">MemoryUsage</span> <span class="variable">heapUsage</span> <span class="operator">=</span> memoryBean.getHeapMemoryUsage();</span><br><span class="line">        <span class="type">MemoryUsage</span> <span class="variable">nonHeapUsage</span> <span class="operator">=</span> memoryBean.getNonHeapMemoryUsage();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Log heap metrics</span></span><br><span class="line">        <span class="type">double</span> <span class="variable">heapUsedPercent</span> <span class="operator">=</span> (<span class="type">double</span>) heapUsage.getUsed() / heapUsage.getMax() * <span class="number">100</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (heapUsedPercent &gt; <span class="number">80</span>) &#123;</span><br><span class="line">            log.warn(<span class="string">&quot;High heap usage: &#123;&#125;%&quot;</span>, String.format(<span class="string">&quot;%.2f&quot;</span>, heapUsedPercent));</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Log GC metrics</span></span><br><span class="line">        <span class="keyword">for</span> (GarbageCollectorMXBean gcBean : gcBeans) &#123;</span><br><span class="line">            <span class="type">long</span> <span class="variable">collections</span> <span class="operator">=</span> gcBean.getCollectionCount();</span><br><span class="line">            <span class="type">long</span> <span class="variable">time</span> <span class="operator">=</span> gcBean.getCollectionTime();</span><br><span class="line">            </span><br><span class="line">            log.info(<span class="string">&quot;GC [&#123;&#125;]: Collections=&#123;&#125;, Time=&#123;&#125;ms&quot;</span>, </span><br><span class="line">                    gcBean.getName(), collections, time);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Alerting-Configuration"><a href="#Alerting-Configuration" class="headerlink" title="Alerting Configuration"></a>Alerting Configuration</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Prometheus alerting rules for OOM prevention</span></span><br><span class="line"><span class="attr">groups:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">jvm-memory-alerts</span></span><br><span class="line">    <span class="attr">rules:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">alert:</span> <span class="string">HighHeapUsage</span></span><br><span class="line">        <span class="attr">expr:</span> <span class="string">jvm_memory_used_bytes&#123;area=&quot;heap&quot;&#125;</span> <span class="string">/</span> <span class="string">jvm_memory_max_bytes&#123;area=&quot;heap&quot;&#125;</span> <span class="string">&gt;</span> <span class="number">0.85</span></span><br><span class="line">        <span class="attr">for:</span> <span class="string">2m</span></span><br><span class="line">        <span class="attr">labels:</span></span><br><span class="line">          <span class="attr">severity:</span> <span class="string">warning</span></span><br><span class="line">        <span class="attr">annotations:</span></span><br><span class="line">          <span class="attr">summary:</span> <span class="string">&quot;High JVM heap usage detected&quot;</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">&quot;Heap usage is above 85% for more than 2 minutes&quot;</span></span><br><span class="line">      </span><br><span class="line">      <span class="bullet">-</span> <span class="attr">alert:</span> <span class="string">HighGCTime</span></span><br><span class="line">        <span class="attr">expr:</span> <span class="string">rate(jvm_gc_collection_seconds_sum[5m])</span> <span class="string">&gt;</span> <span class="number">0.1</span></span><br><span class="line">        <span class="attr">for:</span> <span class="string">1m</span></span><br><span class="line">        <span class="attr">labels:</span></span><br><span class="line">          <span class="attr">severity:</span> <span class="string">critical</span></span><br><span class="line">        <span class="attr">annotations:</span></span><br><span class="line">          <span class="attr">summary:</span> <span class="string">&quot;High GC time detected&quot;</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">&quot;Application spending more than 10% time in GC&quot;</span></span><br><span class="line">      </span><br><span class="line">      <span class="bullet">-</span> <span class="attr">alert:</span> <span class="string">FrequentGC</span></span><br><span class="line">        <span class="attr">expr:</span> <span class="string">rate(jvm_gc_collection_seconds_count[5m])</span> <span class="string">&gt;</span> <span class="number">2</span></span><br><span class="line">        <span class="attr">for:</span> <span class="string">2m</span></span><br><span class="line">        <span class="attr">labels:</span></span><br><span class="line">          <span class="attr">severity:</span> <span class="string">warning</span></span><br><span class="line">        <span class="attr">annotations:</span></span><br><span class="line">          <span class="attr">summary:</span> <span class="string">&quot;Frequent GC cycles&quot;</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">&quot;More than 2 GC cycles per second&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Questions-and-Expert-Insights"><a href="#Interview-Questions-and-Expert-Insights" class="headerlink" title="Interview Questions and Expert Insights"></a>Interview Questions and Expert Insights</h2><h3 id="Core-Technical-Questions"><a href="#Core-Technical-Questions" class="headerlink" title="Core Technical Questions"></a>Core Technical Questions</h3><p><strong>Q: “Explain the difference between memory leak and memory pressure in Java applications.”</strong></p>
+<p><strong>Expert Answer</strong>: Memory leak refers to objects that are no longer needed but still referenced, preventing garbage collection. Memory pressure occurs when application legitimately needs more memory than available. Leaks show constant growth in heap dumps, while pressure shows high but stable memory usage with frequent GC.</p>
+<p><strong>Q: “How would you troubleshoot an application that has intermittent OOM errors?”</strong></p>
+<p><strong>Systematic Approach</strong>:</p>
+<ol>
+<li>Enable heap dump generation on OOM</li>
+<li>Monitor GC logs for patterns</li>
+<li>Use application performance monitoring (APM) tools</li>
+<li>Implement memory circuit breakers</li>
+<li>Analyze heap dumps during both normal and high-load periods</li>
+</ol>
+<p><strong>Q: “What’s the impact of different GC algorithms on OOM behavior?”</strong></p>
+<p><strong>Comparison Table</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>GC Algorithm</th>
+<th>OOM Behavior</th>
+<th>Best Use Case</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Serial GC</td>
+<td>Quick OOM detection</td>
+<td>Small applications</td>
+</tr>
+<tr>
+<td>Parallel GC</td>
+<td>High throughput before OOM</td>
+<td>Batch processing</td>
+</tr>
+<tr>
+<td>G1GC</td>
+<td>Predictable pause times</td>
+<td>Large heaps (&gt;4GB)</td>
+</tr>
+<tr>
+<td>ZGC</td>
+<td>Ultra-low latency</td>
+<td>Real-time applications</td>
+</tr>
+</tbody></table>
+<h3 id="Advanced-Troubleshooting-Scenarios"><a href="#Advanced-Troubleshooting-Scenarios" class="headerlink" title="Advanced Troubleshooting Scenarios"></a>Advanced Troubleshooting Scenarios</h3><p><strong>Scenario</strong>: “Application runs fine for hours, then suddenly throws OOM. Heap dump shows high memory usage but no obvious leaks.”</p>
+<p><strong>Investigation Strategy</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Implement memory pressure monitoring</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MemoryPressureDetector</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Queue&lt;Long&gt; memorySnapshots = <span class="keyword">new</span> <span class="title class_">ConcurrentLinkedQueue</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">maxSnapshots</span> <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Scheduled(fixedRate = 60000)</span> <span class="comment">// Every minute</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">takeSnapshot</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">usedMemory</span> <span class="operator">=</span> Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();</span><br><span class="line">        </span><br><span class="line">        memorySnapshots.offer(usedMemory);</span><br><span class="line">        <span class="keyword">if</span> (memorySnapshots.size() &gt; maxSnapshots) &#123;</span><br><span class="line">            memorySnapshots.poll();</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Detect memory pressure trends</span></span><br><span class="line">        <span class="keyword">if</span> (memorySnapshots.size() &gt;= <span class="number">10</span>) &#123;</span><br><span class="line">            List&lt;Long&gt; recent = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(memorySnapshots);</span><br><span class="line">            Collections.reverse(recent);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Check if memory is consistently increasing</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">increasingTrend</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">1</span>; i &lt; Math.min(<span class="number">10</span>, recent.size()); i++) &#123;</span><br><span class="line">                <span class="keyword">if</span> (recent.get(i) &lt;= recent.get(i-<span class="number">1</span>)) &#123;</span><br><span class="line">                    increasingTrend = <span class="literal">false</span>;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (increasingTrend) &#123;</span><br><span class="line">                log.warn(<span class="string">&quot;Detected increasing memory pressure trend&quot;</span>);</span><br><span class="line">                <span class="comment">// Trigger proactive measures</span></span><br><span class="line">                triggerGarbageCollection();</span><br><span class="line">                generateHeapDump();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">triggerGarbageCollection</span><span class="params">()</span> &#123;</span><br><span class="line">        System.gc(); <span class="comment">// Use with caution in production</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Best-Practices-Summary"><a href="#Best-Practices-Summary" class="headerlink" title="Best Practices Summary"></a>Best Practices Summary</h2><h3 id="Development-Phase"><a href="#Development-Phase" class="headerlink" title="Development Phase"></a>Development Phase</h3><ul>
+<li>Implement proper resource management with try-with-resources</li>
+<li>Use weak references for caches and listeners</li>
+<li>Design with memory constraints in mind</li>
+<li>Implement object pooling for frequently created objects</li>
+</ul>
+<h3 id="Testing-Phase"><a href="#Testing-Phase" class="headerlink" title="Testing Phase"></a>Testing Phase</h3><ul>
+<li>Load test with realistic data volumes</li>
+<li>Monitor memory usage patterns during extended runs</li>
+<li>Test GC behavior under various loads</li>
+<li>Validate heap dump analysis procedures</li>
+</ul>
+<h3 id="Production-Phase"><a href="#Production-Phase" class="headerlink" title="Production Phase"></a>Production Phase</h3><ul>
+<li>Enable automatic heap dump generation</li>
+<li>Implement comprehensive monitoring and alerting</li>
+<li>Have heap dump analysis procedures documented</li>
+<li>Maintain GC logs for performance analysis</li>
+</ul>
+<h3 id="Emergency-Response"><a href="#Emergency-Response" class="headerlink" title="Emergency Response"></a>Emergency Response</h3><ul>
+<li>Automated heap dump collection on OOM</li>
+<li>Circuit breaker patterns to prevent cascading failures</li>
+<li>Memory pressure monitoring and proactive alerting</li>
+<li>Documented escalation procedures for memory issues</li>
+</ul>
+<h2 id="External-References-and-Tools"><a href="#External-References-and-Tools" class="headerlink" title="External References and Tools"></a>External References and Tools</h2><h3 id="Essential-Tools"><a href="#Essential-Tools" class="headerlink" title="Essential Tools"></a>Essential Tools</h3><ul>
+<li><strong>Eclipse MAT</strong>: <a target="_blank" rel="noopener" href="https://www.eclipse.org/mat/">https://www.eclipse.org/mat/</a></li>
+<li><strong>VisualVM</strong>: <a target="_blank" rel="noopener" href="https://visualvm.github.io/">https://visualvm.github.io/</a></li>
+<li><strong>JProfiler</strong>: <a target="_blank" rel="noopener" href="https://www.ej-technologies.com/products/jprofiler/">https://www.ej-technologies.com/products/jprofiler/</a></li>
+<li><strong>Async Profiler</strong>: <a target="_blank" rel="noopener" href="https://github.com/jvm-profiling-tools/async-profiler">https://github.com/jvm-profiling-tools/async-profiler</a></li>
+</ul>
+<h3 id="Monitoring-Solutions"><a href="#Monitoring-Solutions" class="headerlink" title="Monitoring Solutions"></a>Monitoring Solutions</h3><ul>
+<li><strong>Micrometer</strong>: <a target="_blank" rel="noopener" href="https://micrometer.io/">https://micrometer.io/</a></li>
+<li><strong>Prometheus JVM Metrics</strong>: <a target="_blank" rel="noopener" href="https://github.com/prometheus/client_java">https://github.com/prometheus/client_java</a></li>
+<li><strong>APM Tools</strong>: New Relic, AppDynamics, Datadog</li>
+</ul>
+<h3 id="Documentation"><a href="#Documentation" class="headerlink" title="Documentation"></a>Documentation</h3><ul>
+<li><strong>Oracle JVM Tuning Guide</strong>: <a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/">https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/</a></li>
+<li><strong>G1GC Documentation</strong>: <a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/technotes/guides/vm/G1.html">https://docs.oracle.com/javase/8/docs/technotes/guides/vm/G1.html</a></li>
+<li><strong>JVM Flags Reference</strong>: <a target="_blank" rel="noopener" href="https://chriswhocodes.com/hotspot_options_jdk11.html">https://chriswhocodes.com/hotspot_options_jdk11.html</a></li>
+</ul>
+<h3 id="Best-Practices-Resources"><a href="#Best-Practices-Resources" class="headerlink" title="Best Practices Resources"></a>Best Practices Resources</h3><ul>
+<li><strong>Java Performance Tuning</strong>: “Java Performance: The Definitive Guide” by Scott Oaks</li>
+<li><strong>GC Tuning</strong>: “Optimizing Java” by Benjamin J. Evans</li>
+<li><strong>Memory Management</strong>: “Java Memory Management” by Kiran Kumar</li>
+</ul>
+<p>Remember: OOM troubleshooting is both art and science. Combine systematic analysis with deep understanding of your application’s memory patterns. Always test memory optimizations in staging environments before production deployment.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3357,461 +3628,6 @@ Archived --&gt; [*]
 <li><strong>GC</strong>: Choose appropriate collector, monitor GC logs, tune heap ratios</li>
 <li><strong>Memory</strong>: Avoid memory leaks, use object pools for expensive objects</li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/12/Java-JVM-Performance-Tuning/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/12/Java-JVM-Performance-Tuning/" class="post-title-link" itemprop="url">Java JVM Performance Tuning</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-12 15:43:49 / Modified: 15:46:52" itemprop="dateCreated datePublished" datetime="2025-06-12T15:43:49+08:00">2025-06-12</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="JVM-Architecture-Performance-Fundamentals"><a href="#JVM-Architecture-Performance-Fundamentals" class="headerlink" title="JVM Architecture &amp; Performance Fundamentals"></a>JVM Architecture &amp; Performance Fundamentals</h2><h3 id="Core-Components-Overview"><a href="#Core-Components-Overview" class="headerlink" title="Core Components Overview"></a>Core Components Overview</h3><pre>
-<code class="mermaid">
-graph TD
-A[Java Application] --&gt; B[JVM]
-B --&gt; C[Class Loader Subsystem]
-B --&gt; D[Runtime Data Areas]
-B --&gt; E[Execution Engine]
-
-C --&gt; C1[Bootstrap ClassLoader]
-C --&gt; C2[Extension ClassLoader]
-C --&gt; C3[Application ClassLoader]
-
-D --&gt; D1[Method Area]
-D --&gt; D2[Heap Memory]
-D --&gt; D3[Stack Memory]
-D --&gt; D4[PC Registers]
-D --&gt; D5[Native Method Stacks]
-
-E --&gt; E1[Interpreter]
-E --&gt; E2[JIT Compiler]
-E --&gt; E3[Garbage Collector]
-</code>
-</pre>
-
-<h3 id="Memory-Layout-Deep-Dive"><a href="#Memory-Layout-Deep-Dive" class="headerlink" title="Memory Layout Deep Dive"></a>Memory Layout Deep Dive</h3><p>The JVM memory structure directly impacts performance through allocation patterns and garbage collection behavior.</p>
-<p><strong>Heap Memory Structure:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────┐</span><br><span class="line">│                    Heap Memory                      │</span><br><span class="line">├─────────────────────┬───────────────────────────────┤</span><br><span class="line">│    Young Generation │         Old Generation        │</span><br><span class="line">├─────┬─────┬─────────┼───────────────────────────────┤</span><br><span class="line">│Eden │ S0  │   S1    │        Tenured Space          │</span><br><span class="line">│Space│     │         │                               │</span><br><span class="line">└─────┴─────┴─────────┴───────────────────────────────┘</span><br></pre></td></tr></table></figure>
-
-<p><strong>Interview Insight:</strong> <em>“Can you explain the generational hypothesis and why it’s crucial for JVM performance?”</em></p>
-<p>The generational hypothesis states that most objects die young. This principle drives the JVM’s memory design:</p>
-<ul>
-<li><strong>Eden Space</strong>: Where new objects are allocated (fast allocation)</li>
-<li><strong>Survivor Spaces (S0, S1)</strong>: Temporary holding for objects that survived one GC cycle</li>
-<li><strong>Old Generation</strong>: Long-lived objects that survived multiple GC cycles</li>
-</ul>
-<h3 id="Performance-Impact-Factors"><a href="#Performance-Impact-Factors" class="headerlink" title="Performance Impact Factors"></a>Performance Impact Factors</h3><ol>
-<li><strong>Memory Allocation Speed</strong>: Eden space uses bump-the-pointer allocation</li>
-<li><strong>GC Frequency</strong>: Young generation GC is faster than full GC</li>
-<li><strong>Object Lifetime</strong>: Proper object lifecycle management reduces GC pressure</li>
-</ol>
-<hr>
-<h2 id="Memory-Management-Garbage-Collection"><a href="#Memory-Management-Garbage-Collection" class="headerlink" title="Memory Management &amp; Garbage Collection"></a>Memory Management &amp; Garbage Collection</h2><h3 id="Garbage-Collection-Algorithms-Comparison"><a href="#Garbage-Collection-Algorithms-Comparison" class="headerlink" title="Garbage Collection Algorithms Comparison"></a>Garbage Collection Algorithms Comparison</h3><pre>
-<code class="mermaid">
-graph LR
-A[GC Algorithms] --&gt; B[Serial GC]
-A --&gt; C[Parallel GC]
-A --&gt; D[G1GC]
-A --&gt; E[ZGC]
-A --&gt; F[Shenandoah]
-
-B --&gt; B1[Single Thread&lt;br&#x2F;&gt;Small Heaps&lt;br&#x2F;&gt;Client Apps]
-C --&gt; C1[Multi Thread&lt;br&#x2F;&gt;Server Apps&lt;br&#x2F;&gt;Throughput Focus]
-D --&gt; D1[Large Heaps&lt;br&#x2F;&gt;Low Latency&lt;br&#x2F;&gt;Predictable Pauses]
-E --&gt; E1[Very Large Heaps&lt;br&#x2F;&gt;Ultra Low Latency&lt;br&#x2F;&gt;Concurrent Collection]
-F --&gt; F1[Low Pause Times&lt;br&#x2F;&gt;Concurrent Collection&lt;br&#x2F;&gt;Red Hat OpenJDK]
-</code>
-</pre>
-
-<h3 id="G1GC-Deep-Dive-Most-Common-in-Production"><a href="#G1GC-Deep-Dive-Most-Common-in-Production" class="headerlink" title="G1GC Deep Dive (Most Common in Production)"></a>G1GC Deep Dive (Most Common in Production)</h3><p><strong>Interview Insight:</strong> <em>“Why would you choose G1GC over Parallel GC for a high-throughput web application?”</em></p>
-<p>G1GC (Garbage First) is designed for:</p>
-<ul>
-<li>Applications with heap sizes larger than 6GB</li>
-<li>Applications requiring predictable pause times (&lt;200ms)</li>
-<li>Applications with varying allocation rates</li>
-</ul>
-<p><strong>G1GC Memory Regions:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐</span><br><span class="line">│  E  │  E  │ S   │ O   │ O   │ H   │  E  │ O   │</span><br><span class="line">└─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘</span><br><span class="line">E = Eden, S = Survivor, O = Old, H = Humongous</span><br></pre></td></tr></table></figure>
-
-<p><strong>Key G1GC Parameters:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Basic G1GC Configuration</span></span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=200</span><br><span class="line">-XX:G1HeapRegionSize=16m</span><br><span class="line">-XX:G1NewSizePercent=30</span><br><span class="line">-XX:G1MaxNewSizePercent=40</span><br><span class="line">-XX:G1MixedGCCountTarget=8</span><br></pre></td></tr></table></figure>
-
-<h3 id="GC-Tuning-Strategies"><a href="#GC-Tuning-Strategies" class="headerlink" title="GC Tuning Strategies"></a>GC Tuning Strategies</h3><p><strong>Showcase: Production Web Application Tuning</strong></p>
-<p>Before optimization:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Application: E-commerce platform</span><br><span class="line">Heap Size: 8GB</span><br><span class="line">GC Algorithm: Parallel GC</span><br><span class="line">Average GC Pause: 2.5 seconds</span><br><span class="line">Throughput: 85%</span><br></pre></td></tr></table></figure>
-
-<p>After G1GC optimization:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-Xms8g -Xmx8g</span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=100</span><br><span class="line">-XX:G1HeapRegionSize=32m</span><br><span class="line">-XX:+G1UseAdaptiveIHOP</span><br><span class="line">-XX:G1MixedGCCountTarget=8</span><br></pre></td></tr></table></figure>
-
-<p>Results:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Average GC Pause: 45ms</span><br><span class="line">Throughput: 97%</span><br><span class="line">Response Time P99: Improved by 60%</span><br></pre></td></tr></table></figure>
-
-<p><strong>Interview Insight:</strong> <em>“How do you tune G1GC for an application with unpredictable allocation patterns?”</em></p>
-<p>Key strategies:</p>
-<ol>
-<li><strong>Adaptive IHOP</strong>: Use <code>-XX:+G1UseAdaptiveIHOP</code> to let G1 automatically adjust concurrent cycle triggers</li>
-<li><strong>Region Size Tuning</strong>: Larger regions (32m-64m) for applications with large objects</li>
-<li><strong>Mixed GC Tuning</strong>: Adjust <code>G1MixedGCCountTarget</code> based on old generation cleanup needs</li>
-</ol>
-<hr>
-<h2 id="JIT-Compilation-Optimization"><a href="#JIT-Compilation-Optimization" class="headerlink" title="JIT Compilation Optimization"></a>JIT Compilation Optimization</h2><h3 id="JIT-Compilation-Tiers"><a href="#JIT-Compilation-Tiers" class="headerlink" title="JIT Compilation Tiers"></a>JIT Compilation Tiers</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[Method Invocation] --&gt; B{Invocation Count}
-B --&gt;|&lt; C1 Threshold| C[Interpreter]
-B --&gt;|&gt;&#x3D; C1 Threshold| D[C1 Compiler - Tier 3]
-D --&gt; E{Profile Data}
-E --&gt;|Hot Method| F[C2 Compiler - Tier 4]
-E --&gt;|Not Hot| G[Continue C1]
-F --&gt; H[Optimized Native Code]
-
-C --&gt; I[Profile Collection]
-I --&gt; B
-</code>
-</pre>
-
-<p><strong>Interview Insight:</strong> <em>“Explain the difference between C1 and C2 compilers and when each is used.”</em></p>
-<ul>
-<li><strong>C1 (Client Compiler)</strong>: Fast compilation, basic optimizations, suitable for short-running applications</li>
-<li><strong>C2 (Server Compiler)</strong>: Aggressive optimizations, longer compilation time, better for long-running server applications</li>
-</ul>
-<h3 id="JIT-Optimization-Techniques"><a href="#JIT-Optimization-Techniques" class="headerlink" title="JIT Optimization Techniques"></a>JIT Optimization Techniques</h3><ol>
-<li><strong>Method Inlining</strong>: Eliminates method call overhead</li>
-<li><strong>Dead Code Elimination</strong>: Removes unreachable code</li>
-<li><strong>Loop Optimization</strong>: Unrolling, vectorization</li>
-<li><strong>Escape Analysis</strong>: Stack allocation for non-escaping objects</li>
-</ol>
-<p><strong>Showcase: Method Inlining Impact</strong></p>
-<p>Before inlining:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MathUtils</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> a + b;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">calculate</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++) &#123;</span><br><span class="line">            result = add(result, i); <span class="comment">// Method call overhead</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>After JIT optimization (conceptual):</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JIT inlines the add method</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">calculate</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">result</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++) &#123;</span><br><span class="line">        result = result + i; <span class="comment">// Direct operation, no call overhead</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="JIT-Tuning-Parameters"><a href="#JIT-Tuning-Parameters" class="headerlink" title="JIT Tuning Parameters"></a>JIT Tuning Parameters</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Compilation Thresholds</span></span><br><span class="line">-XX:CompileThreshold=10000        <span class="comment"># C2 compilation threshold</span></span><br><span class="line">-XX:Tier3CompileThreshold=2000    <span class="comment"># C1 compilation threshold</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Compilation Control</span></span><br><span class="line">-XX:+TieredCompilation            <span class="comment"># Enable tiered compilation</span></span><br><span class="line">-XX:CICompilerCount=4             <span class="comment"># Number of compiler threads</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Optimization Control</span></span><br><span class="line">-XX:+UseStringDeduplication       <span class="comment"># Reduce memory usage for duplicate strings</span></span><br><span class="line">-XX:+AggressiveOpts               <span class="comment"># Enable experimental optimizations</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Interview Insight:</strong> <em>“How would you diagnose and fix a performance regression after a JVM upgrade?”</em></p>
-<p>Diagnostic approach:</p>
-<ol>
-<li>Compare JIT compilation logs (<code>-XX:+UnlockDiagnosticVMOptions -XX:+LogVMOutput</code>)</li>
-<li>Check for deoptimization events (<code>-XX:+TraceDeoptimization</code>)</li>
-<li>Profile method hotness and inlining decisions</li>
-<li>Verify optimization flags compatibility</li>
-</ol>
-<hr>
-<h2 id="Thread-Management-Concurrency"><a href="#Thread-Management-Concurrency" class="headerlink" title="Thread Management &amp; Concurrency"></a>Thread Management &amp; Concurrency</h2><h3 id="Thread-States-and-Performance-Impact"><a href="#Thread-States-and-Performance-Impact" class="headerlink" title="Thread States and Performance Impact"></a>Thread States and Performance Impact</h3><pre>
-<code class="mermaid">
-stateDiagram-v2
-[*] --&gt; NEW
-NEW --&gt; RUNNABLE: start()
-RUNNABLE --&gt; BLOCKED: synchronized block
-RUNNABLE --&gt; WAITING: wait(), join()
-RUNNABLE --&gt; TIMED_WAITING: sleep(), wait(timeout)
-BLOCKED --&gt; RUNNABLE: lock acquired
-WAITING --&gt; RUNNABLE: notify(), interrupt()
-TIMED_WAITING --&gt; RUNNABLE: timeout, notify()
-RUNNABLE --&gt; TERMINATED: execution complete
-TERMINATED --&gt; [*]
-</code>
-</pre>
-
-<h3 id="Lock-Optimization-Strategies"><a href="#Lock-Optimization-Strategies" class="headerlink" title="Lock Optimization Strategies"></a>Lock Optimization Strategies</h3><p><strong>Interview Insight:</strong> <em>“How does the JVM optimize synchronization, and what are the performance implications?”</em></p>
-<p>JVM lock optimizations include:</p>
-<ol>
-<li><strong>Biased Locking</strong>: Assumes single-threaded access pattern</li>
-<li><strong>Lightweight Locking</strong>: Uses CAS operations for low contention</li>
-<li><strong>Heavyweight Locking</strong>: OS-level locking for high contention</li>
-</ol>
-<p><strong>Lock Inflation Process:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">No Lock → Biased Lock → Lightweight Lock → Heavyweight Lock</span><br></pre></td></tr></table></figure>
-
-<h3 id="Thread-Pool-Optimization"><a href="#Thread-Pool-Optimization" class="headerlink" title="Thread Pool Optimization"></a>Thread Pool Optimization</h3><p><strong>Showcase: HTTP Server Thread Pool Tuning</strong></p>
-<p>Before optimization:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Poor configuration</span></span><br><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    <span class="number">1</span>,                      <span class="comment">// corePoolSize too small</span></span><br><span class="line">    Integer.MAX_VALUE,      <span class="comment">// maxPoolSize too large</span></span><br><span class="line">    <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">SynchronousQueue</span>&lt;&gt;() <span class="comment">// Queue can cause rejections</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-
-<p>After optimization:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Optimized configuration</span></span><br><span class="line"><span class="type">int</span> <span class="variable">coreThreads</span> <span class="operator">=</span> Runtime.getRuntime().availableProcessors() * <span class="number">2</span>;</span><br><span class="line"><span class="type">int</span> <span class="variable">maxThreads</span> <span class="operator">=</span> coreThreads * <span class="number">4</span>;</span><br><span class="line"><span class="type">int</span> <span class="variable">queueCapacity</span> <span class="operator">=</span> <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">ThreadPoolExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>(</span><br><span class="line">    coreThreads,</span><br><span class="line">    maxThreads,</span><br><span class="line">    <span class="number">60L</span>, TimeUnit.SECONDS,</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>&lt;&gt;(queueCapacity),</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">ThreadPoolExecutor</span>.CallerRunsPolicy() <span class="comment">// Backpressure handling</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">// JVM flags for thread optimization</span></span><br><span class="line">-XX:+UseBiasedLocking</span><br><span class="line">-XX:BiasedLockingStartupDelay=<span class="number">0</span></span><br><span class="line">-XX:+UseThreadPriorities</span><br></pre></td></tr></table></figure>
-
-<h3 id="Concurrent-Collections-Performance"><a href="#Concurrent-Collections-Performance" class="headerlink" title="Concurrent Collections Performance"></a>Concurrent Collections Performance</h3><p><strong>Interview Insight:</strong> <em>“When would you use ConcurrentHashMap vs synchronized HashMap, and what are the performance trade-offs?”</em></p>
-<p>Performance comparison:</p>
-<ul>
-<li><strong>ConcurrentHashMap</strong>: Segment-based locking, better scalability</li>
-<li><strong>synchronized HashMap</strong>: Full map locking, simpler but less scalable</li>
-<li><strong>Collections.synchronizedMap()</strong>: Method-level synchronization, worst performance</li>
-</ul>
-<hr>
-<h2 id="Monitoring-Profiling-Tools"><a href="#Monitoring-Profiling-Tools" class="headerlink" title="Monitoring &amp; Profiling Tools"></a>Monitoring &amp; Profiling Tools</h2><h3 id="Essential-JVM-Monitoring-Metrics"><a href="#Essential-JVM-Monitoring-Metrics" class="headerlink" title="Essential JVM Monitoring Metrics"></a>Essential JVM Monitoring Metrics</h3><pre>
-<code class="mermaid">
-graph TD
-A[JVM Monitoring] --&gt; B[Memory Metrics]
-A --&gt; C[GC Metrics]
-A --&gt; D[Thread Metrics]
-A --&gt; E[JIT Metrics]
-
-B --&gt; B1[Heap Usage]
-B --&gt; B2[Non-Heap Usage]
-B --&gt; B3[Memory Pool Details]
-
-C --&gt; C1[GC Time]
-C --&gt; C2[GC Frequency]
-C --&gt; C3[GC Throughput]
-
-D --&gt; D1[Thread Count]
-D --&gt; D2[Thread States]
-D --&gt; D3[Deadlock Detection]
-
-E --&gt; E1[Compilation Time]
-E --&gt; E2[Code Cache Usage]
-E --&gt; E3[Deoptimization Events]
-</code>
-</pre>
-
-<h3 id="Profiling-Tools-Comparison"><a href="#Profiling-Tools-Comparison" class="headerlink" title="Profiling Tools Comparison"></a>Profiling Tools Comparison</h3><table>
-<thead>
-<tr>
-<th>Tool</th>
-<th>Use Case</th>
-<th>Overhead</th>
-<th>Real-time</th>
-<th>Production Safe</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>JProfiler</td>
-<td>Development&#x2F;Testing</td>
-<td>Medium</td>
-<td>Yes</td>
-<td>No</td>
-</tr>
-<tr>
-<td>YourKit</td>
-<td>Development&#x2F;Testing</td>
-<td>Medium</td>
-<td>Yes</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Java Flight Recorder</td>
-<td>Production</td>
-<td>Very Low</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>Async Profiler</td>
-<td>Production</td>
-<td>Low</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>jstack</td>
-<td>Debugging</td>
-<td>None</td>
-<td>No</td>
-<td>Yes</td>
-</tr>
-<tr>
-<td>jstat</td>
-<td>Monitoring</td>
-<td>Very Low</td>
-<td>Yes</td>
-<td>Yes</td>
-</tr>
-</tbody></table>
-<p><strong>Interview Insight:</strong> <em>“How would you profile a production application without impacting performance?”</em></p>
-<p>Production-safe profiling approach:</p>
-<ol>
-<li><strong>Java Flight Recorder (JFR)</strong>: Continuous profiling with &lt;1% overhead</li>
-<li><strong>Async Profiler</strong>: Sample-based profiling for CPU hotspots</li>
-<li><strong>Application Metrics</strong>: Custom metrics for business logic</li>
-<li><strong>JVM Flags for monitoring</strong>:</li>
-</ol>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-XX:+FlightRecorder</span><br><span class="line">-XX:StartFlightRecording=duration=60s,filename=myapp.jfr</span><br><span class="line">-XX:+UnlockCommercialFeatures  <span class="comment"># Java 8 only</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><p><strong>Showcase: Production Monitoring Dashboard</strong></p>
-<p>Critical metrics to track:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Memory:</span><br><span class="line">- Heap Utilization: &lt;80% after GC</span><br><span class="line">- Old Generation Growth Rate: &lt;10MB/minute</span><br><span class="line">- Metaspace Usage: Monitor for memory leaks</span><br><span class="line"></span><br><span class="line">GC:</span><br><span class="line">- GC Pause Time: P99 &lt;100ms</span><br><span class="line">- GC Frequency: &lt;1 per minute for major GC</span><br><span class="line">- GC Throughput: &gt;95%</span><br><span class="line"></span><br><span class="line">Application:</span><br><span class="line">- Response Time: P95, P99 percentiles</span><br><span class="line">- Throughput: Requests per second</span><br><span class="line">- Error Rate: &lt;0.1%</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h2 id="Performance-Tuning-Best-Practices"><a href="#Performance-Tuning-Best-Practices" class="headerlink" title="Performance Tuning Best Practices"></a>Performance Tuning Best Practices</h2><h3 id="JVM-Tuning-Methodology"><a href="#JVM-Tuning-Methodology" class="headerlink" title="JVM Tuning Methodology"></a>JVM Tuning Methodology</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[Baseline Measurement] --&gt; B[Identify Bottlenecks]
-B --&gt; C[Hypothesis Formation]
-C --&gt; D[Parameter Adjustment]
-D --&gt; E[Load Testing]
-E --&gt; F{Performance Improved?}
-F --&gt;|Yes| G[Validate in Production]
-F --&gt;|No| H[Revert Changes]
-H --&gt; B
-G --&gt; I[Monitor &amp; Document]
-</code>
-</pre>
-
-<h3 id="Common-JVM-Flags-for-Production"><a href="#Common-JVM-Flags-for-Production" class="headerlink" title="Common JVM Flags for Production"></a>Common JVM Flags for Production</h3><p><strong>Interview Insight:</strong> <em>“What JVM flags would you use for a high-throughput, low-latency web application?”</em></p>
-<p>Essential production flags:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Memory Settings</span></span><br><span class="line">-Xms8g -Xmx8g                    <span class="comment"># Set heap size (same min/max)</span></span><br><span class="line">-XX:MetaspaceSize=256m            <span class="comment"># Initial metaspace size</span></span><br><span class="line">-XX:MaxMetaspaceSize=512m         <span class="comment"># Max metaspace size</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Garbage Collection</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Use G1 collector</span></span><br><span class="line">-XX:MaxGCPauseMillis=100         <span class="comment"># Target pause time</span></span><br><span class="line">-XX:G1HeapRegionSize=32m         <span class="comment"># Region size for large heaps</span></span><br><span class="line">-XX:+G1UseAdaptiveIHOP           <span class="comment"># Adaptive concurrent cycle triggering</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># JIT Compilation</span></span><br><span class="line">-XX:+TieredCompilation           <span class="comment"># Enable tiered compilation</span></span><br><span class="line">-XX:CompileThreshold=1000        <span class="comment"># Lower threshold for faster warmup</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitoring &amp; Debugging</span></span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError  <span class="comment"># Generate heap dump on OOM</span></span><br><span class="line">-XX:HeapDumpPath=/opt/dumps/     <span class="comment"># Heap dump location</span></span><br><span class="line">-XX:+UseGCLogFileRotation        <span class="comment"># Rotate GC logs</span></span><br><span class="line">-XX:NumberOfGCLogFiles=5         <span class="comment"># Keep 5 GC log files</span></span><br><span class="line">-XX:GCLogFileSize=100M           <span class="comment"># Max size per GC log file</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Performance Optimizations</span></span><br><span class="line">-XX:+UseStringDeduplication      <span class="comment"># Reduce memory for duplicate strings</span></span><br><span class="line">-XX:+OptimizeStringConcat        <span class="comment"># Optimize string concatenation</span></span><br><span class="line">-server                          <span class="comment"># Use server JVM</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Application-Level-Optimizations"><a href="#Application-Level-Optimizations" class="headerlink" title="Application-Level Optimizations"></a>Application-Level Optimizations</h3><p><strong>Showcase: Object Pool vs New Allocation</strong></p>
-<p>Before (high allocation pressure):</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseConnection</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsers</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;User&gt; users = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(); <span class="comment">// New allocation each call</span></span><br><span class="line">        <span class="comment">// Database query logic</span></span><br><span class="line">        <span class="keyword">return</span> users;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>After (reduced allocation):</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseConnection</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ThreadLocal&lt;List&lt;User&gt;&gt; userListCache = </span><br><span class="line">        ThreadLocal.withInitial(() -&gt; <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(<span class="number">100</span>));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">getUsers</span><span class="params">()</span> &#123;</span><br><span class="line">        List&lt;User&gt; users = userListCache.get();</span><br><span class="line">        users.clear(); <span class="comment">// Reuse existing list</span></span><br><span class="line">        <span class="comment">// Database query logic</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(users); <span class="comment">// Return defensive copy</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Memory-Leak-Prevention"><a href="#Memory-Leak-Prevention" class="headerlink" title="Memory Leak Prevention"></a>Memory Leak Prevention</h3><p><strong>Interview Insight:</strong> <em>“How do you detect and prevent memory leaks in a Java application?”</em></p>
-<p>Common memory leak patterns and solutions:</p>
-<ol>
-<li><strong>Static Collections</strong>: Use weak references or bounded caches</li>
-<li><strong>Listener Registration</strong>: Always unregister listeners</li>
-<li><strong>ThreadLocal Variables</strong>: Clear ThreadLocal in finally blocks</li>
-<li><strong>Connection Leaks</strong>: Use try-with-resources for connections</li>
-</ol>
-<p>Detection tools:</p>
-<ul>
-<li><strong>Heap Analysis</strong>: Eclipse MAT, JVisualVM</li>
-<li><strong>Profiling</strong>: Continuous monitoring of old generation growth</li>
-<li><strong>Application Metrics</strong>: Track object creation rates</li>
-</ul>
-<hr>
-<h2 id="Real-World-Case-Studies"><a href="#Real-World-Case-Studies" class="headerlink" title="Real-World Case Studies"></a>Real-World Case Studies</h2><h3 id="Case-Study-1-E-commerce-Platform-Optimization"><a href="#Case-Study-1-E-commerce-Platform-Optimization" class="headerlink" title="Case Study 1: E-commerce Platform Optimization"></a>Case Study 1: E-commerce Platform Optimization</h3><p><strong>Problem</strong>: High latency during peak traffic, frequent long GC pauses</p>
-<p><strong>Initial State</strong>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Heap Size: 16GB</span><br><span class="line">GC Algorithm: Parallel GC</span><br><span class="line">Average GC Pause: 8 seconds</span><br><span class="line">Throughput: 60%</span><br><span class="line">Error Rate: 5% (timeouts)</span><br></pre></td></tr></table></figure>
-
-<p><strong>Solution Applied</strong>:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Tuning approach</span></span><br><span class="line">-Xms32g -Xmx32g                  <span class="comment"># Increased heap size</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Switched to G1GC</span></span><br><span class="line">-XX:MaxGCPauseMillis=50          <span class="comment"># Aggressive pause target</span></span><br><span class="line">-XX:G1HeapRegionSize=64m         <span class="comment"># Large regions for big heap</span></span><br><span class="line">-XX:G1NewSizePercent=40          <span class="comment"># Larger young generation</span></span><br><span class="line">-XX:G1MixedGCCountTarget=4       <span class="comment"># Aggressive mixed GC</span></span><br><span class="line">-XX:+G1UseAdaptiveIHOP           <span class="comment"># Adaptive triggering</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Results</strong>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Average GC Pause: 30ms (99.6% improvement)</span><br><span class="line">Throughput: 98%</span><br><span class="line">Error Rate: 0.1%</span><br><span class="line">Response Time P99: Improved by 80%</span><br></pre></td></tr></table></figure>
-
-<h3 id="Case-Study-2-Microservice-Memory-Optimization"><a href="#Case-Study-2-Microservice-Memory-Optimization" class="headerlink" title="Case Study 2: Microservice Memory Optimization"></a>Case Study 2: Microservice Memory Optimization</h3><p><strong>Problem</strong>: High memory usage in containerized microservices</p>
-<p><strong>Interview Insight</strong>: <em>“How do you optimize JVM memory usage for containers with limited resources?”</em></p>
-<p><strong>Original Configuration</strong> (4GB container):</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-Xmx3g    <span class="comment"># Too large for container</span></span><br><span class="line">-XX:+UseParallelGC</span><br></pre></td></tr></table></figure>
-
-<p><strong>Optimized Configuration</strong>:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Container-aware settings</span></span><br><span class="line">-XX:+UseContainerSupport         <span class="comment"># JVM 11+ container awareness</span></span><br><span class="line">-XX:InitialRAMPercentage=50      <span class="comment"># Initial heap as % of container memory</span></span><br><span class="line">-XX:MaxRAMPercentage=75          <span class="comment"># Max heap as % of container memory</span></span><br><span class="line">-XX:+UseSerialGC                 <span class="comment"># Better for small heaps</span></span><br><span class="line">-XX:TieredStopAtLevel=1          <span class="comment"># Reduce compilation overhead</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Alternative for very small containers</span></span><br><span class="line">-Xmx1536m                        <span class="comment"># Leave 512MB for non-heap</span></span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=100</span><br></pre></td></tr></table></figure>
-
-<h3 id="Case-Study-3-Batch-Processing-Optimization"><a href="#Case-Study-3-Batch-Processing-Optimization" class="headerlink" title="Case Study 3: Batch Processing Optimization"></a>Case Study 3: Batch Processing Optimization</h3><p><strong>Problem</strong>: Long-running batch job with memory growth over time</p>
-<p><strong>Solution Strategy</strong>:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Before: Memory leak in batch processing</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BatchProcessor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> Map&lt;String, ProcessedData&gt; cache = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;(); <span class="comment">// Grows indefinitely</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processBatch</span><span class="params">(List&lt;RawData&gt; data)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (RawData item : data) &#123;</span><br><span class="line">            <span class="type">ProcessedData</span> <span class="variable">processed</span> <span class="operator">=</span> processItem(item);</span><br><span class="line">            cache.put(item.getId(), processed); <span class="comment">// Memory leak</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// After: Bounded cache with proper cleanup</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BatchProcessor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, ProcessedData&gt; cache = </span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicLong</span> <span class="variable">cacheHits</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicLong</span>();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MAX_CACHE_SIZE</span> <span class="operator">=</span> <span class="number">10000</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processBatch</span><span class="params">(List&lt;RawData&gt; data)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (RawData item : data) &#123;</span><br><span class="line">            <span class="type">ProcessedData</span> <span class="variable">processed</span> <span class="operator">=</span> cache.computeIfAbsent(</span><br><span class="line">                item.getId(), </span><br><span class="line">                k -&gt; processItem(item)</span><br><span class="line">            );</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// Periodic cleanup</span></span><br><span class="line">            <span class="keyword">if</span> (cacheHits.incrementAndGet() % <span class="number">1000</span> == <span class="number">0</span>) &#123;</span><br><span class="line">                cleanupCache();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">cleanupCache</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (cache.size() &gt; MAX_CACHE_SIZE) &#123;</span><br><span class="line">            cache.clear(); <span class="comment">// Simple strategy - could use LRU</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>JVM Configuration for Batch Processing</strong>:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-Xms8g -Xmx8g                    <span class="comment"># Fixed heap size</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Handle varying allocation rates</span></span><br><span class="line">-XX:G1HeapRegionSize=32m         <span class="comment"># Optimize for large object processing</span></span><br><span class="line">-XX:+UnlockExperimentalVMOptions</span><br><span class="line">-XX:+UseEpsilonGC                <span class="comment"># For short-lived batch jobs (Java 11+)</span></span><br></pre></td></tr></table></figure>
-
-<hr>
-<h2 id="Advanced-Interview-Questions-Answers"><a href="#Advanced-Interview-Questions-Answers" class="headerlink" title="Advanced Interview Questions &amp; Answers"></a>Advanced Interview Questions &amp; Answers</h2><h3 id="Memory-Management-Deep-Dive"><a href="#Memory-Management-Deep-Dive" class="headerlink" title="Memory Management Deep Dive"></a>Memory Management Deep Dive</h3><p><strong>Q</strong>: <em>“Explain the difference between -Xmx, -Xms, and why you might set them to the same value.”</em></p>
-<p><strong>A</strong>: </p>
-<ul>
-<li><code>-Xmx</code>: Maximum heap size - prevents OutOfMemoryError</li>
-<li><code>-Xms</code>: Initial heap size - starting allocation</li>
-<li><strong>Setting them equal</strong>: Prevents heap expansion overhead and provides predictable memory usage, crucial for:<ul>
-<li>Container environments (prevents OS killing process)</li>
-<li>Latency-sensitive applications (avoids allocation pauses)</li>
-<li>Production predictability</li>
-</ul>
-</li>
-</ul>
-<h3 id="GC-Algorithm-Selection"><a href="#GC-Algorithm-Selection" class="headerlink" title="GC Algorithm Selection"></a>GC Algorithm Selection</h3><p><strong>Q</strong>: <em>“When would you choose ZGC over G1GC, and what are the trade-offs?”</em></p>
-<p><strong>A</strong>: Choose ZGC when:</p>
-<ul>
-<li><strong>Heap sizes &gt;32GB</strong>: ZGC scales better with large heaps</li>
-<li><strong>Ultra-low latency requirements</strong>: &lt;10ms pause times</li>
-<li><strong>Concurrent collection</strong>: Application can’t tolerate stop-the-world pauses</li>
-</ul>
-<p>Trade-offs:</p>
-<ul>
-<li><strong>Higher memory overhead</strong>: ZGC uses more memory for metadata</li>
-<li><strong>CPU overhead</strong>: More concurrent work impacts throughput</li>
-<li><strong>Maturity</strong>: G1GC has broader production adoption</li>
-</ul>
-<h3 id="Performance-Troubleshooting"><a href="#Performance-Troubleshooting" class="headerlink" title="Performance Troubleshooting"></a>Performance Troubleshooting</h3><p><strong>Q</strong>: <em>“An application shows high CPU usage but low throughput. How do you diagnose this?”</em></p>
-<p><strong>A</strong>: Systematic diagnosis approach:</p>
-<ol>
-<li><strong>Check GC activity</strong>: <code>jstat -gc</code> - excessive GC can cause high CPU</li>
-<li><strong>Profile CPU usage</strong>: Async profiler to identify hot methods</li>
-<li><strong>Check thread states</strong>: <code>jstack</code> for thread contention</li>
-<li><strong>JIT compilation</strong>: <code>-XX:+PrintCompilation</code> for compilation storms</li>
-<li><strong>Lock contention</strong>: Thread dump analysis for blocked threads</li>
-</ol>
-<p><strong>Root causes often include</strong>:</p>
-<ul>
-<li>Inefficient algorithms causing excessive GC</li>
-<li>Lock contention preventing parallel execution</li>
-<li>Memory pressure causing constant GC activity</li>
-</ul>
-<p>This comprehensive guide provides both theoretical understanding and practical expertise needed for JVM performance tuning in production environments. The integrated interview insights ensure you’re prepared for both implementation and technical discussions.</p>
 
       
     </div>
