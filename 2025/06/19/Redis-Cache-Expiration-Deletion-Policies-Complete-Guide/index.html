@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha256-dABdfBfUoC8vJUBOwGVdm8L9qlMWaHTIfXt+7GnZCIo=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"shayne007.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.23.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Overview of Cache Expiration StrategiesRedis implements multiple expiration deletion strategies to efficiently manage memory and ensure optimal performance. Understanding these mechanisms is crucial f">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis Cache Expiration Deletion Policies - Complete Guide">
+<meta property="og:url" content="https://shayne007.github.io/2025/06/19/Redis-Cache-Expiration-Deletion-Policies-Complete-Guide/index.html">
+<meta property="og:site_name" content="Charlie Feng&#39;s Tech Space">
+<meta property="og:description" content="Overview of Cache Expiration StrategiesRedis implements multiple expiration deletion strategies to efficiently manage memory and ensure optimal performance. Understanding these mechanisms is crucial f">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-06-19T07:25:00.000Z">
+<meta property="article:modified_time" content="2025-06-19T09:05:24.519Z">
+<meta property="article:author" content="Charlie Feng">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://shayne007.github.io/2025/06/19/Redis-Cache-Expiration-Deletion-Policies-Complete-Guide/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://shayne007.github.io/2025/06/19/Redis-Cache-Expiration-Deletion-Policies-Complete-Guide/","path":"2025/06/19/Redis-Cache-Expiration-Deletion-Policies-Complete-Guide/","title":"Redis Cache Expiration Deletion Policies - Complete Guide"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis Cache Expiration Deletion Policies - Complete Guide | Charlie Feng's Tech Space</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"cdn":false,"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.5.0/mermaid.min.js","integrity":"sha256-2obLuIPcceEhkE3G09G33hBdmE55ivVcZUlcKcGNHjU="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Charlie Feng's Tech Space</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">You will survive with skills</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Overview-of-Cache-Expiration-Strategies"><span class="nav-number">1.</span> <span class="nav-text">Overview of Cache Expiration Strategies</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Core-Expiration-Deletion-Policies"><span class="nav-number">2.</span> <span class="nav-text">Core Expiration Deletion Policies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Lazy-Deletion-Passive-Expiration"><span class="nav-number">2.1.</span> <span class="nav-text">Lazy Deletion (Passive Expiration)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Active-Deletion-Proactive-Scanning"><span class="nav-number">2.2.</span> <span class="nav-text">Active Deletion (Proactive Scanning)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Timer-Based-Deletion"><span class="nav-number">2.3.</span> <span class="nav-text">Timer-Based Deletion</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Delay-Queue-Deletion"><span class="nav-number">2.4.</span> <span class="nav-text">Delay Queue Deletion</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis-Expiration-Policies-Eviction-Policies"><span class="nav-number">3.</span> <span class="nav-text">Redis Expiration Policies (Eviction Policies)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Available-Eviction-Policies"><span class="nav-number">3.1.</span> <span class="nav-text">Available Eviction Policies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Policy-Selection-Guide"><span class="nav-number">3.2.</span> <span class="nav-text">Policy Selection Guide</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Master-Slave-Cluster-Expiration-Mechanisms"><span class="nav-number">4.</span> <span class="nav-text">Master-Slave Cluster Expiration Mechanisms</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Replication-of-Expiration"><span class="nav-number">4.1.</span> <span class="nav-text">Replication of Expiration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Cluster-Configuration-for-Expiration"><span class="nav-number">4.2.</span> <span class="nav-text">Cluster Configuration for Expiration</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Durability-and-Expired-Keys"><span class="nav-number">5.</span> <span class="nav-text">Durability and Expired Keys</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RDB-Persistence"><span class="nav-number">5.1.</span> <span class="nav-text">RDB Persistence</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF-Persistence"><span class="nav-number">5.2.</span> <span class="nav-text">AOF Persistence</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Optimization-Strategies"><span class="nav-number">6.</span> <span class="nav-text">Optimization Strategies</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Efficient-Configuration"><span class="nav-number">6.1.</span> <span class="nav-text">Memory-Efficient Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Expiration-Time-Configuration-Optimization"><span class="nav-number">6.2.</span> <span class="nav-text">Expiration Time Configuration Optimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Production-Use-Cases"><span class="nav-number">7.</span> <span class="nav-text">Production Use Cases</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#High-Concurrent-Idempotent-Scenarios"><span class="nav-number">7.1.</span> <span class="nav-text">High-Concurrent Idempotent Scenarios</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hot-Key-Scenarios"><span class="nav-number">7.2.</span> <span class="nav-text">Hot Key Scenarios</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pre-Loading-and-Predictive-Caching"><span class="nav-number">7.3.</span> <span class="nav-text">Pre-Loading and Predictive Caching</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Monitoring-and-Metrics"><span class="nav-number">8.</span> <span class="nav-text">Performance Monitoring and Metrics</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Expiration-Monitoring"><span class="nav-number">8.1.</span> <span class="nav-text">Expiration Monitoring</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-Checklist"><span class="nav-number">8.2.</span> <span class="nav-text">Configuration Checklist</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interview-Questions-and-Expert-Answers"><span class="nav-number">9.</span> <span class="nav-text">Interview Questions and Expert Answers</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#External-References-and-Resources"><span class="nav-number">10.</span> <span class="nav-text">External References and Resources</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Key-Takeaways"><span class="nav-number">11.</span> <span class="nav-text">Key Takeaways</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charlie Feng</p>
+  <div class="site-description" itemprop="description">This place is for thinking and sharing.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/19/Redis-Cache-Expiration-Deletion-Policies-Complete-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Redis Cache Expiration Deletion Policies - Complete Guide | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis Cache Expiration Deletion Policies - Complete Guide
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-19 15:25:00 / Modified: 17:05:24" itemprop="dateCreated datePublished" datetime="2025-06-19T15:25:00+08:00">2025-06-19</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Overview-of-Cache-Expiration-Strategies"><a href="#Overview-of-Cache-Expiration-Strategies" class="headerlink" title="Overview of Cache Expiration Strategies"></a>Overview of Cache Expiration Strategies</h2><p>Redis implements multiple expiration deletion strategies to efficiently manage memory and ensure optimal performance. Understanding these mechanisms is crucial for building scalable, high-performance applications.</p>
+<p><strong>Interview Insight</strong>: <em>“How does Redis handle expired keys?”</em> - Redis uses a combination of lazy deletion and active deletion strategies. It doesn’t immediately delete expired keys but employs intelligent algorithms to balance performance and memory usage.</p>
+<h2 id="Core-Expiration-Deletion-Policies"><a href="#Core-Expiration-Deletion-Policies" class="headerlink" title="Core Expiration Deletion Policies"></a>Core Expiration Deletion Policies</h2><h3 id="Lazy-Deletion-Passive-Expiration"><a href="#Lazy-Deletion-Passive-Expiration" class="headerlink" title="Lazy Deletion (Passive Expiration)"></a>Lazy Deletion (Passive Expiration)</h3><p>Lazy deletion is the primary mechanism where expired keys are only removed when they are accessed.</p>
+<p><strong>How it works</strong>:</p>
+<ul>
+<li>When a client attempts to access a key, Redis checks if it has expired</li>
+<li>If expired, the key is immediately deleted and <code>NULL</code> is returned</li>
+<li>No background scanning or proactive deletion occurs</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Example: Lazy deletion in action</span></span><br><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">r = redis.Redis()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set a key with 2-second expiration</span></span><br><span class="line">r.setex(<span class="string">&#x27;temp_key&#x27;</span>, <span class="number">2</span>, <span class="string">&#x27;temporary_value&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Key exists initially</span></span><br><span class="line"><span class="built_in">print</span>(r.get(<span class="string">&#x27;temp_key&#x27;</span>))  <span class="comment"># b&#x27;temporary_value&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Wait for expiration</span></span><br><span class="line">time.sleep(<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Key is deleted only when accessed (lazy deletion)</span></span><br><span class="line"><span class="built_in">print</span>(r.get(<span class="string">&#x27;temp_key&#x27;</span>))  <span class="comment"># None</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Advantages</strong>:</p>
+<ul>
+<li>Minimal CPU overhead</li>
+<li>No background processing required</li>
+<li>Perfect for frequently accessed keys</li>
+</ul>
+<p><strong>Disadvantages</strong>:</p>
+<ul>
+<li>Memory waste if expired keys are never accessed</li>
+<li>Unpredictable memory usage patterns</li>
+</ul>
+<h3 id="Active-Deletion-Proactive-Scanning"><a href="#Active-Deletion-Proactive-Scanning" class="headerlink" title="Active Deletion (Proactive Scanning)"></a>Active Deletion (Proactive Scanning)</h3><p>Redis periodically scans and removes expired keys to prevent memory bloat.</p>
+<p><strong>Algorithm Details</strong>:</p>
+<ol>
+<li>Redis runs expiration cycles approximately 10 times per second</li>
+<li>Each cycle samples 20 random keys from the expires dictionary</li>
+<li>If more than 25% are expired, repeat the process</li>
+<li>Maximum execution time per cycle is limited to prevent blocking</li>
+</ol>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[Start Expiration Cycle] --&gt; B[Sample 20 Random Keys]
+B --&gt; C{More than 25% expired?}
+C --&gt;|Yes| D[Delete Expired Keys]
+D --&gt; E{Time limit reached?}
+E --&gt;|No| B
+E --&gt;|Yes| F[End Cycle]
+C --&gt;|No| F
+F --&gt; G[Wait ~100ms]
+G --&gt; A
+</code>
+</pre>
+
+<p><strong>Configuration Parameters</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Redis configuration for active expiration</span></span><br><span class="line">hz 10                    <span class="comment"># Frequency of background tasks (10 Hz = 10 times/second)</span></span><br><span class="line">active-expire-effort 1   <span class="comment"># CPU effort for active expiration (1-10)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Timer-Based-Deletion"><a href="#Timer-Based-Deletion" class="headerlink" title="Timer-Based Deletion"></a>Timer-Based Deletion</h3><p>While Redis doesn’t implement traditional timer-based deletion, you can simulate it using sorted sets:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TimerCache</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis_client = redis.Redis()</span><br><span class="line">        <span class="variable language_">self</span>.timer_key = <span class="string">&quot;expiration_timer&quot;</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_with_timer</span>(<span class="params">self, key, value, ttl</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Set key-value with custom timer deletion&quot;&quot;&quot;</span></span><br><span class="line">        expire_time = time.time() + ttl</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Store the actual data</span></span><br><span class="line">        <span class="variable language_">self</span>.redis_client.<span class="built_in">set</span>(key, value)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Add to timer sorted set</span></span><br><span class="line">        <span class="variable language_">self</span>.redis_client.zadd(<span class="variable language_">self</span>.timer_key, &#123;key: expire_time&#125;)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">cleanup_expired</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Background thread to clean expired keys&quot;&quot;&quot;</span></span><br><span class="line">        current_time = time.time()</span><br><span class="line">        expired_keys = <span class="variable language_">self</span>.redis_client.zrangebyscore(</span><br><span class="line">            <span class="variable language_">self</span>.timer_key, <span class="number">0</span>, current_time</span><br><span class="line">        )</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> expired_keys:</span><br><span class="line">            <span class="comment"># Remove expired keys</span></span><br><span class="line">            <span class="keyword">for</span> key <span class="keyword">in</span> expired_keys:</span><br><span class="line">                <span class="variable language_">self</span>.redis_client.delete(key.decode())</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Remove from timer set</span></span><br><span class="line">            <span class="variable language_">self</span>.redis_client.zremrangebyscore(<span class="variable language_">self</span>.timer_key, <span class="number">0</span>, current_time)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">cache = TimerCache()</span><br><span class="line">cache.set_with_timer(<span class="string">&#x27;user:1&#x27;</span>, <span class="string">&#x27;John Doe&#x27;</span>, <span class="number">60</span>)  <span class="comment"># 60 seconds TTL</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Delay-Queue-Deletion"><a href="#Delay-Queue-Deletion" class="headerlink" title="Delay Queue Deletion"></a>Delay Queue Deletion</h3><p>Implement a delay queue pattern for complex expiration scenarios:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime, timedelta</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">DelayQueueExpiration</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis_client = redis.Redis()</span><br><span class="line">        <span class="variable language_">self</span>.queue_key = <span class="string">&quot;delay_expiration_queue&quot;</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">schedule_deletion</span>(<span class="params">self, key, delay_seconds</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Schedule key deletion after specified delay&quot;&quot;&quot;</span></span><br><span class="line">        execution_time = time.time() + delay_seconds</span><br><span class="line">        task = &#123;</span><br><span class="line">            <span class="string">&#x27;key&#x27;</span>: key,</span><br><span class="line">            <span class="string">&#x27;scheduled_time&#x27;</span>: execution_time,</span><br><span class="line">            <span class="string">&#x27;action&#x27;</span>: <span class="string">&#x27;delete&#x27;</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="variable language_">self</span>.redis_client.zadd(</span><br><span class="line">            <span class="variable language_">self</span>.queue_key, </span><br><span class="line">            &#123;json.dumps(task): execution_time&#125;</span><br><span class="line">        )</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">process_delayed_deletions</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Process pending deletions&quot;&quot;&quot;</span></span><br><span class="line">        current_time = time.time()</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Get tasks ready for execution</span></span><br><span class="line">        ready_tasks = <span class="variable language_">self</span>.redis_client.zrangebyscore(</span><br><span class="line">            <span class="variable language_">self</span>.queue_key, <span class="number">0</span>, current_time, withscores=<span class="literal">True</span></span><br><span class="line">        )</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> task_json, score <span class="keyword">in</span> ready_tasks:</span><br><span class="line">            task = json.loads(task_json)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Execute deletion</span></span><br><span class="line">            <span class="variable language_">self</span>.redis_client.delete(task[<span class="string">&#x27;key&#x27;</span>])</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Remove from queue</span></span><br><span class="line">            <span class="variable language_">self</span>.redis_client.zrem(<span class="variable language_">self</span>.queue_key, task_json)</span><br><span class="line">            </span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Deleted key: <span class="subst">&#123;task[<span class="string">&#x27;key&#x27;</span>]&#125;</span> at <span class="subst">&#123;datetime.now()&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage</span></span><br><span class="line">delay_queue = DelayQueueExpiration()</span><br><span class="line">delay_queue.schedule_deletion(<span class="string">&#x27;temp_data&#x27;</span>, <span class="number">300</span>)  <span class="comment"># Delete after 5 minutes</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>“What’s the difference between active and passive expiration?”</em> - Passive (lazy) expiration only occurs when keys are accessed, while active expiration proactively scans and removes expired keys in background cycles to prevent memory bloat.</p>
+<h2 id="Redis-Expiration-Policies-Eviction-Policies"><a href="#Redis-Expiration-Policies-Eviction-Policies" class="headerlink" title="Redis Expiration Policies (Eviction Policies)"></a>Redis Expiration Policies (Eviction Policies)</h2><p>When Redis reaches memory limits, it employs eviction policies to free up space:</p>
+<h3 id="Available-Eviction-Policies"><a href="#Available-Eviction-Policies" class="headerlink" title="Available Eviction Policies"></a>Available Eviction Policies</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Configuration in redis.conf</span></span><br><span class="line">maxmemory 2gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br></pre></td></tr></table></figure>
+
+<p><strong>Policy Types</strong>:</p>
+<ol>
+<li><p><strong>noeviction</strong> (default)</p>
+<ul>
+<li>No keys are evicted</li>
+<li>Write operations return errors when memory limit reached</li>
+<li>Use case: Critical data that cannot be lost</li>
+</ul>
+</li>
+<li><p><strong>allkeys-lru</strong></p>
+<ul>
+<li>Removes least recently used keys from all keys</li>
+<li>Use case: General caching scenarios</li>
+</ul>
+</li>
+<li><p><strong>allkeys-lfu</strong></p>
+<ul>
+<li>Removes least frequently used keys</li>
+<li>Use case: Applications with distinct access patterns</li>
+</ul>
+</li>
+<li><p><strong>volatile-lru</strong></p>
+<ul>
+<li>Removes LRU keys only from keys with expiration set</li>
+<li>Use case: Mixed persistent and temporary data</li>
+</ul>
+</li>
+<li><p><strong>volatile-lfu</strong></p>
+<ul>
+<li>Removes LFU keys only from keys with expiration set</li>
+</ul>
+</li>
+<li><p><strong>allkeys-random</strong></p>
+<ul>
+<li>Randomly removes keys</li>
+<li>Use case: When access patterns are unpredictable</li>
+</ul>
+</li>
+<li><p><strong>volatile-random</strong></p>
+<ul>
+<li>Randomly removes keys with expiration set</li>
+</ul>
+</li>
+<li><p><strong>volatile-ttl</strong></p>
+<ul>
+<li>Removes keys with shortest TTL first</li>
+<li>Use case: Time-sensitive data prioritization</li>
+</ul>
+</li>
+</ol>
+<h3 id="Policy-Selection-Guide"><a href="#Policy-Selection-Guide" class="headerlink" title="Policy Selection Guide"></a>Policy Selection Guide</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Memory Pressure] --&gt; B{All data equally important?}
+B --&gt;|Yes| C[allkeys-lru&#x2F;lfu]
+B --&gt;|No| D{Temporary vs Persistent data?}
+D --&gt;|Mixed| E[volatile-lru&#x2F;lfu]
+D --&gt;|Time-sensitive| F[volatile-ttl]
+C --&gt; G[High access pattern variance?]
+G --&gt;|Yes| H[allkeys-lfu]
+G --&gt;|No| I[allkeys-lru]
+</code>
+</pre>
+
+<h2 id="Master-Slave-Cluster-Expiration-Mechanisms"><a href="#Master-Slave-Cluster-Expiration-Mechanisms" class="headerlink" title="Master-Slave Cluster Expiration Mechanisms"></a>Master-Slave Cluster Expiration Mechanisms</h2><h3 id="Replication-of-Expiration"><a href="#Replication-of-Expiration" class="headerlink" title="Replication of Expiration"></a>Replication of Expiration</h3><p>In Redis clusters, expiration handling follows specific patterns:</p>
+<p><strong>Master-Slave Expiration Flow</strong>:</p>
+<ol>
+<li>Only masters perform active expiration</li>
+<li>Masters send explicit <code>DEL</code> commands to slaves</li>
+<li>Slaves don’t independently expire keys (except for lazy deletion)</li>
+</ol>
+<pre>
+<code class="mermaid">
+sequenceDiagram
+participant M as Master
+participant S1 as Slave 1
+participant S2 as Slave 2
+participant C as Client
+
+Note over M: Active expiration cycle
+M-&gt;&gt;M: Check expired keys
+M-&gt;&gt;S1: DEL expired_key
+M-&gt;&gt;S2: DEL expired_key
+
+C-&gt;&gt;S1: GET expired_key
+S1-&gt;&gt;S1: Lazy expiration check
+S1-&gt;&gt;C: NULL (key expired)
+</code>
+</pre>
+
+<h3 id="Cluster-Configuration-for-Expiration"><a href="#Cluster-Configuration-for-Expiration" class="headerlink" title="Cluster Configuration for Expiration"></a>Cluster Configuration for Expiration</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Master configuration</span></span><br><span class="line"><span class="built_in">bind</span> 0.0.0.0</span><br><span class="line">port 6379</span><br><span class="line">maxmemory 1gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br><span class="line">hz 10</span><br><span class="line"></span><br><span class="line"><span class="comment"># Slave configuration</span></span><br><span class="line"><span class="built_in">bind</span> 0.0.0.0</span><br><span class="line">port 6380</span><br><span class="line">slaveof 127.0.0.1 6379</span><br><span class="line">slave-read-only <span class="built_in">yes</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Example - Redis Sentinel with Expiration</strong>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis.sentinel</span><br><span class="line"></span><br><span class="line"><span class="comment"># Sentinel configuration for high availability</span></span><br><span class="line">sentinels = [(<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26379</span>), (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26380</span>), (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26381</span>)]</span><br><span class="line">sentinel = redis.sentinel.Sentinel(sentinels)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Get master and slave connections</span></span><br><span class="line">master = sentinel.master_for(<span class="string">&#x27;mymaster&#x27;</span>, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line">slave = sentinel.slave_for(<span class="string">&#x27;mymaster&#x27;</span>, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Write to master with expiration</span></span><br><span class="line">master.setex(<span class="string">&#x27;session:user:1&#x27;</span>, <span class="number">3600</span>, <span class="string">&#x27;session_data&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Read from slave (expiration handled consistently)</span></span><br><span class="line">session_data = slave.get(<span class="string">&#x27;session:user:1&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>“How does Redis handle expiration in a cluster?”</em> - In Redis clusters, only master nodes perform active expiration. When a master expires a key, it sends explicit DEL commands to all slaves to maintain consistency.</p>
+<h2 id="Durability-and-Expired-Keys"><a href="#Durability-and-Expired-Keys" class="headerlink" title="Durability and Expired Keys"></a>Durability and Expired Keys</h2><h3 id="RDB-Persistence"><a href="#RDB-Persistence" class="headerlink" title="RDB Persistence"></a>RDB Persistence</h3><p>Expired keys are handled during RDB operations:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># RDB configuration</span></span><br><span class="line">save 900 1      <span class="comment"># Save if at least 1 key changed in 900 seconds</span></span><br><span class="line">save 300 10     <span class="comment"># Save if at least 10 keys changed in 300 seconds</span></span><br><span class="line">save 60 10000   <span class="comment"># Save if at least 10000 keys changed in 60 seconds</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Expired keys are not saved to RDB files</span></span><br><span class="line">rdbcompression <span class="built_in">yes</span></span><br><span class="line">rdbchecksum <span class="built_in">yes</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="AOF-Persistence"><a href="#AOF-Persistence" class="headerlink" title="AOF Persistence"></a>AOF Persistence</h3><p>AOF handles expiration through explicit commands:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># AOF configuration</span></span><br><span class="line">appendonly <span class="built_in">yes</span></span><br><span class="line">appendfsync everysec</span><br><span class="line">auto-aof-rewrite-percentage 100</span><br><span class="line">auto-aof-rewrite-min-size 64mb</span><br><span class="line"></span><br><span class="line"><span class="comment"># Expired keys generate explicit DEL commands in AOF</span></span><br><span class="line">no-appendfsync-on-rewrite no</span><br></pre></td></tr></table></figure>
+
+<p><strong>Example AOF entries for expiration</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">*2</span><br><span class="line">$6</span><br><span class="line">SELECT</span><br><span class="line">$1</span><br><span class="line">0</span><br><span class="line">*3</span><br><span class="line">$3</span><br><span class="line">SET</span><br><span class="line">$8</span><br><span class="line">temp_key</span><br><span class="line">$5</span><br><span class="line">value</span><br><span class="line">*3</span><br><span class="line">$6</span><br><span class="line">EXPIRE</span><br><span class="line">$8</span><br><span class="line">temp_key</span><br><span class="line">$2</span><br><span class="line">60</span><br><span class="line">*2</span><br><span class="line">$3</span><br><span class="line">DEL</span><br><span class="line">$8</span><br><span class="line">temp_key</span><br></pre></td></tr></table></figure>
+
+<h2 id="Optimization-Strategies"><a href="#Optimization-Strategies" class="headerlink" title="Optimization Strategies"></a>Optimization Strategies</h2><h3 id="Memory-Efficient-Configuration"><a href="#Memory-Efficient-Configuration" class="headerlink" title="Memory-Efficient Configuration"></a>Memory-Efficient Configuration</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># redis.conf optimizations</span></span><br><span class="line">maxmemory 2gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br><span class="line"></span><br><span class="line"><span class="comment"># Active deletion tuning</span></span><br><span class="line">hz 10  <span class="comment"># Background task frequency</span></span><br><span class="line">active-expire-cycle-lookups-per-loop 20</span><br><span class="line">active-expire-cycle-fast-duration 1000</span><br><span class="line"></span><br><span class="line"><span class="comment"># Memory sampling for LRU/LFU</span></span><br><span class="line">maxmemory-samples 5</span><br></pre></td></tr></table></figure>
+
+<h3 id="Expiration-Time-Configuration-Optimization"><a href="#Expiration-Time-Configuration-Optimization" class="headerlink" title="Expiration Time Configuration Optimization"></a>Expiration Time Configuration Optimization</h3><p><strong>Hierarchical TTL Strategy</strong>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">TTLManager</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Define TTL hierarchy</span></span><br><span class="line">        <span class="variable language_">self</span>.ttl_config = &#123;</span><br><span class="line">            <span class="string">&#x27;hot_data&#x27;</span>: <span class="number">300</span>,      <span class="comment"># 5 minutes - frequently accessed</span></span><br><span class="line">            <span class="string">&#x27;warm_data&#x27;</span>: <span class="number">1800</span>,    <span class="comment"># 30 minutes - moderately accessed</span></span><br><span class="line">            <span class="string">&#x27;cold_data&#x27;</span>: <span class="number">3600</span>,    <span class="comment"># 1 hour - rarely accessed</span></span><br><span class="line">            <span class="string">&#x27;session_data&#x27;</span>: <span class="number">7200</span>, <span class="comment"># 2 hours - user sessions</span></span><br><span class="line">            <span class="string">&#x27;cache_data&#x27;</span>: <span class="number">86400</span>   <span class="comment"># 24 hours - general cache</span></span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_with_smart_ttl</span>(<span class="params">self, key, value, data_type=<span class="string">&#x27;cache_data&#x27;</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Set key with intelligent TTL based on data type&quot;&quot;&quot;</span></span><br><span class="line">        ttl = <span class="variable language_">self</span>.ttl_config.get(data_type, <span class="number">3600</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Add jitter to prevent thundering herd</span></span><br><span class="line">        <span class="keyword">import</span> random</span><br><span class="line">        jitter = random.randint(-ttl//<span class="number">10</span>, ttl//<span class="number">10</span>)</span><br><span class="line">        final_ttl = ttl + jitter</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.redis.setex(key, final_ttl, value)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">adaptive_ttl</span>(<span class="params">self, key, access_frequency</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Adjust TTL based on access patterns&quot;&quot;&quot;</span></span><br><span class="line">        base_ttl = <span class="number">3600</span>  <span class="comment"># 1 hour base</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> access_frequency &gt; <span class="number">100</span>:  <span class="comment"># Hot key</span></span><br><span class="line">            <span class="keyword">return</span> base_ttl // <span class="number">4</span>    <span class="comment"># 15 minutes</span></span><br><span class="line">        <span class="keyword">elif</span> access_frequency &gt; <span class="number">10</span>: <span class="comment"># Warm key</span></span><br><span class="line">            <span class="keyword">return</span> base_ttl // <span class="number">2</span>    <span class="comment"># 30 minutes</span></span><br><span class="line">        <span class="keyword">else</span>:                       <span class="comment"># Cold key</span></span><br><span class="line">            <span class="keyword">return</span> base_ttl * <span class="number">2</span>     <span class="comment"># 2 hours</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">ttl_manager = TTLManager(redis.Redis())</span><br><span class="line">ttl_manager.set_with_smart_ttl(<span class="string">&#x27;user:profile:123&#x27;</span>, user_data, <span class="string">&#x27;hot_data&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Production-Use-Cases"><a href="#Production-Use-Cases" class="headerlink" title="Production Use Cases"></a>Production Use Cases</h2><h3 id="High-Concurrent-Idempotent-Scenarios"><a href="#High-Concurrent-Idempotent-Scenarios" class="headerlink" title="High-Concurrent Idempotent Scenarios"></a>High-Concurrent Idempotent Scenarios</h3><p>In idempotent(&#x2F;aɪˈdempətənt&#x2F;) operations, cache expiration must prevent duplicate processing while maintaining consistency.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> uuid</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IdempotentCache</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis.Redis()</span><br><span class="line">        <span class="variable language_">self</span>.default_ttl = <span class="number">300</span>  <span class="comment"># 5 minutes</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">generate_idempotent_key</span>(<span class="params">self, operation, params</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Generate unique key for operation&quot;&quot;&quot;</span></span><br><span class="line">        <span class="comment"># Create hash from operation and parameters</span></span><br><span class="line">        content = <span class="string">f&quot;<span class="subst">&#123;operation&#125;</span>:<span class="subst">&#123;<span class="built_in">str</span>(<span class="built_in">sorted</span>(params.items()))&#125;</span>&quot;</span></span><br><span class="line">        <span class="keyword">return</span> <span class="string">f&quot;idempotent:<span class="subst">&#123;hashlib.md5(content.encode()).hexdigest()&#125;</span>&quot;</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">execute_idempotent</span>(<span class="params">self, operation, params, executor_func</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Execute operation with idempotency guarantee&quot;&quot;&quot;</span></span><br><span class="line">        idempotent_key = <span class="variable language_">self</span>.generate_idempotent_key(operation, params)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Check if operation already executed</span></span><br><span class="line">        result = <span class="variable language_">self</span>.redis.get(idempotent_key)</span><br><span class="line">        <span class="keyword">if</span> result:</span><br><span class="line">            <span class="keyword">return</span> json.loads(result)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Use distributed lock to prevent concurrent execution</span></span><br><span class="line">        lock_key = <span class="string">f&quot;lock:<span class="subst">&#123;idempotent_key&#125;</span>&quot;</span></span><br><span class="line">        lock_acquired = <span class="variable language_">self</span>.redis.<span class="built_in">set</span>(lock_key, <span class="string">&quot;1&quot;</span>, nx=<span class="literal">True</span>, ex=<span class="number">60</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> lock_acquired:</span><br><span class="line">            <span class="comment"># Wait and check again</span></span><br><span class="line">            time.sleep(<span class="number">0.1</span>)</span><br><span class="line">            result = <span class="variable language_">self</span>.redis.get(idempotent_key)</span><br><span class="line">            <span class="keyword">if</span> result:</span><br><span class="line">                <span class="keyword">return</span> json.loads(result)</span><br><span class="line">            <span class="keyword">raise</span> Exception(<span class="string">&quot;Operation in progress&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            <span class="comment"># Execute the actual operation</span></span><br><span class="line">            result = executor_func(params)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Cache the result</span></span><br><span class="line">            <span class="variable language_">self</span>.redis.setex(</span><br><span class="line">                idempotent_key, </span><br><span class="line">                <span class="variable language_">self</span>.default_ttl, </span><br><span class="line">                json.dumps(result)</span><br><span class="line">            )</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span> result</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            <span class="comment"># Release lock</span></span><br><span class="line">            <span class="variable language_">self</span>.redis.delete(lock_key)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">process_payment</span>(<span class="params">params</span>):</span><br><span class="line">    <span class="comment"># Simulate payment processing</span></span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="string">&quot;status&quot;</span>: <span class="string">&quot;success&quot;</span>, <span class="string">&quot;transaction_id&quot;</span>: <span class="built_in">str</span>(uuid.uuid4())&#125;</span><br><span class="line"></span><br><span class="line">idempotent_cache = IdempotentCache()</span><br><span class="line">result = idempotent_cache.execute_idempotent(</span><br><span class="line">    <span class="string">&quot;payment&quot;</span>, </span><br><span class="line">    &#123;<span class="string">&quot;amount&quot;</span>: <span class="number">100</span>, <span class="string">&quot;user_id&quot;</span>: <span class="string">&quot;123&quot;</span>&#125;, </span><br><span class="line">    process_payment</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Hot-Key-Scenarios"><a href="#Hot-Key-Scenarios" class="headerlink" title="Hot Key Scenarios"></a>Hot Key Scenarios</h3><p><strong>Problem</strong>: Managing frequently accessed keys that can overwhelm Redis.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> defaultdict</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">HotKeyManager</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis.Redis()</span><br><span class="line">        <span class="variable language_">self</span>.access_stats = defaultdict(<span class="built_in">int</span>)</span><br><span class="line">        <span class="variable language_">self</span>.hot_key_threshold = <span class="number">1000</span>  <span class="comment"># Requests per minute</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_with_hot_key_protection</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Get value with hot key protection&quot;&quot;&quot;</span></span><br><span class="line">        <span class="variable language_">self</span>.access_stats[key] += <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Check if key is hot</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.access_stats[key] &gt; <span class="variable language_">self</span>.hot_key_threshold:</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">self</span>._handle_hot_key(key)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.redis.get(key)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_handle_hot_key</span>(<span class="params">self, hot_key</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Handle hot key with multiple strategies&quot;&quot;&quot;</span></span><br><span class="line">        strategies = [</span><br><span class="line">            <span class="variable language_">self</span>._local_cache_strategy,</span><br><span class="line">            <span class="variable language_">self</span>._replica_strategy,</span><br><span class="line">            <span class="variable language_">self</span>._fragmentation_strategy</span><br><span class="line">        ]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Choose strategy based on key characteristics</span></span><br><span class="line">        <span class="keyword">return</span> random.choice(strategies)(hot_key)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_local_cache_strategy</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Use local cache for hot keys&quot;&quot;&quot;</span></span><br><span class="line">        local_cache_key = <span class="string">f&quot;local:<span class="subst">&#123;key&#125;</span>&quot;</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Check local cache first (simulate with Redis)</span></span><br><span class="line">        local_value = <span class="variable language_">self</span>.redis.get(local_cache_key)</span><br><span class="line">        <span class="keyword">if</span> local_value:</span><br><span class="line">            <span class="keyword">return</span> local_value</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Get from main cache and store locally</span></span><br><span class="line">        value = <span class="variable language_">self</span>.redis.get(key)</span><br><span class="line">        <span class="keyword">if</span> value:</span><br><span class="line">            <span class="comment"># Short TTL for local cache</span></span><br><span class="line">            <span class="variable language_">self</span>.redis.setex(local_cache_key, <span class="number">60</span>, value)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> value</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_replica_strategy</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Create multiple replicas of hot key&quot;&quot;&quot;</span></span><br><span class="line">        replica_count = <span class="number">5</span></span><br><span class="line">        replica_key = <span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:replica:<span class="subst">&#123;random.randint(<span class="number">1</span>, replica_count)&#125;</span>&quot;</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Try to get from replica</span></span><br><span class="line">        value = <span class="variable language_">self</span>.redis.get(replica_key)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> value:</span><br><span class="line">            <span class="comment"># Get from master and update replica</span></span><br><span class="line">            value = <span class="variable language_">self</span>.redis.get(key)</span><br><span class="line">            <span class="keyword">if</span> value:</span><br><span class="line">                <span class="variable language_">self</span>.redis.setex(replica_key, <span class="number">300</span>, value)  <span class="comment"># 5 min TTL</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> value</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_fragmentation_strategy</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Fragment hot key into smaller pieces&quot;&quot;&quot;</span></span><br><span class="line">        <span class="comment"># For large objects, split into fragments</span></span><br><span class="line">        fragments = []</span><br><span class="line">        fragment_index = <span class="number">0</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            fragment_key = <span class="string">f&quot;<span class="subst">&#123;key&#125;</span>:frag:<span class="subst">&#123;fragment_index&#125;</span>&quot;</span></span><br><span class="line">            fragment = <span class="variable language_">self</span>.redis.get(fragment_key)</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> fragment:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">                </span><br><span class="line">            fragments.append(fragment)</span><br><span class="line">            fragment_index += <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> fragments:</span><br><span class="line">            <span class="keyword">return</span> <span class="string">b&#x27;&#x27;</span>.join(fragments)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.redis.get(key)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage example</span></span><br><span class="line">hot_key_manager = HotKeyManager()</span><br><span class="line">value = hot_key_manager.get_with_hot_key_protection(<span class="string">&#x27;popular_product:123&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Pre-Loading-and-Predictive-Caching"><a href="#Pre-Loading-and-Predictive-Caching" class="headerlink" title="Pre-Loading and Predictive Caching"></a>Pre-Loading and Predictive Caching</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">PredictiveCacheManager</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, redis_client</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis_client</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">preload_related_data</span>(<span class="params">self, primary_key, related_keys_func, short_ttl=<span class="number">300</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Pre-load related data with shorter TTL</span></span><br><span class="line"><span class="string">        Useful for pagination, related products, etc.</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="comment"># Get related keys that might be accessed soon</span></span><br><span class="line">        related_keys = related_keys_func(primary_key)</span><br><span class="line">        </span><br><span class="line">        pipeline = <span class="variable language_">self</span>.redis.pipeline()</span><br><span class="line">        <span class="keyword">for</span> related_key <span class="keyword">in</span> related_keys:</span><br><span class="line">            <span class="comment"># Check if already cached</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> <span class="variable language_">self</span>.redis.exists(related_key):</span><br><span class="line">                <span class="comment"># Pre-load with shorter TTL</span></span><br><span class="line">                related_data = <span class="variable language_">self</span>._fetch_data(related_key)</span><br><span class="line">                pipeline.setex(related_key, short_ttl, related_data)</span><br><span class="line">        </span><br><span class="line">        pipeline.execute()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">cache_with_prefetch</span>(<span class="params">self, key, value, ttl=<span class="number">3600</span>, prefetch_ratio=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Cache data and trigger prefetch when TTL is near expiration</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="variable language_">self</span>.redis.setex(key, ttl, value)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Set a prefetch trigger at 90% of TTL</span></span><br><span class="line">        prefetch_ttl = <span class="built_in">int</span>(ttl * prefetch_ratio)</span><br><span class="line">        prefetch_key = <span class="string">f&quot;prefetch:<span class="subst">&#123;key&#125;</span>&quot;</span></span><br><span class="line">        <span class="variable language_">self</span>.redis.setex(prefetch_key, ttl - prefetch_ttl, <span class="string">&quot;trigger&quot;</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">check_and_prefetch</span>(<span class="params">self, key, refresh_func</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Check if prefetch is needed and refresh in background&quot;&quot;&quot;</span></span><br><span class="line">        prefetch_key = <span class="string">f&quot;prefetch:<span class="subst">&#123;key&#125;</span>&quot;</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="variable language_">self</span>.redis.exists(prefetch_key):</span><br><span class="line">            <span class="comment"># Prefetch trigger expired - refresh in background</span></span><br><span class="line">            threading.Thread(</span><br><span class="line">                target=<span class="variable language_">self</span>._background_refresh,</span><br><span class="line">                args=(key, refresh_func)</span><br><span class="line">            ).start()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_background_refresh</span>(<span class="params">self, key, refresh_func</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Refresh data in background before expiration&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            new_value = refresh_func()</span><br><span class="line">            current_ttl = <span class="variable language_">self</span>.redis.ttl(key)</span><br><span class="line">            <span class="keyword">if</span> current_ttl &gt; <span class="number">0</span>:</span><br><span class="line">                <span class="comment"># Extend current key TTL and set new value</span></span><br><span class="line">                <span class="variable language_">self</span>.redis.setex(key, current_ttl + <span class="number">3600</span>, new_value)</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="comment"># Log error but don&#x27;t fail main request</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;Background refresh failed for <span class="subst">&#123;key&#125;</span>: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Example usage for e-commerce</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_related_product_keys</span>(<span class="params">product_id</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Return keys for related products, reviews, recommendations&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> [</span><br><span class="line">        <span class="string">f&quot;product:<span class="subst">&#123;product_id&#125;</span>:reviews&quot;</span>,</span><br><span class="line">        <span class="string">f&quot;product:<span class="subst">&#123;product_id&#125;</span>:recommendations&quot;</span>, </span><br><span class="line">        <span class="string">f&quot;product:<span class="subst">&#123;product_id&#125;</span>:similar&quot;</span>,</span><br><span class="line">        <span class="string">f&quot;category:<span class="subst">&#123;get_category(product_id)&#125;</span>:featured&quot;</span></span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Pre-load when user views a product</span></span><br><span class="line">predictive_cache = PredictiveCacheManager(redis_client)</span><br><span class="line">predictive_cache.preload_related_data(</span><br><span class="line">    <span class="string">f&quot;product:<span class="subst">&#123;product_id&#125;</span>&quot;</span>,</span><br><span class="line">    get_related_product_keys,</span><br><span class="line">    short_ttl=<span class="number">600</span>  <span class="comment"># 10 minutes for related data</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Monitoring-and-Metrics"><a href="#Performance-Monitoring-and-Metrics" class="headerlink" title="Performance Monitoring and Metrics"></a>Performance Monitoring and Metrics</h2><h3 id="Expiration-Monitoring"><a href="#Expiration-Monitoring" class="headerlink" title="Expiration Monitoring"></a>Expiration Monitoring</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ExpirationMonitor</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.redis = redis.Redis()</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_expiration_stats</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Get comprehensive expiration statistics&quot;&quot;&quot;</span></span><br><span class="line">        info = <span class="variable language_">self</span>.redis.info()</span><br><span class="line">        </span><br><span class="line">        stats = &#123;</span><br><span class="line">            <span class="string">&#x27;expired_keys&#x27;</span>: info.get(<span class="string">&#x27;expired_keys&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">            <span class="string">&#x27;evicted_keys&#x27;</span>: info.get(<span class="string">&#x27;evicted_keys&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">            <span class="string">&#x27;keyspace_hits&#x27;</span>: info.get(<span class="string">&#x27;keyspace_hits&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">            <span class="string">&#x27;keyspace_misses&#x27;</span>: info.get(<span class="string">&#x27;keyspace_misses&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">            <span class="string">&#x27;used_memory&#x27;</span>: info.get(<span class="string">&#x27;used_memory&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">            <span class="string">&#x27;maxmemory&#x27;</span>: info.get(<span class="string">&#x27;maxmemory&#x27;</span>, <span class="number">0</span>),</span><br><span class="line">            <span class="string">&#x27;memory_usage_percentage&#x27;</span>: <span class="number">0</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> stats[<span class="string">&#x27;maxmemory&#x27;</span>] &gt; <span class="number">0</span>:</span><br><span class="line">            stats[<span class="string">&#x27;memory_usage_percentage&#x27;</span>] = (</span><br><span class="line">                stats[<span class="string">&#x27;used_memory&#x27;</span>] / stats[<span class="string">&#x27;maxmemory&#x27;</span>] * <span class="number">100</span></span><br><span class="line">            )</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Calculate hit ratio</span></span><br><span class="line">        total_requests = stats[<span class="string">&#x27;keyspace_hits&#x27;</span>] + stats[<span class="string">&#x27;keyspace_misses&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> total_requests &gt; <span class="number">0</span>:</span><br><span class="line">            stats[<span class="string">&#x27;hit_ratio&#x27;</span>] = stats[<span class="string">&#x27;keyspace_hits&#x27;</span>] / total_requests * <span class="number">100</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            stats[<span class="string">&#x27;hit_ratio&#x27;</span>] = <span class="number">0</span></span><br><span class="line">            </span><br><span class="line">        <span class="keyword">return</span> stats</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">analyze_key_expiration_patterns</span>(<span class="params">self, pattern=<span class="string">&quot;*&quot;</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Analyze expiration patterns for keys matching pattern&quot;&quot;&quot;</span></span><br><span class="line">        keys = <span class="variable language_">self</span>.redis.keys(pattern)</span><br><span class="line">        expiration_analysis = &#123;</span><br><span class="line">            <span class="string">&#x27;total_keys&#x27;</span>: <span class="built_in">len</span>(keys),</span><br><span class="line">            <span class="string">&#x27;keys_with_ttl&#x27;</span>: <span class="number">0</span>,</span><br><span class="line">            <span class="string">&#x27;keys_without_ttl&#x27;</span>: <span class="number">0</span>,</span><br><span class="line">            <span class="string">&#x27;avg_ttl&#x27;</span>: <span class="number">0</span>,</span><br><span class="line">            <span class="string">&#x27;ttl_distribution&#x27;</span>: &#123;&#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        ttl_values = []</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> key <span class="keyword">in</span> keys:</span><br><span class="line">            ttl = <span class="variable language_">self</span>.redis.ttl(key)</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> ttl == -<span class="number">1</span>:  <span class="comment"># No expiration set</span></span><br><span class="line">                expiration_analysis[<span class="string">&#x27;keys_without_ttl&#x27;</span>] += <span class="number">1</span></span><br><span class="line">            <span class="keyword">elif</span> ttl &gt;= <span class="number">0</span>:  <span class="comment"># Has expiration</span></span><br><span class="line">                expiration_analysis[<span class="string">&#x27;keys_with_ttl&#x27;</span>] += <span class="number">1</span></span><br><span class="line">                ttl_values.append(ttl)</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># Categorize TTL</span></span><br><span class="line">                <span class="keyword">if</span> ttl &lt; <span class="number">300</span>:  <span class="comment"># &lt; 5 minutes</span></span><br><span class="line">                    category = <span class="string">&#x27;short_term&#x27;</span></span><br><span class="line">                <span class="keyword">elif</span> ttl &lt; <span class="number">3600</span>:  <span class="comment"># &lt; 1 hour</span></span><br><span class="line">                    category = <span class="string">&#x27;medium_term&#x27;</span></span><br><span class="line">                <span class="keyword">else</span>:  <span class="comment"># &gt;= 1 hour</span></span><br><span class="line">                    category = <span class="string">&#x27;long_term&#x27;</span></span><br><span class="line">                </span><br><span class="line">                expiration_analysis[<span class="string">&#x27;ttl_distribution&#x27;</span>][category] = \</span><br><span class="line">                    expiration_analysis[<span class="string">&#x27;ttl_distribution&#x27;</span>].get(category, <span class="number">0</span>) + <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> ttl_values:</span><br><span class="line">            expiration_analysis[<span class="string">&#x27;avg_ttl&#x27;</span>] = <span class="built_in">sum</span>(ttl_values) / <span class="built_in">len</span>(ttl_values)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> expiration_analysis</span><br><span class="line"></span><br><span class="line"><span class="comment"># Usage</span></span><br><span class="line">monitor = ExpirationMonitor()</span><br><span class="line">stats = monitor.get_expiration_stats()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Hit ratio: <span class="subst">&#123;stats[<span class="string">&#x27;hit_ratio&#x27;</span>]:<span class="number">.2</span>f&#125;</span>%&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Memory usage: <span class="subst">&#123;stats[<span class="string">&#x27;memory_usage_percentage&#x27;</span>]:<span class="number">.2</span>f&#125;</span>%&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="Configuration-Checklist"><a href="#Configuration-Checklist" class="headerlink" title="Configuration Checklist"></a>Configuration Checklist</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Memory management</span></span><br><span class="line">maxmemory 2gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br><span class="line"></span><br><span class="line"><span class="comment"># Expiration tuning</span></span><br><span class="line">hz 10</span><br><span class="line">active-expire-effort 1</span><br><span class="line"></span><br><span class="line"><span class="comment"># Persistence (affects expiration)</span></span><br><span class="line">save 900 1</span><br><span class="line">appendonly <span class="built_in">yes</span></span><br><span class="line">appendfsync everysec</span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitoring</span></span><br><span class="line">latency-monitor-threshold 100</span><br></pre></td></tr></table></figure>
+
+<h2 id="Interview-Questions-and-Expert-Answers"><a href="#Interview-Questions-and-Expert-Answers" class="headerlink" title="Interview Questions and Expert Answers"></a>Interview Questions and Expert Answers</h2><p><strong>Q: How does Redis handle expiration in a master-slave setup, and what happens during failover?</strong></p>
+<p>A: In Redis replication, only the master performs expiration logic. When a key expires on the master (either through lazy or active expiration), the master sends an explicit <code>DEL</code> command to all slaves. Slaves never expire keys independently - they wait for the master’s instruction.</p>
+<p>During failover, the promoted slave becomes the new master and starts handling expiration. However, there might be temporary inconsistencies because:</p>
+<ol>
+<li>The old master might have expired keys that weren’t yet replicated</li>
+<li>Clock differences can cause timing variations</li>
+<li>Some keys might appear “unexpired” on the new master</li>
+</ol>
+<p>Production applications should handle these edge cases by implementing fallback mechanisms and not relying solely on Redis for strict expiration timing.</p>
+<p><strong>Q: What’s the difference between eviction and expiration, and how do they interact?</strong></p>
+<p>A: Expiration is time-based removal of keys that have reached their TTL, while eviction is memory-pressure-based removal when Redis reaches its memory limit.</p>
+<p>They interact in several ways:</p>
+<ul>
+<li>Eviction policies like <code>volatile-lru</code> only consider keys with expiration set</li>
+<li>Active expiration reduces memory pressure, potentially avoiding eviction</li>
+<li>The <code>volatile-ttl</code> policy evicts keys with the shortest remaining TTL first</li>
+<li>Proper TTL configuration can reduce eviction frequency and improve cache performance</li>
+</ul>
+<p><strong>Q: How would you optimize Redis expiration for a high-traffic e-commerce site?</strong></p>
+<p>A: For high-traffic e-commerce, I’d implement a multi-tier expiration strategy:</p>
+<ol>
+<li><strong>Product Catalog</strong>: Long TTL (4-24 hours) with background refresh</li>
+<li><strong>Inventory Counts</strong>: Short TTL (1-5 minutes) with real-time updates</li>
+<li><strong>User Sessions</strong>: Medium TTL (30 minutes) with sliding expiration</li>
+<li><strong>Shopping Carts</strong>: Longer TTL (24-48 hours) with cleanup processes</li>
+<li><strong>Search Results</strong>: Staggered TTL (15-60 minutes) with jitter to prevent thundering herd</li>
+</ol>
+<p>Key optimizations:</p>
+<ul>
+<li>Use <code>allkeys-lru</code> eviction for cache-heavy workloads</li>
+<li>Implement predictive pre-loading for related products</li>
+<li>Add jitter to TTL values to prevent simultaneous expiration</li>
+<li>Monitor hot keys and implement replication strategies</li>
+<li>Use pipeline operations for bulk TTL updates</li>
+</ul>
+<p>The goal is balancing data freshness, memory usage, and system performance while handling traffic spikes gracefully.</p>
+<h2 id="External-References-and-Resources"><a href="#External-References-and-Resources" class="headerlink" title="External References and Resources"></a>External References and Resources</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://redis.io/commands/expire/">Redis Expiration Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/topics/memory-optimization">Redis Memory Optimization Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/topics/cluster-spec">Redis Cluster Specification</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/topics/persistence">Redis Persistence Demystified</a></li>
+<li><a target="_blank" rel="noopener" href="https://redis.io/topics/patterns">High Performance Redis Patterns</a></li>
+</ul>
+<h2 id="Key-Takeaways"><a href="#Key-Takeaways" class="headerlink" title="Key Takeaways"></a>Key Takeaways</h2><p>Redis expiration deletion policies are crucial for maintaining optimal performance and memory usage in production systems. The combination of lazy deletion, active expiration, and memory eviction policies provides flexible options for different use cases.</p>
+<p>Success in production requires understanding the trade-offs between memory usage, CPU overhead, and data consistency, especially in distributed environments. Monitoring expiration efficiency and implementing appropriate TTL strategies based on access patterns is essential for maintaining high-performance Redis deployments.</p>
+<p>The key is matching expiration strategies to your specific use case: use longer TTLs with background refresh for stable data, shorter TTLs for frequently changing data, and implement sophisticated hot key handling for high-traffic scenarios.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" rel="tag"># redis</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/06/18/Redis-Cache-Eviction-Policies-Complete-Guide/" rel="prev" title="Redis Cache Eviction Policies - Complete Guide">
+                  <i class="fa fa-angle-left"></i> Redis Cache Eviction Policies - Complete Guide
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Charlie Feng</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
