@@ -213,7 +213,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-07-03 19:52:27" itemprop="dateModified" datetime="2025-07-03T19:52:27+08:00">2025-07-03</time>
+      <time title="Modified: 2025-07-03 20:24:11" itemprop="dateModified" datetime="2025-07-03T20:24:11+08:00">2025-07-03</time>
     </span>
 
   
@@ -255,7 +255,7 @@ end
 subgraph &quot;Service Layer&quot;
     H[ConversationService] --&gt; I[AIWorkflowEngineService]
     I --&gt; J[WorkflowEngineService]
-    J --&gt; K[KnowledgeBaseService]
+    H --&gt; K[KnowledgeBaseService]
 end
 
 subgraph &quot;AI Layer&quot;
