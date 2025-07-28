@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">50</span>
+          <span class="site-state-item-count">51</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,552 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/07/28/Java-Basic-Interview-Questions-Reference-Answers/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/28/Java-Basic-Interview-Questions-Reference-Answers/" class="post-title-link" itemprop="url">Java Basic Interview Questions-Reference Answers</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-07-28 23:57:51 / Modified: 23:58:41" itemprop="dateCreated datePublished" datetime="2025-07-28T23:57:51+08:00">2025-07-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Core-Java-Concepts"><a href="#Core-Java-Concepts" class="headerlink" title="Core Java Concepts"></a>Core Java Concepts</h2><h3 id="What’s-the-difference-between-and-equals-in-Java"><a href="#What’s-the-difference-between-and-equals-in-Java" class="headerlink" title="What’s the difference between == and .equals() in Java?"></a>What’s the difference between <code>==</code> and <code>.equals()</code> in Java?</h3><p><strong>Reference Answer:</strong></p>
+<ul>
+<li><code>==</code> compares references (memory addresses) for objects and values for primitives</li>
+<li><code>.equals()</code> compares the actual content&#x2F;state of objects</li>
+<li>By default, <code>.equals()</code> uses <code>==</code> (reference comparison) unless overridden</li>
+<li>When overriding <code>.equals()</code>, you must also override <code>.hashCode()</code> to maintain the contract: if two objects are equal according to <code>.equals()</code>, they must have the same hash code</li>
+<li>String pool example: <code>&quot;hello&quot; == &quot;hello&quot;</code> is true due to string interning, but <code>new String(&quot;hello&quot;) == new String(&quot;hello&quot;)</code> is false</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">String</span> <span class="variable">s1</span> <span class="operator">=</span> <span class="string">&quot;hello&quot;</span>;</span><br><span class="line"><span class="type">String</span> <span class="variable">s2</span> <span class="operator">=</span> <span class="string">&quot;hello&quot;</span>;</span><br><span class="line"><span class="type">String</span> <span class="variable">s3</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">String</span>(<span class="string">&quot;hello&quot;</span>);</span><br><span class="line"></span><br><span class="line">s1 == s2;        <span class="comment">// true (same reference in string pool)</span></span><br><span class="line">s1 == s3;        <span class="comment">// false (different references)</span></span><br><span class="line">s1.equals(s3);   <span class="comment">// true (same content)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Explain-the-Java-memory-model-and-garbage-collection"><a href="#Explain-the-Java-memory-model-and-garbage-collection" class="headerlink" title="Explain the Java memory model and garbage collection."></a>Explain the Java memory model and garbage collection.</h3><p><strong>Reference Answer:</strong><br><strong>Memory Areas:</strong></p>
+<ul>
+<li><strong>Heap</strong>: Object storage, divided into Young Generation (Eden, S0, S1) and Old Generation</li>
+<li><strong>Stack</strong>: Method call frames, local variables, partial results</li>
+<li><strong>Method Area&#x2F;Metaspace</strong>: Class metadata, constant pool</li>
+<li><strong>PC Register</strong>: Current executing instruction</li>
+<li><strong>Native Method Stack</strong>: Native method calls</li>
+</ul>
+<p><strong>Garbage Collection Process:</strong></p>
+<ol>
+<li>Objects created in Eden space</li>
+<li>When Eden fills, minor GC moves surviving objects to Survivor space</li>
+<li>After several GC cycles, long-lived objects promoted to Old Generation</li>
+<li>Major GC cleans Old Generation (more expensive)</li>
+</ol>
+<p><strong>Common GC Algorithms:</strong></p>
+<ul>
+<li><strong>Serial GC</strong>: Single-threaded, suitable for small applications</li>
+<li><strong>Parallel GC</strong>: Multi-threaded, good for throughput</li>
+<li><strong>G1GC</strong>: Low-latency, good for large heaps</li>
+<li><strong>ZGC&#x2F;Shenandoah</strong>: Ultra-low latency collectors</li>
+</ul>
+<h3 id="What-are-the-differences-between-abstract-classes-and-interfaces"><a href="#What-are-the-differences-between-abstract-classes-and-interfaces" class="headerlink" title="What are the differences between abstract classes and interfaces?"></a>What are the differences between abstract classes and interfaces?</h3><p><strong>Reference Answer:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Abstract Class</th>
+<th>Interface</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Inheritance</td>
+<td>Single inheritance</td>
+<td>Multiple inheritance</td>
+</tr>
+<tr>
+<td>Methods</td>
+<td>Can have concrete methods</td>
+<td>All methods abstract (before Java 8)</td>
+</tr>
+<tr>
+<td>Variables</td>
+<td>Can have instance variables</td>
+<td>Only public static final variables</td>
+</tr>
+<tr>
+<td>Constructor</td>
+<td>Can have constructors</td>
+<td>Cannot have constructors</td>
+</tr>
+<tr>
+<td>Access Modifiers</td>
+<td>Any access modifier</td>
+<td>Public by default</td>
+</tr>
+</tbody></table>
+<p><strong>Modern Java (8+) additions:</strong></p>
+<ul>
+<li>Interfaces can have default and static methods</li>
+<li>Private methods in interfaces (Java 9+)</li>
+</ul>
+<p><strong>When to use:</strong></p>
+<ul>
+<li><strong>Abstract Class</strong>: When you have common code to share and “is-a” relationship</li>
+<li><strong>Interface</strong>: When you want to define a contract and “can-do” relationship</li>
+</ul>
+<h2 id="Concurrency-and-Threading"><a href="#Concurrency-and-Threading" class="headerlink" title="Concurrency and Threading"></a>Concurrency and Threading</h2><h3 id="How-does-the-volatile-keyword-work"><a href="#How-does-the-volatile-keyword-work" class="headerlink" title="How does the volatile keyword work?"></a>How does the <code>volatile</code> keyword work?</h3><p><strong>Reference Answer:</strong><br><strong>Purpose:</strong> Ensures visibility of variable changes across threads and prevents instruction reordering.</p>
+<p><strong>Memory Effects:</strong></p>
+<ul>
+<li>Reads&#x2F;writes to volatile variables are directly from&#x2F;to main memory</li>
+<li>Creates a happens-before relationship</li>
+<li>Prevents compiler optimizations that cache variable values</li>
+</ul>
+<p><strong>When to use:</strong></p>
+<ul>
+<li>Simple flags or state variables</li>
+<li>Single writer, multiple readers scenarios</li>
+<li>Not sufficient for compound operations (like increment)</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">VolatileExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> <span class="variable">flag</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Thread 1</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setFlag</span><span class="params">()</span> &#123;</span><br><span class="line">        flag = <span class="literal">true</span>; <span class="comment">// Immediately visible to other threads</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Thread 2</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">checkFlag</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (!flag) &#123;</span><br><span class="line">            <span class="comment">// Will see the change immediately</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Limitations:</strong> Doesn’t provide atomicity for compound operations. Use <code>AtomicBoolean</code>, <code>AtomicInteger</code>, etc., for atomic operations.</p>
+<h3 id="Explain-different-ways-to-create-threads-and-their-trade-offs"><a href="#Explain-different-ways-to-create-threads-and-their-trade-offs" class="headerlink" title="Explain different ways to create threads and their trade-offs."></a>Explain different ways to create threads and their trade-offs.</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>1. Extending Thread class:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyThread</span> <span class="keyword">extends</span> <span class="title class_">Thread</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123; <span class="comment">/* implementation */</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">new</span> <span class="title class_">MyThread</span>().start();</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Pros</strong>: Simple, direct control</li>
+<li><strong>Cons</strong>: Single inheritance limitation, tight coupling</li>
+</ul>
+<p><strong>2. Implementing Runnable:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyTask</span> <span class="keyword">implements</span> <span class="title class_">Runnable</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123; <span class="comment">/* implementation */</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Thread</span>(<span class="keyword">new</span> <span class="title class_">MyTask</span>()).start();</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Pros</strong>: Better design, can extend other classes</li>
+<li><strong>Cons</strong>: Still creates OS threads</li>
+</ul>
+<p><strong>3. ExecutorService:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ExecutorService</span> <span class="variable">executor</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">10</span>);</span><br><span class="line">executor.submit(() -&gt; &#123; <span class="comment">/* task */</span> &#125;);</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Pros</strong>: Thread pooling, resource management</li>
+<li><strong>Cons</strong>: More complex, need proper shutdown</li>
+</ul>
+<p><strong>4. CompletableFuture:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CompletableFuture.supplyAsync(() -&gt; &#123; <span class="comment">/* computation */</span> &#125;)</span><br><span class="line">    .thenApply(result -&gt; &#123; <span class="comment">/* transform */</span> &#125;);</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Pros</strong>: Asynchronous composition, functional style</li>
+<li><strong>Cons</strong>: Learning curve, can be overkill for simple tasks</li>
+</ul>
+<p><strong>5. Virtual Threads (Java 19+):</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread.startVirtualThread(() -&gt; &#123; <span class="comment">/* task */</span> &#125;);</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Pros</strong>: Lightweight, millions of threads possible</li>
+<li><strong>Cons</strong>: New feature, limited adoption</li>
+</ul>
+<h3 id="What’s-the-difference-between-synchronized-and-ReentrantLock"><a href="#What’s-the-difference-between-synchronized-and-ReentrantLock" class="headerlink" title="What’s the difference between synchronized and ReentrantLock?"></a>What’s the difference between <code>synchronized</code> and <code>ReentrantLock</code>?</h3><p><strong>Reference Answer:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>synchronized</th>
+<th>ReentrantLock</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Type</td>
+<td>Intrinsic&#x2F;implicit lock</td>
+<td>Explicit lock</td>
+</tr>
+<tr>
+<td>Acquisition</td>
+<td>Automatic</td>
+<td>Manual (lock&#x2F;unlock)</td>
+</tr>
+<tr>
+<td>Fairness</td>
+<td>No fairness guarantee</td>
+<td>Optional fairness</td>
+</tr>
+<tr>
+<td>Interruptibility</td>
+<td>Not interruptible</td>
+<td>Interruptible</td>
+</tr>
+<tr>
+<td>Try Lock</td>
+<td>Not available</td>
+<td>Available</td>
+</tr>
+<tr>
+<td>Condition Variables</td>
+<td>wait&#x2F;notify</td>
+<td>Multiple Condition objects</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>JVM optimized</td>
+<td>Slightly more overhead</td>
+</tr>
+</tbody></table>
+<p><strong>ReentrantLock Example:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>(<span class="literal">true</span>); <span class="comment">// fair lock</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">performTask</span><span class="params">()</span> &#123;</span><br><span class="line">    lock.lock();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// critical section</span></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock(); <span class="comment">// Must be in finally block</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">tryPerformTask</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (lock.tryLock()) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// critical section</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Collections-and-Data-Structures"><a href="#Collections-and-Data-Structures" class="headerlink" title="Collections and Data Structures"></a>Collections and Data Structures</h2><h3 id="How-does-HashMap-work-internally"><a href="#How-does-HashMap-work-internally" class="headerlink" title="How does HashMap work internally?"></a>How does HashMap work internally?</h3><p><strong>Reference Answer:</strong><br><strong>Internal Structure:</strong></p>
+<ul>
+<li>Array of buckets (Node&lt;K,V&gt;[] table)</li>
+<li>Each bucket can contain a linked list or red-black tree</li>
+<li>Default initial capacity: 16, load factor: 0.75</li>
+</ul>
+<p><strong>Hash Process:</strong></p>
+<ol>
+<li>Calculate hash code of key using <code>hashCode()</code></li>
+<li>Apply hash function: <code>hash(key) = key.hashCode() ^ (key.hashCode() &gt;&gt;&gt; 16)</code></li>
+<li>Find bucket: <code>index = hash &amp; (capacity - 1)</code></li>
+</ol>
+<p><strong>Collision Resolution:</strong></p>
+<ul>
+<li><strong>Chaining</strong>: Multiple entries in same bucket form linked list</li>
+<li><strong>Treeification</strong> (Java 8+): When bucket size ≥ 8, convert to red-black tree</li>
+<li><strong>Untreeification</strong>: When bucket size ≤ 6, convert back to linked list</li>
+</ul>
+<p><strong>Resizing:</strong></p>
+<ul>
+<li>When size &gt; capacity × load factor, capacity doubles</li>
+<li>All entries rehashed to new positions</li>
+<li>Expensive operation, can cause performance issues</li>
+</ul>
+<p><strong>Poor hashCode() Impact:</strong><br>If <code>hashCode()</code> always returns same value, all entries go to one bucket, degrading performance to O(n) for operations.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Simplified internal structure</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Node</span>&lt;K,V&gt; &#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">int</span> hash;</span><br><span class="line">    <span class="keyword">final</span> K key;</span><br><span class="line">    V value;</span><br><span class="line">    Node&lt;K,V&gt; next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="When-would-you-use-ConcurrentHashMap-vs-Collections-synchronizedMap"><a href="#When-would-you-use-ConcurrentHashMap-vs-Collections-synchronizedMap" class="headerlink" title="When would you use ConcurrentHashMap vs Collections.synchronizedMap()?"></a>When would you use ConcurrentHashMap vs Collections.synchronizedMap()?</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Collections.synchronizedMap():</strong></p>
+<ul>
+<li>Wraps existing map with synchronized methods</li>
+<li><strong>Synchronization</strong>: Entire map locked for each operation</li>
+<li><strong>Performance</strong>: Poor in multi-threaded scenarios</li>
+<li><strong>Iteration</strong>: Requires external synchronization</li>
+<li><strong>Fail-fast</strong>: Iterators can throw ConcurrentModificationException</li>
+</ul>
+<p><strong>ConcurrentHashMap:</strong></p>
+<ul>
+<li><strong>Synchronization</strong>: Segment-based locking (Java 7) or CAS operations (Java 8+)</li>
+<li><strong>Performance</strong>: Excellent concurrent read performance</li>
+<li><strong>Iteration</strong>: Weakly consistent iterators, no external sync needed</li>
+<li><strong>Fail-safe</strong>: Iterators reflect state at creation time</li>
+<li><strong>Atomic operations</strong>: putIfAbsent(), replace(), computeIfAbsent()</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ConcurrentHashMap example</span></span><br><span class="line">ConcurrentHashMap&lt;String, Integer&gt; map = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">map.putIfAbsent(<span class="string">&quot;key&quot;</span>, <span class="number">1</span>);</span><br><span class="line">map.computeIfPresent(<span class="string">&quot;key&quot;</span>, (k, v) -&gt; v + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Safe iteration without external synchronization</span></span><br><span class="line"><span class="keyword">for</span> (Map.Entry&lt;String, Integer&gt; entry : map.entrySet()) &#123;</span><br><span class="line">    <span class="comment">// No ConcurrentModificationException</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Use ConcurrentHashMap when:</strong></p>
+<ul>
+<li>High concurrent access</li>
+<li>More reads than writes</li>
+<li>Need atomic operations</li>
+<li>Want better performance</li>
+</ul>
+<h2 id="Design-Patterns-and-Architecture"><a href="#Design-Patterns-and-Architecture" class="headerlink" title="Design Patterns and Architecture"></a>Design Patterns and Architecture</h2><h3 id="Implement-the-Singleton-pattern-and-discuss-its-problems"><a href="#Implement-the-Singleton-pattern-and-discuss-its-problems" class="headerlink" title="Implement the Singleton pattern and discuss its problems."></a>Implement the Singleton pattern and discuss its problems.</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>1. Eager Initialization:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EagerSingleton</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">EagerSingleton</span> <span class="variable">INSTANCE</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">EagerSingleton</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">EagerSingleton</span><span class="params">()</span> &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> EagerSingleton <span class="title function_">getInstance</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> INSTANCE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Pros</strong>: Thread-safe, simple</li>
+<li><strong>Cons</strong>: Creates instance even if never used</li>
+</ul>
+<p><strong>2. Lazy Initialization (Thread-unsafe):</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LazySingleton</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> LazySingleton instance;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">LazySingleton</span><span class="params">()</span> &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> LazySingleton <span class="title function_">getInstance</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (instance == <span class="literal">null</span>) &#123;</span><br><span class="line">            instance = <span class="keyword">new</span> <span class="title class_">LazySingleton</span>(); <span class="comment">// Race condition!</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> instance;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. Thread-safe Lazy (Double-checked locking):</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadSafeSingleton</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> ThreadSafeSingleton instance;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">ThreadSafeSingleton</span><span class="params">()</span> &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ThreadSafeSingleton <span class="title function_">getInstance</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (instance == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">                <span class="keyword">if</span> (instance == <span class="literal">null</span>) &#123;</span><br><span class="line">                    instance = <span class="keyword">new</span> <span class="title class_">ThreadSafeSingleton</span>();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> instance;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>4. Enum Singleton (Recommended):</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> <span class="title class_">EnumSingleton</span> &#123;</span><br><span class="line">    INSTANCE;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doSomething</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// business logic</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Problems with Singleton:</strong></p>
+<ul>
+<li><strong>Testing</strong>: Difficult to mock, global state</li>
+<li><strong>Coupling</strong>: Tight coupling throughout application</li>
+<li><strong>Scalability</strong>: Global bottleneck</li>
+<li><strong>Serialization</strong>: Need special handling</li>
+<li><strong>Reflection</strong>: Can break private constructor</li>
+<li><strong>Classloader</strong>: Multiple instances with different classloaders</li>
+</ul>
+<h3 id="Explain-dependency-injection-and-inversion-of-control"><a href="#Explain-dependency-injection-and-inversion-of-control" class="headerlink" title="Explain dependency injection and inversion of control."></a>Explain dependency injection and inversion of control.</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Inversion of Control (IoC):</strong><br>Principle where control of object creation and lifecycle is transferred from the application code to an external framework.</p>
+<p><strong>Dependency Injection (DI):</strong><br>A technique to implement IoC where dependencies are provided to an object rather than the object creating them.</p>
+<p><strong>Types of DI:</strong></p>
+<p><strong>1. Constructor Injection:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> UserRepository userRepository;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">UserService</span><span class="params">(UserRepository userRepository)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.userRepository = userRepository;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. Setter Injection:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> UserRepository userRepository;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setUserRepository</span><span class="params">(UserRepository userRepository)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.userRepository = userRepository;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. Field Injection:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    <span class="meta">@Inject</span></span><br><span class="line">    <span class="keyword">private</span> UserRepository userRepository;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Benefits:</strong></p>
+<ul>
+<li><strong>Testability</strong>: Easy to inject mock dependencies</li>
+<li><strong>Flexibility</strong>: Change implementations without code changes</li>
+<li><strong>Decoupling</strong>: Reduces tight coupling between classes</li>
+<li><strong>Configuration</strong>: Centralized dependency configuration</li>
+</ul>
+<p><strong>Without DI:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">UserRepository</span> <span class="variable">userRepository</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DatabaseUserRepository</span>(); <span class="comment">// Tight coupling</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>With DI:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> UserRepository userRepository;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">UserService</span><span class="params">(UserRepository userRepository)</span> &#123; <span class="comment">// Loose coupling</span></span><br><span class="line">        <span class="built_in">this</span>.userRepository = userRepository;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-and-Optimization"><a href="#Performance-and-Optimization" class="headerlink" title="Performance and Optimization"></a>Performance and Optimization</h2><h3 id="How-would-you-identify-and-resolve-a-memory-leak-in-a-Java-application"><a href="#How-would-you-identify-and-resolve-a-memory-leak-in-a-Java-application" class="headerlink" title="How would you identify and resolve a memory leak in a Java application?"></a>How would you identify and resolve a memory leak in a Java application?</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Identification Tools:</strong></p>
+<ol>
+<li><strong>JVisualVM</strong>: Visual profiler, heap dumps</li>
+<li><strong>JProfiler</strong>: Commercial profiler</li>
+<li><strong>Eclipse MAT</strong>: Memory Analyzer Tool</li>
+<li><strong>JConsole</strong>: Built-in monitoring</li>
+<li><strong>Application metrics</strong>: OutOfMemoryError frequency</li>
+</ol>
+<p><strong>Detection Signs:</strong></p>
+<ul>
+<li>Gradual memory increase over time</li>
+<li>OutOfMemoryError exceptions</li>
+<li>Increasing GC frequency&#x2F;duration</li>
+<li>Application slowdown</li>
+</ul>
+<p><strong>Analysis Process:</strong></p>
+<p><strong>1. Heap Dump Analysis:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">jcmd &lt;pid&gt; GC.run_finalization</span><br><span class="line">jcmd &lt;pid&gt; VM.gc</span><br><span class="line">jmap -dump:format=b,file=heapdump.hprof &lt;pid&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. Common Leak Scenarios:</strong></p>
+<p><strong>Static Collections:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LeakyClass</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> List&lt;Object&gt; cache = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(); <span class="comment">// Never cleared</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addToCache</span><span class="params">(Object obj)</span> &#123;</span><br><span class="line">        cache.add(obj); <span class="comment">// Memory leak!</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Listener Registration:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EventPublisher</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;EventListener&gt; listeners = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addListener</span><span class="params">(EventListener listener)</span> &#123;</span><br><span class="line">        listeners.add(listener); <span class="comment">// If not removed, leak!</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeListener</span><span class="params">(EventListener listener)</span> &#123;</span><br><span class="line">        listeners.remove(listener); <span class="comment">// Often forgotten</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>ThreadLocal Variables:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadLocalLeak</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> ThreadLocal&lt;ExpensiveObject&gt; threadLocal = <span class="keyword">new</span> <span class="title class_">ThreadLocal</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setThreadLocalValue</span><span class="params">()</span> &#123;</span><br><span class="line">        threadLocal.set(<span class="keyword">new</span> <span class="title class_">ExpensiveObject</span>()); <span class="comment">// Clear when done!</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cleanup</span><span class="params">()</span> &#123;</span><br><span class="line">        threadLocal.remove(); <span class="comment">// Essential in long-lived threads</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Resolution Strategies:</strong></p>
+<ul>
+<li>Use weak references where appropriate</li>
+<li>Implement proper cleanup in finally blocks</li>
+<li>Clear collections when no longer needed</li>
+<li>Remove listeners in lifecycle methods</li>
+<li>Use try-with-resources for automatic cleanup</li>
+<li>Monitor object creation patterns</li>
+</ul>
+<h3 id="What-are-some-JVM-tuning-parameters-you’ve-used"><a href="#What-are-some-JVM-tuning-parameters-you’ve-used" class="headerlink" title="What are some JVM tuning parameters you’ve used?"></a>What are some JVM tuning parameters you’ve used?</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Heap Memory:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-Xms2g          <span class="comment"># Initial heap size</span></span><br><span class="line">-Xmx8g          <span class="comment"># Maximum heap size</span></span><br><span class="line">-XX:NewRatio=3  <span class="comment"># Old/Young generation ratio</span></span><br><span class="line">-XX:MaxMetaspaceSize=256m  <span class="comment"># Metaspace limit</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Garbage Collection:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># G1GC (recommended for large heaps)</span></span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=200</span><br><span class="line">-XX:G1HeapRegionSize=16m</span><br><span class="line"></span><br><span class="line"><span class="comment"># Parallel GC (good throughput)</span></span><br><span class="line">-XX:+UseParallelGC</span><br><span class="line">-XX:ParallelGCThreads=8</span><br><span class="line"></span><br><span class="line"><span class="comment"># ZGC (ultra-low latency)</span></span><br><span class="line">-XX:+UseZGC</span><br><span class="line">-XX:+UnlockExperimentalVMOptions</span><br></pre></td></tr></table></figure>
+
+<p><strong>GC Logging:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-Xlog:gc*:gc.log:<span class="keyword">time</span>,tags</span><br><span class="line">-XX:+UseGCLogFileRotation</span><br><span class="line">-XX:NumberOfGCLogFiles=5</span><br><span class="line">-XX:GCLogFileSize=100M</span><br></pre></td></tr></table></figure>
+
+<p><strong>Performance Monitoring:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">-XX:+PrintGCDetails</span><br><span class="line">-XX:+PrintGCTimeStamps</span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError</span><br><span class="line">-XX:HeapDumpPath=/path/to/dumps/</span><br></pre></td></tr></table></figure>
+
+<p><strong>JIT Compilation:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-XX:+TieredCompilation</span><br><span class="line">-XX:CompileThreshold=10000</span><br><span class="line">-XX:+PrintCompilation</span><br></pre></td></tr></table></figure>
+
+<p><strong>Common Tuning Scenarios:</strong></p>
+<ul>
+<li><strong>High throughput</strong>: Parallel GC, larger heap</li>
+<li><strong>Low latency</strong>: G1GC or ZGC, smaller pause times</li>
+<li><strong>Memory constrained</strong>: Smaller heap, compressed OOPs</li>
+<li><strong>CPU intensive</strong>: More GC threads, tiered compilation</li>
+</ul>
+<h2 id="Modern-Java-Features"><a href="#Modern-Java-Features" class="headerlink" title="Modern Java Features"></a>Modern Java Features</h2><h3 id="Explain-streams-and-when-you’d-use-them-vs-traditional-loops"><a href="#Explain-streams-and-when-you’d-use-them-vs-traditional-loops" class="headerlink" title="Explain streams and when you’d use them vs traditional loops."></a>Explain streams and when you’d use them vs traditional loops.</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Stream Characteristics:</strong></p>
+<ul>
+<li><strong>Functional</strong>: Declarative programming style</li>
+<li><strong>Lazy</strong>: Operations executed only when terminal operation called</li>
+<li><strong>Immutable</strong>: Original collection unchanged</li>
+<li><strong>Chainable</strong>: Fluent API for operation composition</li>
+</ul>
+<p><strong>Stream Example:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; names = Arrays.asList(<span class="string">&quot;Alice&quot;</span>, <span class="string">&quot;Bob&quot;</span>, <span class="string">&quot;Charlie&quot;</span>, <span class="string">&quot;David&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Traditional loop</span></span><br><span class="line">List&lt;String&gt; result = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line"><span class="keyword">for</span> (String name : names) &#123;</span><br><span class="line">    <span class="keyword">if</span> (name.length() &gt; <span class="number">4</span>) &#123;</span><br><span class="line">        result.add(name.toUpperCase());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Stream approach</span></span><br><span class="line">List&lt;String&gt; result = names.stream()</span><br><span class="line">    .filter(name -&gt; name.length() &gt; <span class="number">4</span>)</span><br><span class="line">    .map(String::toUpperCase)</span><br><span class="line">    .collect(Collectors.toList());</span><br></pre></td></tr></table></figure>
+
+<p><strong>When to use Streams:</strong></p>
+<ul>
+<li><strong>Data transformation pipelines</strong></li>
+<li><strong>Complex filtering&#x2F;mapping operations</strong></li>
+<li><strong>Parallel processing</strong> (<code>.parallelStream()</code>)</li>
+<li><strong>Functional programming style preferred</strong></li>
+<li><strong>Readability</strong> over performance for complex operations</li>
+</ul>
+<p><strong>When to use Traditional Loops:</strong></p>
+<ul>
+<li><strong>Simple iterations</strong> without transformations</li>
+<li><strong>Performance critical</strong> tight loops</li>
+<li><strong>Early termination</strong> needed</li>
+<li><strong>State modification</strong> during iteration</li>
+<li><strong>Index-based</strong> operations</li>
+</ul>
+<p><strong>Performance Considerations:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Stream overhead for simple operations</span></span><br><span class="line">list.stream().forEach(System.out::println); <span class="comment">// Slower</span></span><br><span class="line">list.forEach(System.out::println);           <span class="comment">// Faster</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Streams excel at complex operations</span></span><br><span class="line">list.stream()</span><br><span class="line">    .filter(complex_predicate)</span><br><span class="line">    .map(expensive_transformation)</span><br><span class="line">    .sorted()</span><br><span class="line">    .limit(<span class="number">10</span>)</span><br><span class="line">    .collect(Collectors.toList()); <span class="comment">// More readable than equivalent loop</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="What-are-records-in-Java-14-and-when-would-you-use-them"><a href="#What-are-records-in-Java-14-and-when-would-you-use-them" class="headerlink" title="What are records in Java 14+ and when would you use them?"></a>What are records in Java 14+ and when would you use them?</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Records Definition:</strong><br>Records are immutable data carriers that automatically generate boilerplate code.</p>
+<p><strong>Basic Record:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">record</span> <span class="title class_">Person</span><span class="params">(String name, <span class="type">int</span> age, String email)</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Automatically generates:</span></span><br><span class="line"><span class="comment">// - Constructor: Person(String name, int age, String email)</span></span><br><span class="line"><span class="comment">// - Accessors: name(), age(), email()</span></span><br><span class="line"><span class="comment">// - equals(), hashCode(), toString()</span></span><br><span class="line"><span class="comment">// - All fields are private final</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Custom Methods:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">record</span> <span class="title class_">Point</span><span class="params">(<span class="type">double</span> x, <span class="type">double</span> y)</span> &#123;</span><br><span class="line">    <span class="comment">// Custom constructor with validation</span></span><br><span class="line">    <span class="keyword">public</span> Point &#123;</span><br><span class="line">        <span class="keyword">if</span> (x &lt; <span class="number">0</span> || y &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;Coordinates must be positive&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Additional methods</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">double</span> <span class="title function_">distanceFromOrigin</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Math.sqrt(x * x + y * y);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Static factory method</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Point <span class="title function_">origin</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Point</span>(<span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>When to Use Records:</strong></p>
+<ul>
+<li><strong>Data Transfer Objects</strong> (DTOs)</li>
+<li><strong>Configuration objects</strong></li>
+<li><strong>API response&#x2F;request models</strong></li>
+<li><strong>Value objects</strong> in domain modeling</li>
+<li><strong>Tuple-like</strong> data structures</li>
+<li><strong>Database result mapping</strong></li>
+</ul>
+<p><strong>Example Use Cases:</strong></p>
+<p><strong>API Response:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">record</span> <span class="title class_">UserResponse</span><span class="params">(Long id, String username, String email, LocalDateTime createdAt)</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Usage</span></span><br><span class="line"><span class="keyword">return</span> users.stream()</span><br><span class="line">    .map(user -&gt; <span class="keyword">new</span> <span class="title class_">UserResponse</span>(user.getId(), user.getUsername(), </span><br><span class="line">                                 user.getEmail(), user.getCreatedAt()))</span><br><span class="line">    .collect(Collectors.toList());</span><br></pre></td></tr></table></figure>
+
+<p><strong>Configuration:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">record</span> <span class="title class_">DatabaseConfig</span><span class="params">(String url, String username, String password, </span></span><br><span class="line"><span class="params">                           <span class="type">int</span> maxConnections, Duration timeout)</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>Cannot extend other classes (can implement interfaces)</li>
+<li>All fields are implicitly final</li>
+<li>Cannot declare instance fields beyond record components</li>
+<li>Less flexibility than regular classes</li>
+</ul>
+<p><strong>Records vs Classes:</strong></p>
+<ul>
+<li><strong>Use Records</strong>: Immutable data, minimal behavior</li>
+<li><strong>Use Classes</strong>: Mutable state, complex behavior, inheritance needed</li>
+</ul>
+<h2 id="System-Design-Integration"><a href="#System-Design-Integration" class="headerlink" title="System Design Integration"></a>System Design Integration</h2><h3 id="How-would-you-design-a-thread-safe-cache-with-TTL-time-to-live"><a href="#How-would-you-design-a-thread-safe-cache-with-TTL-time-to-live" class="headerlink" title="How would you design a thread-safe cache with TTL (time-to-live)?"></a>How would you design a thread-safe cache with TTL (time-to-live)?</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Design Requirements:</strong></p>
+<ul>
+<li>Thread-safe concurrent access</li>
+<li>Automatic expiration based on TTL</li>
+<li>Efficient cleanup of expired entries</li>
+<li>Good performance for reads and writes</li>
+</ul>
+<p><strong>Implementation:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TTLCache</span>&lt;K, V&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">CacheEntry</span>&lt;V&gt; &#123;</span><br><span class="line">        <span class="keyword">final</span> V value;</span><br><span class="line">        <span class="keyword">final</span> <span class="type">long</span> expirationTime;</span><br><span class="line">        </span><br><span class="line">        CacheEntry(V value, <span class="type">long</span> ttlMillis) &#123;</span><br><span class="line">            <span class="built_in">this</span>.value = value;</span><br><span class="line">            <span class="built_in">this</span>.expirationTime = System.currentTimeMillis() + ttlMillis;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="type">boolean</span> <span class="title function_">isExpired</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> System.currentTimeMillis() &gt; expirationTime;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;K, CacheEntry&lt;V&gt;&gt; cache = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ScheduledExecutorService cleanupExecutor;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">long</span> defaultTTL;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TTLCache</span><span class="params">(<span class="type">long</span> defaultTTLMillis, <span class="type">long</span> cleanupIntervalMillis)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.defaultTTL = defaultTTLMillis;</span><br><span class="line">        <span class="built_in">this</span>.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -&gt; &#123;</span><br><span class="line">            <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(r, <span class="string">&quot;TTLCache-Cleanup&quot;</span>);</span><br><span class="line">            t.setDaemon(<span class="literal">true</span>);</span><br><span class="line">            <span class="keyword">return</span> t;</span><br><span class="line">        &#125;);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Schedule periodic cleanup</span></span><br><span class="line">        cleanupExecutor.scheduleAtFixedRate(<span class="built_in">this</span>::cleanup, </span><br><span class="line">            cleanupIntervalMillis, cleanupIntervalMillis, TimeUnit.MILLISECONDS);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">put</span><span class="params">(K key, V value)</span> &#123;</span><br><span class="line">        put(key, value, defaultTTL);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">put</span><span class="params">(K key, V value, <span class="type">long</span> ttlMillis)</span> &#123;</span><br><span class="line">        cache.put(key, <span class="keyword">new</span> <span class="title class_">CacheEntry</span>&lt;&gt;(value, ttlMillis));</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> V <span class="title function_">get</span><span class="params">(K key)</span> &#123;</span><br><span class="line">        CacheEntry&lt;V&gt; entry = cache.get(key);</span><br><span class="line">        <span class="keyword">if</span> (entry == <span class="literal">null</span> || entry.isExpired()) &#123;</span><br><span class="line">            cache.remove(key); <span class="comment">// Clean up expired entry</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> entry.value;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">containsKey</span><span class="params">(K key)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> get(key) != <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">(K key)</span> &#123;</span><br><span class="line">        cache.remove(key);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">clear</span><span class="params">()</span> &#123;</span><br><span class="line">        cache.clear();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">size</span><span class="params">()</span> &#123;</span><br><span class="line">        cleanup(); <span class="comment">// Clean expired entries first</span></span><br><span class="line">        <span class="keyword">return</span> cache.size();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">cleanup</span><span class="params">()</span> &#123;</span><br><span class="line">        cache.entrySet().removeIf(entry -&gt; entry.getValue().isExpired());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">shutdown</span><span class="params">()</span> &#123;</span><br><span class="line">        cleanupExecutor.shutdown();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (!cleanupExecutor.awaitTermination(<span class="number">5</span>, TimeUnit.SECONDS)) &#123;</span><br><span class="line">                cleanupExecutor.shutdownNow();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            cleanupExecutor.shutdownNow();</span><br><span class="line">            Thread.currentThread().interrupt();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Usage Example:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Create cache with 5-minute default TTL, cleanup every minute</span></span><br><span class="line">TTLCache&lt;String, UserData&gt; userCache = <span class="keyword">new</span> <span class="title class_">TTLCache</span>&lt;&gt;(<span class="number">5</span> * <span class="number">60</span> * <span class="number">1000</span>, <span class="number">60</span> * <span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Store with default TTL</span></span><br><span class="line">userCache.put(<span class="string">&quot;user123&quot;</span>, userData);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Store with custom TTL (10 minutes)</span></span><br><span class="line">userCache.put(<span class="string">&quot;session456&quot;</span>, sessionData, <span class="number">10</span> * <span class="number">60</span> * <span class="number">1000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Retrieve</span></span><br><span class="line"><span class="type">UserData</span> <span class="variable">user</span> <span class="operator">=</span> userCache.get(<span class="string">&quot;user123&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Alternative Approaches:</strong></p>
+<ul>
+<li><strong>Caffeine Cache</strong>: Production-ready with advanced features</li>
+<li><strong>Guava Cache</strong>: Google’s caching library</li>
+<li><strong>Redis</strong>: External cache for distributed systems</li>
+<li><strong>Chronicle Map</strong>: Off-heap storage for large datasets</li>
+</ul>
+<h3 id="Explain-how-you’d-handle-database-connections-in-a-high-traffic-application"><a href="#Explain-how-you’d-handle-database-connections-in-a-high-traffic-application" class="headerlink" title="Explain how you’d handle database connections in a high-traffic application."></a>Explain how you’d handle database connections in a high-traffic application.</h3><p><strong>Reference Answer:</strong></p>
+<p><strong>Connection Pooling Strategy:</strong></p>
+<p><strong>1. HikariCP Configuration (Recommended):</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseConfig</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> DataSource <span class="title function_">dataSource</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">HikariConfig</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HikariConfig</span>();</span><br><span class="line">        config.setJdbcUrl(<span class="string">&quot;jdbc:postgresql://localhost:5432/mydb&quot;</span>);</span><br><span class="line">        config.setUsername(<span class="string">&quot;user&quot;</span>);</span><br><span class="line">        config.setPassword(<span class="string">&quot;password&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Pool sizing</span></span><br><span class="line">        config.setMaximumPoolSize(<span class="number">20</span>);              <span class="comment">// Max connections</span></span><br><span class="line">        config.setMinimumIdle(<span class="number">5</span>);                   <span class="comment">// Min idle connections</span></span><br><span class="line">        config.setConnectionTimeout(<span class="number">30000</span>);         <span class="comment">// 30 seconds timeout</span></span><br><span class="line">        config.setIdleTimeout(<span class="number">600000</span>);              <span class="comment">// 10 minutes idle timeout</span></span><br><span class="line">        config.setMaxLifetime(<span class="number">1800000</span>);             <span class="comment">// 30 minutes max lifetime</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Performance tuning</span></span><br><span class="line">        config.setLeakDetectionThreshold(<span class="number">60000</span>);    <span class="comment">// 1 minute leak detection</span></span><br><span class="line">        config.setCachePrepStmts(<span class="literal">true</span>);</span><br><span class="line">        config.setPrepStmtCacheSize(<span class="number">250</span>);</span><br><span class="line">        config.setPrepStmtCacheSqlLimit(<span class="number">2048</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">HikariDataSource</span>(config);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. Connection Pool Sizing:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">connections = ((core_count * 2) + effective_spindle_count)</span><br><span class="line"></span><br><span class="line">For CPU-intensive: core_count * 2</span><br><span class="line">For I/O-intensive: higher multiplier (3-4x)</span><br><span class="line">Monitor and adjust based on actual usage</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. Transaction Management:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> UserRepository userRepository;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Transactional(readOnly = true)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">findById</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> userRepository.findById(id);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Transactional(propagation = Propagation.REQUIRES_NEW)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">updateUserAsync</span><span class="params">(Long id, UserData data)</span> &#123;</span><br><span class="line">        <span class="comment">// Runs in separate transaction</span></span><br><span class="line">        <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> userRepository.findById(id);</span><br><span class="line">        user.update(data);</span><br><span class="line">        userRepository.save(user);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Transactional(timeout = 30)</span> <span class="comment">// 30 seconds timeout</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">bulkOperation</span><span class="params">(List&lt;User&gt; users)</span> &#123;</span><br><span class="line">        users.forEach(userRepository::save);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>4. Read&#x2F;Write Splitting:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseRoutingConfig</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@Primary</span></span><br><span class="line">    <span class="keyword">public</span> DataSource <span class="title function_">routingDataSource</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">RoutingDataSource</span> <span class="variable">routingDataSource</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RoutingDataSource</span>();</span><br><span class="line">        </span><br><span class="line">        Map&lt;Object, Object&gt; targetDataSources = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">        targetDataSources.put(<span class="string">&quot;write&quot;</span>, writeDataSource());</span><br><span class="line">        targetDataSources.put(<span class="string">&quot;read&quot;</span>, readDataSource());</span><br><span class="line">        </span><br><span class="line">        routingDataSource.setTargetDataSources(targetDataSources);</span><br><span class="line">        routingDataSource.setDefaultTargetDataSource(writeDataSource());</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> routingDataSource;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> DataSource <span class="title function_">writeDataSource</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Master database configuration</span></span><br><span class="line">        <span class="keyword">return</span> createDataSource(<span class="string">&quot;jdbc:postgresql://master:5432/mydb&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> DataSource <span class="title function_">readDataSource</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Replica database configuration</span></span><br><span class="line">        <span class="keyword">return</span> createDataSource(<span class="string">&quot;jdbc:postgresql://replica:5432/mydb&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RoutingDataSource</span> <span class="keyword">extends</span> <span class="title class_">AbstractRoutingDataSource</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Object <span class="title function_">determineCurrentLookupKey</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> TransactionSynchronizationManager.isCurrentTransactionReadOnly() ? <span class="string">&quot;read&quot;</span> : <span class="string">&quot;write&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>5. Monitoring and Health Checks:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DatabaseHealthIndicator</span> <span class="keyword">implements</span> <span class="title class_">HealthIndicator</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> DataSource dataSource;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Health <span class="title function_">health</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">Connection</span> <span class="variable">connection</span> <span class="operator">=</span> dataSource.getConnection()) &#123;</span><br><span class="line">            <span class="keyword">if</span> (connection.isValid(<span class="number">2</span>)) &#123; <span class="comment">// 2 second timeout</span></span><br><span class="line">                <span class="keyword">return</span> Health.up()</span><br><span class="line">                    .withDetail(<span class="string">&quot;database&quot;</span>, <span class="string">&quot;Available&quot;</span>)</span><br><span class="line">                    .withDetail(<span class="string">&quot;active-connections&quot;</span>, getActiveConnections())</span><br><span class="line">                    .build();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">            <span class="keyword">return</span> Health.down()</span><br><span class="line">                .withDetail(<span class="string">&quot;database&quot;</span>, <span class="string">&quot;Unavailable&quot;</span>)</span><br><span class="line">                .withException(e)</span><br><span class="line">                .build();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> Health.down().withDetail(<span class="string">&quot;database&quot;</span>, <span class="string">&quot;Connection invalid&quot;</span>).build();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="title function_">getActiveConnections</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (dataSource <span class="keyword">instanceof</span> HikariDataSource) &#123;</span><br><span class="line">            <span class="keyword">return</span> ((HikariDataSource) dataSource).getHikariPoolMXBean().getActiveConnections();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>6. Best Practices for High Traffic:</strong></p>
+<p><strong>Connection Management:</strong></p>
+<ul>
+<li>Always use connection pooling</li>
+<li>Set appropriate timeouts</li>
+<li>Monitor pool metrics</li>
+<li>Use read replicas for read-heavy workloads</li>
+</ul>
+<p><strong>Query Optimization:</strong></p>
+<ul>
+<li>Use prepared statements</li>
+<li>Implement proper indexing</li>
+<li>Cache frequently accessed data</li>
+<li>Use batch operations for bulk updates</li>
+</ul>
+<p><strong>Resilience Patterns:</strong></p>
+<ul>
+<li>Circuit breaker for database failures</li>
+<li>Retry logic with exponential backoff</li>
+<li>Graceful degradation when database unavailable</li>
+<li>Database failover strategies</li>
+</ul>
+<p><strong>Performance Monitoring:</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EventListener</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">handleConnectionPoolMetrics</span><span class="params">(ConnectionPoolMetricsEvent event)</span> &#123;</span><br><span class="line">    logger.info(<span class="string">&quot;Active connections: &#123;&#125;, Idle: &#123;&#125;, Waiting: &#123;&#125;&quot;</span>, </span><br><span class="line">        event.getActive(), event.getIdle(), event.getWaiting());</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (event.getActive() &gt; event.getMaxPool() * <span class="number">0.8</span>) &#123;</span><br><span class="line">        alertingService.sendAlert(<span class="string">&quot;High database connection usage&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This comprehensive approach ensures database connections are efficiently managed in high-traffic scenarios while maintaining performance and reliability.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3088,355 +3634,8 @@ H --&gt; K[Distribute Load]
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/17/Elasticsearch-High-Availability-Deep-Dive-Guide/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/17/Elasticsearch-High-Availability-Deep-Dive-Guide/" class="post-title-link" itemprop="url">Elasticsearch High Availability: Deep Dive Guide</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-17 17:08:58 / Modified: 17:10:45" itemprop="dateCreated datePublished" datetime="2025-06-17T17:08:58+08:00">2025-06-17</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/elasticsearch/" itemprop="url" rel="index"><span itemprop="name">elasticsearch</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Shards-and-Replicas-The-Foundation-of-Elasticsearch-HA"><a href="#Shards-and-Replicas-The-Foundation-of-Elasticsearch-HA" class="headerlink" title="Shards and Replicas: The Foundation of Elasticsearch HA"></a>Shards and Replicas: The Foundation of Elasticsearch HA</h2><h3 id="Understanding-Shards"><a href="#Understanding-Shards" class="headerlink" title="Understanding Shards"></a>Understanding Shards</h3><p>Shards are the fundamental building blocks of Elasticsearch’s distributed architecture. Each index is divided into multiple shards, which are essentially independent Lucene indices that can be distributed across different nodes in a cluster.</p>
-<p><strong>Primary Shards:</strong></p>
-<ul>
-<li>Store the original data</li>
-<li>Handle write operations</li>
-<li>Number is fixed at index creation time</li>
-<li>Cannot be changed without reindexing</li>
-</ul>
-<p><strong>Shard Sizing Best Practices:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">PUT /my_index</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.routing.allocation.total_shards_per_node&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Replica-Strategy-for-High-Availability"><a href="#Replica-Strategy-for-High-Availability" class="headerlink" title="Replica Strategy for High Availability"></a>Replica Strategy for High Availability</h3><p>Replicas are exact copies of primary shards that provide both redundancy and increased read throughput.</p>
-<p><strong>Production Replica Configuration:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">PUT /production_logs</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">5</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.refresh_interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;30s&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.durability&quot;</span><span class="punctuation">:</span> <span class="string">&quot;request&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Real-World-Example-E-commerce-Platform"><a href="#Real-World-Example-E-commerce-Platform" class="headerlink" title="Real-World Example: E-commerce Platform"></a>Real-World Example: E-commerce Platform</h3><p>Consider an e-commerce platform handling 1TB of product data:</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">PUT /products</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">10</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.routing.allocation.require.box_type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;hot&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;mappings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;properties&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;product_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;text&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;price&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;double&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;category&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;keyword&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<pre>
-<code class="mermaid">
-graph TB
-subgraph &quot;Node 1&quot;
-    P1[Primary Shard 1]
-    R2[Replica Shard 2]
-    R3[Replica Shard 3]
-end
-
-subgraph &quot;Node 2&quot;
-    P2[Primary Shard 2]
-    R1[Replica Shard 1]
-    R4[Replica Shard 4]
-end
-
-subgraph &quot;Node 3&quot;
-    P3[Primary Shard 3]
-    P4[Primary Shard 4]
-    R5[Replica Shard 5]
-end
-
-P1 -.-&gt;|Replicates to| R1
-P2 -.-&gt;|Replicates to| R2
-P3 -.-&gt;|Replicates to| R3
-P4 -.-&gt;|Replicates to| R4
-</code>
-</pre>
-
-<p><strong>Interview Insight:</strong> <em>“How would you determine the optimal number of shards for a 500GB index with expected 50% growth annually?”</em></p>
-<p><strong>Answer:</strong> Calculate based on shard size (aim for 10-50GB per shard), consider node capacity, and factor in growth. For 500GB growing to 750GB: 15-75 shards initially, typically 20-30 shards with 1-2 replicas.</p>
-<h2 id="TransLog-Ensuring-Write-Durability"><a href="#TransLog-Ensuring-Write-Durability" class="headerlink" title="TransLog: Ensuring Write Durability"></a>TransLog: Ensuring Write Durability</h2><h3 id="TransLog-Mechanism"><a href="#TransLog-Mechanism" class="headerlink" title="TransLog Mechanism"></a>TransLog Mechanism</h3><p>The Transaction Log (TransLog) is Elasticsearch’s write-ahead log that ensures data durability during unexpected shutdowns or power failures.</p>
-<p><strong>How TransLog Works:</strong></p>
-<ol>
-<li>Write operation received</li>
-<li>Data written to in-memory buffer</li>
-<li>Operation logged to TransLog</li>
-<li>Acknowledgment sent to client</li>
-<li>Periodic flush to Lucene segments</li>
-</ol>
-<h3 id="TransLog-Configuration-for-High-Availability"><a href="#TransLog-Configuration-for-High-Availability" class="headerlink" title="TransLog Configuration for High Availability"></a>TransLog Configuration for High Availability</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">PUT /critical_data</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;index.translog.durability&quot;</span><span class="punctuation">:</span> <span class="string">&quot;request&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.sync_interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;5s&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.flush_threshold_size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;512mb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.refresh_interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1s&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>TransLog Durability Options:</strong></p>
-<ul>
-<li><code>request</code>: Fsync after each request (highest durability, lower performance)</li>
-<li><code>async</code>: Fsync every sync_interval (better performance, slight risk)</li>
-</ul>
-<h3 id="Production-Example-Financial-Trading-System"><a href="#Production-Example-Financial-Trading-System" class="headerlink" title="Production Example: Financial Trading System"></a>Production Example: Financial Trading System</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">PUT /trading_transactions</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.durability&quot;</span><span class="punctuation">:</span> <span class="string">&quot;request&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.sync_interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1s&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.refresh_interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1s&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.retention.size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1gb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;index.translog.retention.age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;12h&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<pre>
-<code class="mermaid">
-sequenceDiagram
-participant Client
-participant ES_Node
-participant TransLog
-participant Lucene
-
-Client-&gt;&gt;ES_Node: Index Document
-ES_Node-&gt;&gt;TransLog: Write to TransLog
-TransLog--&gt;&gt;ES_Node: Confirm Write
-ES_Node-&gt;&gt;Lucene: Add to In-Memory Buffer
-ES_Node--&gt;&gt;Client: Acknowledge Request
-
-Note over ES_Node: Periodic Refresh
-ES_Node-&gt;&gt;Lucene: Flush Buffer to Segment
-ES_Node-&gt;&gt;TransLog: Clear TransLog Entries
-</code>
-</pre>
-
-<p><strong>Interview Insight:</strong> <em>“What happens if a node crashes between TransLog write and Lucene flush?”</em></p>
-<p><strong>Answer:</strong> On restart, Elasticsearch replays TransLog entries to recover uncommitted operations. The TransLog ensures no acknowledged writes are lost, maintaining data consistency.</p>
-<h2 id="Production-HA-Challenges-and-Solutions"><a href="#Production-HA-Challenges-and-Solutions" class="headerlink" title="Production HA Challenges and Solutions"></a>Production HA Challenges and Solutions</h2><h3 id="Common-Production-Issues"><a href="#Common-Production-Issues" class="headerlink" title="Common Production Issues"></a>Common Production Issues</h3><h4 id="Split-Brain-Syndrome"><a href="#Split-Brain-Syndrome" class="headerlink" title="Split-Brain Syndrome"></a>Split-Brain Syndrome</h4><p><strong>Problem:</strong> Network partitions causing multiple master nodes</p>
-<p><strong>Solution:</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># elasticsearch.yml</span></span><br><span class="line"><span class="attr">discovery.zen.minimum_master_nodes:</span> <span class="number">2</span>  <span class="comment"># (total_masters / 2) + 1</span></span><br><span class="line"><span class="attr">cluster.initial_master_nodes:</span> [<span class="string">&quot;node-1&quot;</span>, <span class="string">&quot;node-2&quot;</span>, <span class="string">&quot;node-3&quot;</span>]</span><br></pre></td></tr></table></figure>
-
-<h4 id="Memory-Pressure-and-GC-Issues"><a href="#Memory-Pressure-and-GC-Issues" class="headerlink" title="Memory Pressure and GC Issues"></a>Memory Pressure and GC Issues</h4><p><strong>Problem:</strong> Large heaps causing long GC pauses</p>
-<p><strong>Solution:</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># jvm.options</span></span><br><span class="line"><span class="string">-Xms16g</span></span><br><span class="line"><span class="string">-Xmx16g</span></span><br><span class="line"><span class="string">-XX:+UseG1GC</span></span><br><span class="line"><span class="string">-XX:MaxGCPauseMillis=200</span></span><br></pre></td></tr></table></figure>
-
-<h4 id="Uneven-Shard-Distribution"><a href="#Uneven-Shard-Distribution" class="headerlink" title="Uneven Shard Distribution"></a>Uneven Shard Distribution</h4><p><strong>Problem:</strong> Hot spots on specific nodes</p>
-<p><strong>Solution:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">PUT /_cluster/settings</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;transient&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;cluster.routing.allocation.balance.shard&quot;</span><span class="punctuation">:</span> <span class="number">0.45</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;cluster.routing.allocation.balance.index&quot;</span><span class="punctuation">:</span> <span class="number">0.55</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;cluster.routing.allocation.balance.threshold&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Real-Production-Case-Study-Log-Analytics-Platform"><a href="#Real-Production-Case-Study-Log-Analytics-Platform" class="headerlink" title="Real Production Case Study: Log Analytics Platform"></a>Real Production Case Study: Log Analytics Platform</h3><p><strong>Challenge:</strong> Processing 100GB&#x2F;day of application logs with strict SLA requirements</p>
-<p><strong>Architecture:</strong></p>
-<pre>
-<code class="mermaid">
-graph LR
-subgraph &quot;Hot Tier&quot;
-    H1[Hot Node 1]
-    H2[Hot Node 2]
-    H3[Hot Node 3]
-end
-
-subgraph &quot;Warm Tier&quot;
-    W1[Warm Node 1]
-    W2[Warm Node 2]
-end
-
-subgraph &quot;Cold Tier&quot;
-    C1[Cold Node 1]
-end
-
-Apps[Applications] --&gt; LB[Load Balancer]
-LB --&gt; H1
-LB --&gt; H2
-LB --&gt; H3
-
-H1 -.-&gt;|Age-based| W1
-H2 -.-&gt;|Migration| W2
-W1 -.-&gt;|Archive| C1
-W2 -.-&gt;|Archive| C1
-</code>
-</pre>
-
-<p><strong>Index Template Configuration:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">PUT /_index_template/logs_template</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;index_patterns&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;logs-*&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;template&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;settings&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;number_of_shards&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;number_of_replicas&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;index.lifecycle.name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;logs_policy&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;index.routing.allocation.require.box_type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;hot&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Interview Insight:</strong> <em>“How would you handle a scenario where your Elasticsearch cluster is experiencing high write latency?”</em></p>
-<p><strong>Answer:</strong> </p>
-<ol>
-<li>Check TransLog settings (reduce durability if acceptable)</li>
-<li>Optimize refresh intervals</li>
-<li>Implement bulk indexing</li>
-<li>Scale horizontally by adding nodes</li>
-<li>Consider index lifecycle management</li>
-</ol>
-<h2 id="Optimization-Strategies-for-Production-HA"><a href="#Optimization-Strategies-for-Production-HA" class="headerlink" title="Optimization Strategies for Production HA"></a>Optimization Strategies for Production HA</h2><h3 id="Rate-Limiting-Implementation"><a href="#Rate-Limiting-Implementation" class="headerlink" title="Rate Limiting Implementation"></a>Rate Limiting Implementation</h3><p><strong>Circuit Breaker Pattern:</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ElasticsearchCircuitBreaker</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CircuitBreaker circuitBreaker;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ElasticsearchClient client;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;IndexResponse&gt; <span class="title function_">indexWithRateLimit</span><span class="params">(</span></span><br><span class="line"><span class="params">            IndexRequest request)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> circuitBreaker.executeSupplier(() -&gt; &#123;</span><br><span class="line">            <span class="keyword">return</span> client.index(request);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Cluster-level Rate Limiting:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">PUT /_cluster/settings</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;transient&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;indices.memory.index_buffer_size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;20%&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;indices.memory.min_index_buffer_size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;96mb&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;thread_pool.write.queue_size&quot;</span><span class="punctuation">:</span> <span class="number">1000</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Message-Queue-Peak-Shaving"><a href="#Message-Queue-Peak-Shaving" class="headerlink" title="Message Queue Peak Shaving"></a>Message Queue Peak Shaving</h3><p><strong>Kafka Integration Example:</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ElasticsearchBulkProcessor</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@KafkaListener(topics = &quot;elasticsearch-queue&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">processBulkData</span><span class="params">(List&lt;String&gt; documents)</span> &#123;</span><br><span class="line">        <span class="type">BulkRequest</span> <span class="variable">bulkRequest</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BulkRequest</span>();</span><br><span class="line">        </span><br><span class="line">        documents.forEach(doc -&gt; &#123;</span><br><span class="line">            bulkRequest.add(<span class="keyword">new</span> <span class="title class_">IndexRequest</span>(<span class="string">&quot;logs&quot;</span>)</span><br><span class="line">                .source(doc, XContentType.JSON));</span><br><span class="line">        &#125;);</span><br><span class="line">        </span><br><span class="line">        <span class="type">BulkResponse</span> <span class="variable">response</span> <span class="operator">=</span> client.bulk(bulkRequest, RequestOptions.DEFAULT);</span><br><span class="line">        handleBulkResponse(response);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>MQ Configuration for Peak Shaving:</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">kafka:</span></span><br><span class="line">    <span class="attr">consumer:</span></span><br><span class="line">      <span class="attr">max-poll-records:</span> <span class="number">500</span></span><br><span class="line">      <span class="attr">fetch-max-wait:</span> <span class="string">1000ms</span></span><br><span class="line">    <span class="attr">producer:</span></span><br><span class="line">      <span class="attr">batch-size:</span> <span class="number">65536</span></span><br><span class="line">      <span class="attr">linger-ms:</span> <span class="number">100</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Single-Role-Node-Architecture"><a href="#Single-Role-Node-Architecture" class="headerlink" title="Single Role Node Architecture"></a>Single Role Node Architecture</h3><p><strong>Dedicated Master Nodes:</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># master.yml</span></span><br><span class="line"><span class="attr">node.roles:</span> [<span class="string">master</span>]</span><br><span class="line"><span class="attr">discovery.seed_hosts:</span> [<span class="string">&quot;master-1&quot;</span>, <span class="string">&quot;master-2&quot;</span>, <span class="string">&quot;master-3&quot;</span>]</span><br><span class="line"><span class="attr">cluster.initial_master_nodes:</span> [<span class="string">&quot;master-1&quot;</span>, <span class="string">&quot;master-2&quot;</span>, <span class="string">&quot;master-3&quot;</span>]</span><br></pre></td></tr></table></figure>
-
-<p><strong>Data Nodes Configuration:</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># data.yml</span></span><br><span class="line"><span class="attr">node.roles:</span> [<span class="string">data</span>, <span class="string">data_content</span>, <span class="string">data_hot</span>, <span class="string">data_warm</span>]</span><br><span class="line"><span class="attr">path.data:</span> [<span class="string">&quot;/data1&quot;</span>, <span class="string">&quot;/data2&quot;</span>, <span class="string">&quot;/data3&quot;</span>]</span><br></pre></td></tr></table></figure>
-
-<p><strong>Coordinating Nodes:</strong></p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># coordinator.yml</span></span><br><span class="line"><span class="attr">node.roles:</span> []</span><br><span class="line"><span class="attr">http.port:</span> <span class="number">9200</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Dual-Cluster-Deployment-Strategy"><a href="#Dual-Cluster-Deployment-Strategy" class="headerlink" title="Dual Cluster Deployment Strategy"></a>Dual Cluster Deployment Strategy</h3><p><strong>Active-Passive Setup:</strong></p>
-<pre>
-<code class="mermaid">
-graph TB
-subgraph &quot;Primary DC&quot;
-    P_LB[Load Balancer]
-    P_C1[Cluster 1 Node 1]
-    P_C2[Cluster 1 Node 2]
-    P_C3[Cluster 1 Node 3]
-    
-    P_LB --&gt; P_C1
-    P_LB --&gt; P_C2
-    P_LB --&gt; P_C3
-end
-
-subgraph &quot;Secondary DC&quot;
-    S_C1[Cluster 2 Node 1]
-    S_C2[Cluster 2 Node 2]
-    S_C3[Cluster 2 Node 3]
-end
-
-P_C1 -.-&gt;|Cross Cluster Replication| S_C1
-P_C2 -.-&gt;|CCR| S_C2
-P_C3 -.-&gt;|CCR| S_C3
-
-Apps[Applications] --&gt; P_LB
-</code>
-</pre>
-
-<p><strong>Cross-Cluster Replication Setup:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">PUT /_cluster/settings</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;persistent&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;cluster.remote.secondary&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;seeds&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;secondary-cluster:9300&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;transport.compress&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line">PUT /primary_index/_ccr/follow</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;remote_cluster&quot;</span><span class="punctuation">:</span> <span class="string">&quot;secondary&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;leader_index&quot;</span><span class="punctuation">:</span> <span class="string">&quot;primary_index&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Advanced-HA-Monitoring-and-Alerting"><a href="#Advanced-HA-Monitoring-and-Alerting" class="headerlink" title="Advanced HA Monitoring and Alerting"></a>Advanced HA Monitoring and Alerting</h2><h3 id="Key-Metrics-to-Monitor"><a href="#Key-Metrics-to-Monitor" class="headerlink" title="Key Metrics to Monitor"></a>Key Metrics to Monitor</h3><p><strong>Cluster Health Script:</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line">CLUSTER_HEALTH=$(curl -s <span class="string">&quot;localhost:9200/_cluster/health&quot;</span>)</span><br><span class="line">STATUS=$(<span class="built_in">echo</span> <span class="variable">$CLUSTER_HEALTH</span> | jq -r <span class="string">&#x27;.status&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$STATUS</span>&quot;</span> != <span class="string">&quot;green&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;ALERT: Cluster status is <span class="variable">$STATUS</span>&quot;</span></span><br><span class="line">    <span class="comment"># Send notification</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Critical Metrics:</strong></p>
-<ul>
-<li>Cluster status (green&#x2F;yellow&#x2F;red)</li>
-<li>Node availability</li>
-<li>Shard allocation status</li>
-<li>Memory usage and GC frequency</li>
-<li>Search and indexing latency</li>
-<li>TransLog size and flush frequency</li>
-</ul>
-<h3 id="Alerting-Configuration-Example"><a href="#Alerting-Configuration-Example" class="headerlink" title="Alerting Configuration Example"></a>Alerting Configuration Example</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># alertmanager.yml</span></span><br><span class="line"><span class="attr">groups:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">elasticsearch</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">alert:</span> <span class="string">ElasticsearchClusterNotHealthy</span></span><br><span class="line">    <span class="attr">expr:</span> <span class="string">elasticsearch_cluster_health_status&#123;color=&quot;red&quot;&#125;</span> <span class="string">==</span> <span class="number">1</span></span><br><span class="line">    <span class="attr">for:</span> <span class="string">0m</span></span><br><span class="line">    <span class="attr">labels:</span></span><br><span class="line">      <span class="attr">severity:</span> <span class="string">critical</span></span><br><span class="line">    <span class="attr">annotations:</span></span><br><span class="line">      <span class="attr">summary:</span> <span class="string">&quot;Elasticsearch cluster health is RED&quot;</span></span><br><span class="line">      </span><br><span class="line">  <span class="bullet">-</span> <span class="attr">alert:</span> <span class="string">ElasticsearchNodeDown</span></span><br><span class="line">    <span class="attr">expr:</span> <span class="string">up&#123;job=&quot;elasticsearch&quot;&#125;</span> <span class="string">==</span> <span class="number">0</span></span><br><span class="line">    <span class="attr">for:</span> <span class="string">1m</span></span><br><span class="line">    <span class="attr">labels:</span></span><br><span class="line">      <span class="attr">severity:</span> <span class="string">warning</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Performance-Tuning-for-HA"><a href="#Performance-Tuning-for-HA" class="headerlink" title="Performance Tuning for HA"></a>Performance Tuning for HA</h2><h3 id="Index-Lifecycle-Management"><a href="#Index-Lifecycle-Management" class="headerlink" title="Index Lifecycle Management"></a>Index Lifecycle Management</h3><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">PUT /_ilm/policy/production_policy</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;policy&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;phases&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;hot&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;rollover&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;max_size&quot;</span><span class="punctuation">:</span> <span class="string">&quot;10gb&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;max_age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1d&quot;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;warm&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;min_age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;7d&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;allocate&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;require&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">              <span class="attr">&quot;box_type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;warm&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span></span><br><span class="line">          <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">          <span class="attr">&quot;forcemerge&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;max_num_segments&quot;</span><span class="punctuation">:</span> <span class="number">1</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;cold&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;min_age&quot;</span><span class="punctuation">:</span> <span class="string">&quot;30d&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">          <span class="attr">&quot;allocate&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;require&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">              <span class="attr">&quot;box_type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;cold&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span></span><br><span class="line">          <span class="punctuation">&#125;</span></span><br><span class="line">        <span class="punctuation">&#125;</span></span><br><span class="line">      <span class="punctuation">&#125;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Hardware-Recommendations"><a href="#Hardware-Recommendations" class="headerlink" title="Hardware Recommendations"></a>Hardware Recommendations</h3><p><strong>Production Hardware Specs:</strong></p>
-<ul>
-<li><strong>CPU:</strong> 16+ cores for data nodes</li>
-<li><strong>Memory:</strong> 64GB+ RAM (50% for heap, 50% for filesystem cache)</li>
-<li><strong>Storage:</strong> NVMe SSDs for hot data, SATA SSDs for warm&#x2F;cold</li>
-<li><strong>Network:</strong> 10Gbps+ for inter-node communication</li>
-</ul>
-<h2 id="Interview-Questions-and-Expert-Answers"><a href="#Interview-Questions-and-Expert-Answers" class="headerlink" title="Interview Questions and Expert Answers"></a>Interview Questions and Expert Answers</h2><p><strong>Q: “How would you recover from a complete cluster failure?”</strong></p>
-<p><strong>A:</strong> </p>
-<ol>
-<li>Restore from snapshot if available</li>
-<li>If no snapshots, recover using <code>elasticsearch-node</code> tool</li>
-<li>Implement proper backup strategy going forward</li>
-<li>Consider cross-cluster replication for future disasters</li>
-</ol>
-<p><strong>Q: “Explain the difference between <code>index.refresh_interval</code> and TransLog flush.”</strong></p>
-<p><strong>A:</strong> </p>
-<ul>
-<li><code>refresh_interval</code> controls when in-memory documents become searchable</li>
-<li>TransLog flush persists data to disk for durability</li>
-<li>Refresh affects search visibility, flush affects data safety</li>
-</ul>
-<p><strong>Q: “How do you handle version conflicts in a distributed environment?”</strong></p>
-<p><strong>A:</strong> </p>
-<ul>
-<li>Use optimistic concurrency control with version numbers</li>
-<li>Implement retry logic with exponential backoff</li>
-<li>Consider using <code>_seq_no</code> and <code>_primary_term</code> for more granular control</li>
-</ul>
-<h2 id="Security-Considerations-for-HA"><a href="#Security-Considerations-for-HA" class="headerlink" title="Security Considerations for HA"></a>Security Considerations for HA</h2><h3 id="Authentication-and-Authorization"><a href="#Authentication-and-Authorization" class="headerlink" title="Authentication and Authorization"></a>Authentication and Authorization</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># elasticsearch.yml</span></span><br><span class="line"><span class="attr">xpack.security.enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">xpack.security.transport.ssl.enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">xpack.security.http.ssl.enabled:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">xpack.security.authc.realms.native.native1:</span></span><br><span class="line">  <span class="attr">order:</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Role-Based Access Control:</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">PUT /_security/role/log_reader</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;indices&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;names&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;logs-*&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;privileges&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;read&quot;</span><span class="punctuation">,</span> <span class="string">&quot;view_index_metadata&quot;</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Best-Practices-Summary"><a href="#Best-Practices-Summary" class="headerlink" title="Best Practices Summary"></a>Best Practices Summary</h2><h3 id="Do’s"><a href="#Do’s" class="headerlink" title="Do’s"></a>Do’s</h3><ul>
-<li>Always use odd number of master-eligible nodes (3, 5, 7)</li>
-<li>Implement proper monitoring and alerting</li>
-<li>Use index templates for consistent settings</li>
-<li>Regularly test disaster recovery procedures</li>
-<li>Implement proper backup strategies</li>
-</ul>
-<h3 id="Don’ts"><a href="#Don’ts" class="headerlink" title="Don’ts"></a>Don’ts</h3><ul>
-<li>Don’t set heap size above 32GB</li>
-<li>Don’t disable swap without proper configuration</li>
-<li>Don’t ignore yellow cluster status</li>
-<li>Don’t use default settings in production</li>
-<li>Don’t forget to monitor disk space</li>
-</ul>
-<h2 id="References-and-Additional-Resources"><a href="#References-and-Additional-Resources" class="headerlink" title="References and Additional Resources"></a>References and Additional Resources</h2><ul>
-<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html">Elasticsearch Official Documentation</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-search-speed.html">Elasticsearch Performance Tuning Guide</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/cloud/current/ec-getting-started.html">Elastic Cloud Architecture Best Practices</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html">Production Deployment Considerations</a></li>
-</ul>
-<hr>
-<p><em>This guide provides a comprehensive foundation for implementing and maintaining highly available Elasticsearch clusters in production environments. Regular updates and testing of these configurations are essential for maintaining optimal performance and reliability.</em></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" title="Next page" aria-label="Next page" href="/page/2/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
