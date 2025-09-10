@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,538 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/MySQL-Performance-Optimization-Complete-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/09/MySQL-Performance-Optimization-Complete-Guide/" class="post-title-link" itemprop="url">MySQL Performance Optimization: Complete Guide</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-09 15:31:30 / Modified: 16:12:42" itemprop="dateCreated datePublished" datetime="2025-06-09T15:31:30+08:00">2025-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="MySQL-Query-Execution-Architecture"><a href="#MySQL-Query-Execution-Architecture" class="headerlink" title="MySQL Query Execution Architecture"></a>MySQL Query Execution Architecture</h2><p>Understanding MySQL’s internal architecture is crucial for optimization. Here’s how MySQL processes queries:</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[SQL Query] --&gt; B[Connection Layer]
+B --&gt; C[Parser]
+C --&gt; D[Optimizer]
+D --&gt; E[Execution Engine]
+E --&gt; F[Storage Engine]
+F --&gt; G[Physical Data]
+
+D --&gt; H[Query Plan Cache]
+H --&gt; E
+
+subgraph &quot;Query Optimizer&quot;
+    D1[Cost-Based Optimization]
+    D2[Statistics Analysis]
+    D3[Index Selection]
+    D4[Join Order]
+end
+
+D --&gt; D1
+D --&gt; D2
+D --&gt; D3
+D --&gt; D4
+</code>
+</pre>
+
+<h3 id="Key-Components-and-Performance-Impact"><a href="#Key-Components-and-Performance-Impact" class="headerlink" title="Key Components and Performance Impact"></a>Key Components and Performance Impact</h3><p><strong>Connection Layer</strong>: Manages client connections and authentication</p>
+<ul>
+<li><strong>Optimization</strong>: Use connection pooling to reduce overhead</li>
+<li><strong>Interview Question</strong>: <em>“How would you handle connection pool exhaustion?”</em> <ul>
+<li><strong>Answer</strong>: Implement proper connection limits, timeouts, and monitoring. Use connection pooling middleware like ProxySQL or application-level pools.</li>
+</ul>
+</li>
+</ul>
+<p><strong>Parser &amp; Optimizer</strong>: Creates execution plans</p>
+<ul>
+<li><strong>Critical Point</strong>: The optimizer’s cost-based decisions directly impact query performance</li>
+<li><strong>Interview Insight</strong>: <em>“What factors influence MySQL’s query execution plan?”</em><ul>
+<li>Table statistics, index cardinality, join order, and available indexes</li>
+<li>Use <code>ANALYZE TABLE</code> to update statistics regularly</li>
+</ul>
+</li>
+</ul>
+<p><strong>Storage Engine Layer</strong>:</p>
+<ul>
+<li><strong>InnoDB</strong>: Row-level locking, ACID compliance, better for concurrent writes</li>
+<li><strong>MyISAM</strong>: Table-level locking, faster for read-heavy workloads</li>
+<li><strong>Interview Question</strong>: <em>“When would you choose MyISAM over InnoDB?”</em><ul>
+<li><strong>Answer</strong>: Rarely in modern applications. Only for read-only data warehouses or when storage space is extremely limited.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="Index-Optimization-Strategy"><a href="#Index-Optimization-Strategy" class="headerlink" title="Index Optimization Strategy"></a>Index Optimization Strategy</h2><p>Indexes are the foundation of MySQL performance. Understanding when and how to use them is essential.</p>
+<h3 id="Index-Types-and-Use-Cases"><a href="#Index-Types-and-Use-Cases" class="headerlink" title="Index Types and Use Cases"></a>Index Types and Use Cases</h3><pre>
+<code class="mermaid">
+flowchart LR
+A[Index Types] --&gt; B[B-Tree Index]
+A --&gt; C[Hash Index]
+A --&gt; D[Full-Text Index]
+A --&gt; E[Spatial Index]
+
+B --&gt; B1[Primary Key]
+B --&gt; B2[Unique Index]
+B --&gt; B3[Composite Index]
+B --&gt; B4[Covering Index]
+
+B1 --&gt; B1a[Clustered Storage]
+B3 --&gt; B3a[Left-Most Prefix Rule]
+B4 --&gt; B4a[Index-Only Scans]
+</code>
+</pre>
+
+<h3 id="Composite-Index-Design-Strategy"><a href="#Composite-Index-Design-Strategy" class="headerlink" title="Composite Index Design Strategy"></a>Composite Index Design Strategy</h3><p><strong>Interview Question</strong>: <em>“Why is column order important in composite indexes?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- WRONG: Separate indexes</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_user_id <span class="keyword">ON</span> orders (user_id);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_status <span class="keyword">ON</span> orders (status);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_date <span class="keyword">ON</span> orders (order_date);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- RIGHT: Composite index following cardinality rules</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_orders_composite <span class="keyword">ON</span> orders (status, user_id, order_date);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Query that benefits from the composite index</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders </span><br><span class="line"><span class="keyword">WHERE</span> status <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span> </span><br><span class="line">  <span class="keyword">AND</span> user_id <span class="operator">=</span> <span class="number">12345</span> </span><br><span class="line">  <span class="keyword">AND</span> order_date <span class="operator">&gt;=</span> <span class="string">&#x27;2024-01-01&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: MySQL uses the left-most prefix rule. The above index can serve queries filtering on:</p>
+<ul>
+<li><code>status</code> only</li>
+<li><code>status + user_id</code></li>
+<li><code>status + user_id + order_date</code></li>
+<li>But NOT <code>user_id</code> only or <code>order_date</code> only</li>
+</ul>
+<p><strong>Best Practice</strong>: Order columns by selectivity (most selective first) and query patterns.</p>
+<h3 id="Covering-Index-Optimization"><a href="#Covering-Index-Optimization" class="headerlink" title="Covering Index Optimization"></a>Covering Index Optimization</h3><p><strong>Interview Insight</strong>: <em>“How do covering indexes improve performance?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Original query requiring table lookup</span></span><br><span class="line"><span class="keyword">SELECT</span> user_id, order_date, total_amount </span><br><span class="line"><span class="keyword">FROM</span> orders </span><br><span class="line"><span class="keyword">WHERE</span> status <span class="operator">=</span> <span class="string">&#x27;completed&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Covering index eliminates table lookup</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_covering <span class="keyword">ON</span> orders (status, user_id, order_date, total_amount);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Covering indexes eliminate the need for table lookups by including all required columns in the index itself, reducing I&#x2F;O by 70-90% for read-heavy workloads.</p>
+<h3 id="Index-Maintenance-Considerations"><a href="#Index-Maintenance-Considerations" class="headerlink" title="Index Maintenance Considerations"></a>Index Maintenance Considerations</h3><p><strong>Interview Question</strong>: <em>“How do you identify unused indexes?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Find unused indexes</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    OBJECT_SCHEMA <span class="keyword">as</span> db_name,</span><br><span class="line">    OBJECT_NAME <span class="keyword">as</span> table_name,</span><br><span class="line">    INDEX_NAME <span class="keyword">as</span> index_name</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.table_io_waits_summary_by_index_usage </span><br><span class="line"><span class="keyword">WHERE</span> INDEX_NAME <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> </span><br><span class="line">  <span class="keyword">AND</span> COUNT_STAR <span class="operator">=</span> <span class="number">0</span> </span><br><span class="line">  <span class="keyword">AND</span> OBJECT_SCHEMA <span class="keyword">NOT</span> <span class="keyword">IN</span> (<span class="string">&#x27;mysql&#x27;</span>, <span class="string">&#x27;performance_schema&#x27;</span>, <span class="string">&#x27;information_schema&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Use Performance Schema to monitor index usage patterns and remove unused indexes that consume storage and slow down DML operations.</p>
+<hr>
+<h2 id="Query-Optimization-Techniques"><a href="#Query-Optimization-Techniques" class="headerlink" title="Query Optimization Techniques"></a>Query Optimization Techniques</h2><h3 id="Join-Optimization-Hierarchy"><a href="#Join-Optimization-Hierarchy" class="headerlink" title="Join Optimization Hierarchy"></a>Join Optimization Hierarchy</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Join Types by Performance] --&gt; B[Nested Loop Join]
+A --&gt; C[Block Nested Loop Join]
+A --&gt; D[Hash Join MySQL 8.0+]
+A --&gt; E[Index Nested Loop Join]
+
+B --&gt; B1[O（n*m） - Worst Case]
+C --&gt; C1[Better for Large Tables]
+D --&gt; D1[Best for Equi-joins]
+E --&gt; E1[Optimal with Proper Indexes]
+
+style E fill:#90EE90
+style B fill:#FFB6C1
+</code>
+</pre>
+
+<p><strong>Interview Question</strong>: <em>“How does MySQL choose join algorithms?”</em></p>
+<p><strong>Answer</strong>: MySQL’s optimizer considers:</p>
+<ul>
+<li>Table sizes and cardinality</li>
+<li>Available indexes on join columns</li>
+<li>Memory available for join buffers</li>
+<li>MySQL 8.0+ includes hash joins for better performance on large datasets</li>
+</ul>
+<h3 id="Subquery-vs-JOIN-Performance"><a href="#Subquery-vs-JOIN-Performance" class="headerlink" title="Subquery vs JOIN Performance"></a>Subquery vs JOIN Performance</h3><p><strong>Interview Insight</strong>: <em>“When would you use EXISTS vs JOIN?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- SLOW: Correlated subquery</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users u</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">EXISTS</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> orders o </span><br><span class="line">    <span class="keyword">WHERE</span> o.user_id <span class="operator">=</span> u.id </span><br><span class="line">      <span class="keyword">AND</span> o.status <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- FAST: JOIN with proper indexing</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span> u.<span class="operator">*</span> <span class="keyword">FROM</span> users u</span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> orders o <span class="keyword">ON</span> u.id <span class="operator">=</span> o.user_id</span><br><span class="line"><span class="keyword">WHERE</span> o.status <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Index to support the JOIN</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_orders_user_status <span class="keyword">ON</span> orders (user_id, status);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>EXISTS</strong>: When you only need to check presence (doesn’t return duplicates naturally)</li>
+<li><strong>JOIN</strong>: When you need data from both tables or better performance with proper indexes</li>
+<li><strong>Performance tip</strong>: JOINs are typically faster when properly indexed</li>
+</ul>
+<h3 id="Window-Functions-vs-GROUP-BY"><a href="#Window-Functions-vs-GROUP-BY" class="headerlink" title="Window Functions vs GROUP BY"></a>Window Functions vs GROUP BY</h3><p><strong>Interview Question</strong>: <em>“How do window functions improve performance over traditional approaches?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Traditional approach with self-join (SLOW)</span></span><br><span class="line"><span class="keyword">SELECT</span> u1.<span class="operator">*</span>, </span><br><span class="line">       (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> users u2 <span class="keyword">WHERE</span> u2.department <span class="operator">=</span> u1.department) <span class="keyword">as</span> dept_count</span><br><span class="line"><span class="keyword">FROM</span> users u1;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Optimized with window function (FAST)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span>, </span><br><span class="line">       <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">OVER</span> (<span class="keyword">PARTITION</span> <span class="keyword">BY</span> department) <span class="keyword">as</span> dept_count</span><br><span class="line"><span class="keyword">FROM</span> users;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Window functions reduce multiple passes through data, improving performance by 40-60% by eliminating correlated subqueries and self-joins.</p>
+<h3 id="Query-Rewriting-Patterns"><a href="#Query-Rewriting-Patterns" class="headerlink" title="Query Rewriting Patterns"></a>Query Rewriting Patterns</h3><p><strong>Interview Insight</strong>: <em>“What are common query anti-patterns that hurt performance?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- ANTI-PATTERN 1: Functions in WHERE clauses</span></span><br><span class="line"><span class="comment">-- SLOW: Function prevents index usage</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> <span class="keyword">YEAR</span>(order_date) <span class="operator">=</span> <span class="number">2024</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- FAST: Range condition uses index</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders </span><br><span class="line"><span class="keyword">WHERE</span> order_date <span class="operator">&gt;=</span> <span class="string">&#x27;2024-01-01&#x27;</span> </span><br><span class="line">  <span class="keyword">AND</span> order_date <span class="operator">&lt;</span> <span class="string">&#x27;2025-01-01&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- ANTI-PATTERN 2: Leading wildcards in LIKE</span></span><br><span class="line"><span class="comment">-- SLOW: Cannot use index</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;%phone%&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- BETTER: Full-text search</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">MATCH</span>(name) AGAINST(<span class="string">&#x27;phone&#x27;</span> <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Avoid functions in WHERE clauses, leading wildcards, and OR conditions that prevent index usage. Rewrite queries to enable index scans.</p>
+<hr>
+<h2 id="Schema-Design-Best-Practices"><a href="#Schema-Design-Best-Practices" class="headerlink" title="Schema Design Best Practices"></a>Schema Design Best Practices</h2><h3 id="Normalization-vs-Denormalization-Trade-offs"><a href="#Normalization-vs-Denormalization-Trade-offs" class="headerlink" title="Normalization vs Denormalization Trade-offs"></a>Normalization vs Denormalization Trade-offs</h3><pre>
+<code class="mermaid">
+flowchart LR
+A[Schema Design Decision] --&gt; B[Normalize]
+A --&gt; C[Denormalize]
+
+B --&gt; B1[Reduce Data Redundancy]
+B --&gt; B2[Maintain Data Integrity]
+B --&gt; B3[More Complex Queries]
+
+C --&gt; C1[Improve Read Performance]
+C --&gt; C2[Reduce JOINs]
+C --&gt; C3[Increase Storage]
+
+</code>
+</pre>
+<pre>
+<code class="mermaid">
+flowchart LR
+  
+subgraph &quot;Decision Factors&quot;
+    D1[Read&#x2F;Write Ratio]
+    D2[Query Complexity]
+    D3[Data Consistency Requirements]
+end
+</code>
+</pre>
+
+<p><strong>Interview Question</strong>: <em>“How do you decide between normalization and denormalization?”</em></p>
+<p><strong>Answer</strong>: Consider the read&#x2F;write ratio:</p>
+<ul>
+<li><strong>High read, low write</strong>: Denormalize for performance</li>
+<li><strong>High write, moderate read</strong>: Normalize for consistency</li>
+<li><strong>Mixed workload</strong>: Hybrid approach with materialized views or summary tables</li>
+</ul>
+<h3 id="Data-Type-Optimization"><a href="#Data-Type-Optimization" class="headerlink" title="Data Type Optimization"></a>Data Type Optimization</h3><p><strong>Interview Insight</strong>: <em>“How do data types affect performance?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- INEFFICIENT: Using wrong data types</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users (</span><br><span class="line">    id <span class="type">VARCHAR</span>(<span class="number">50</span>),           <span class="comment">-- Should be INT or BIGINT</span></span><br><span class="line">    age <span class="type">VARCHAR</span>(<span class="number">10</span>),          <span class="comment">-- Should be TINYINT</span></span><br><span class="line">    salary <span class="type">DECIMAL</span>(<span class="number">20</span>,<span class="number">2</span>),     <span class="comment">-- Excessive precision</span></span><br><span class="line">    created_at <span class="type">VARCHAR</span>(<span class="number">50</span>)    <span class="comment">-- Should be DATETIME/TIMESTAMP</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- OPTIMIZED: Proper data types</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users (</span><br><span class="line">    id <span class="type">BIGINT</span> UNSIGNED AUTO_INCREMENT <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    age TINYINT UNSIGNED,</span><br><span class="line">    salary <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    created_at <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p><strong>Performance Impact Analysis</strong>:</p>
+<ul>
+<li><strong>INT vs VARCHAR</strong>: INT operations are 3-5x faster, use 4 bytes vs variable storage</li>
+<li><strong>TINYINT vs INT</strong>: TINYINT uses 1 byte vs 4 bytes for age (0-255 range sufficient)</li>
+<li><strong>Fixed vs Variable length</strong>: CHAR vs VARCHAR impacts row storage and scanning speed</li>
+</ul>
+<h3 id="Partitioning-Strategy"><a href="#Partitioning-Strategy" class="headerlink" title="Partitioning Strategy"></a>Partitioning Strategy</h3><p><strong>Interview Question</strong>: <em>“When and how would you implement table partitioning?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Range partitioning for time-series data</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> sales (</span><br><span class="line">    id <span class="type">BIGINT</span>,</span><br><span class="line">    sale_date <span class="type">DATE</span>,</span><br><span class="line">    amount <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>)</span><br><span class="line">) <span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span> (<span class="keyword">YEAR</span>(sale_date)) (</span><br><span class="line">    <span class="keyword">PARTITION</span> p2023 <span class="keyword">VALUES</span> LESS THAN (<span class="number">2024</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p2024 <span class="keyword">VALUES</span> LESS THAN (<span class="number">2025</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p2025 <span class="keyword">VALUES</span> LESS THAN (<span class="number">2026</span>)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Hash partitioning for even distribution</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> user_activities (</span><br><span class="line">    id <span class="type">BIGINT</span>,</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    activity_type <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    created_at <span class="type">TIMESTAMP</span></span><br><span class="line">) <span class="keyword">PARTITION</span> <span class="keyword">BY</span> HASH(user_id) PARTITIONS <span class="number">8</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Use partitioning when:</p>
+<ul>
+<li><strong>Tables exceed 100GB</strong></li>
+<li><strong>Clear partitioning key exists</strong> (date, region, etc.)</li>
+<li><strong>Query patterns align with partitioning scheme</strong></li>
+</ul>
+<p><strong>Benefits</strong>:</p>
+<ul>
+<li><strong>Query pruning</strong>: Only relevant partitions are scanned</li>
+<li><strong>Parallel processing</strong>: Operations can run on multiple partitions</li>
+<li><strong>Maintenance efficiency</strong>: Drop old partitions instead of DELETE operations</li>
+</ul>
+<hr>
+<h2 id="Configuration-Tuning"><a href="#Configuration-Tuning" class="headerlink" title="Configuration Tuning"></a>Configuration Tuning</h2><h3 id="Memory-Configuration-Hierarchy"><a href="#Memory-Configuration-Hierarchy" class="headerlink" title="Memory Configuration Hierarchy"></a>Memory Configuration Hierarchy</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[MySQL Memory Allocation] --&gt; B[Global Buffers]
+A --&gt; C[Per-Connection Buffers]
+
+B --&gt; B1[InnoDB Buffer Pool]
+B --&gt; B2[Key Buffer Size]
+B --&gt; B3[Query Cache Deprecated]
+
+C --&gt; C1[Sort Buffer Size]
+C --&gt; C2[Join Buffer Size]
+C --&gt; C3[Read Buffer Size]
+
+B1 --&gt; B1a[70-80% of RAM for dedicated servers]
+C1 --&gt; C1a[256KB-2MB per connection]
+
+style B1 fill:#90EE90
+style C1 fill:#FFD700
+</code>
+</pre>
+
+<p><strong>Interview Question</strong>: <em>“How would you size the InnoDB buffer pool?”</em></p>
+<h3 id="Critical-Configuration-Parameters"><a href="#Critical-Configuration-Parameters" class="headerlink" title="Critical Configuration Parameters"></a>Critical Configuration Parameters</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Key InnoDB settings for performance</span></span><br><span class="line">[mysqld]</span><br><span class="line"># Buffer pool <span class="operator">-</span> most critical setting</span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">6</span>G  # <span class="number">70</span><span class="number">-80</span><span class="operator">%</span> <span class="keyword">of</span> RAM <span class="keyword">for</span> dedicated servers</span><br><span class="line">innodb_buffer_pool_instances <span class="operator">=</span> <span class="number">8</span>  # <span class="number">1</span> instance <span class="keyword">per</span> GB <span class="keyword">of</span> buffer pool</span><br><span class="line"></span><br><span class="line"># Log files <span class="keyword">for</span> write performance</span><br><span class="line">innodb_log_file_size <span class="operator">=</span> <span class="number">1</span>G    # <span class="number">25</span><span class="operator">%</span> <span class="keyword">of</span> buffer pool size</span><br><span class="line">innodb_log_buffer_size <span class="operator">=</span> <span class="number">64</span>M</span><br><span class="line">innodb_flush_log_at_trx_commit <span class="operator">=</span> <span class="number">2</span>  # Balance performance vs durability</span><br><span class="line"></span><br><span class="line"># Connection settings</span><br><span class="line">max_connections <span class="operator">=</span> <span class="number">200</span></span><br><span class="line">thread_cache_size <span class="operator">=</span> <span class="number">16</span></span><br><span class="line"></span><br><span class="line"># Query optimization</span><br><span class="line">sort_buffer_size <span class="operator">=</span> <span class="number">2</span>M         # <span class="keyword">Per</span> connection</span><br><span class="line">join_buffer_size <span class="operator">=</span> <span class="number">2</span>M         # <span class="keyword">Per</span> <span class="keyword">JOIN</span> operation</span><br><span class="line">tmp_table_size <span class="operator">=</span> <span class="number">64</span>M</span><br><span class="line">max_heap_table_size <span class="operator">=</span> <span class="number">64</span>M</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer Strategy</strong>:</p>
+<ol>
+<li><strong>Start with 70-80%</strong> of available RAM for dedicated database servers</li>
+<li><strong>Monitor buffer pool hit ratio</strong> (should be &gt;99%)</li>
+<li><strong>Adjust based on working set size</strong> and query patterns</li>
+<li><strong>Use multiple buffer pool instances</strong> for systems with &gt;8GB buffer pool</li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>“What’s the relationship between buffer pool size and performance?”</em></p>
+<p><strong>Answer</strong>: The buffer pool caches data pages in memory. Larger buffer pools reduce disk I&#x2F;O, but too large can cause:</p>
+<ul>
+<li><strong>OS paging</strong>: If total MySQL memory exceeds available RAM</li>
+<li><strong>Longer crash recovery</strong>: Larger logs and memory structures</li>
+<li><strong>Checkpoint storms</strong>: During heavy write periods</li>
+</ul>
+<h3 id="Connection-and-Query-Tuning"><a href="#Connection-and-Query-Tuning" class="headerlink" title="Connection and Query Tuning"></a>Connection and Query Tuning</h3><p><strong>Interview Question</strong>: <em>“How do you handle connection management in high-concurrency environments?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Monitor connection usage</span></span><br><span class="line"><span class="keyword">SHOW</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Threads_%&#x27;</span>;</span><br><span class="line"><span class="keyword">SHOW</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Connections&#x27;</span>;</span><br><span class="line"><span class="keyword">SHOW</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Max_used_connections&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Optimize connection handling</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> thread_cache_size <span class="operator">=</span> <span class="number">16</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> max_connections <span class="operator">=</span> <span class="number">500</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> connect_timeout <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> interactive_timeout <span class="operator">=</span> <span class="number">300</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> wait_timeout <span class="operator">=</span> <span class="number">300</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: </p>
+<ul>
+<li><strong>Use connection pooling</strong> at application level</li>
+<li><strong>Set appropriate timeouts</strong> to prevent connection leaks</li>
+<li><strong>Monitor thread cache efficiency</strong>: Thread_cache_hit_rate should be &gt;90%</li>
+<li><strong>Consider ProxySQL</strong> for advanced connection management</li>
+</ul>
+<hr>
+<h2 id="Monitoring-and-Profiling"><a href="#Monitoring-and-Profiling" class="headerlink" title="Monitoring and Profiling"></a>Monitoring and Profiling</h2><h3 id="Performance-Monitoring-Workflow"><a href="#Performance-Monitoring-Workflow" class="headerlink" title="Performance Monitoring Workflow"></a>Performance Monitoring Workflow</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Performance Issue] --&gt; B[Identify Bottleneck]
+B --&gt; C[Slow Query Log]
+B --&gt; D[Performance Schema]
+B --&gt; E[EXPLAIN Analysis]
+
+C --&gt; F[Query Optimization]
+D --&gt; G[Resource Optimization]
+E --&gt; H[Index Optimization]
+
+F --&gt; I[Validate Improvement]
+G --&gt; I
+H --&gt; I
+
+I --&gt; J{Performance Acceptable?}
+J --&gt;|No| B
+J --&gt;|Yes| K[Document Solution]
+</code>
+</pre>
+
+<p><strong>Interview Question</strong>: <em>“What’s your approach to troubleshooting MySQL performance issues?”</em></p>
+<h3 id="Essential-Monitoring-Queries"><a href="#Essential-Monitoring-Queries" class="headerlink" title="Essential Monitoring Queries"></a>Essential Monitoring Queries</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. Find slow queries in real-time</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    CONCAT(<span class="keyword">USER</span>, <span class="string">&#x27;@&#x27;</span>, HOST) <span class="keyword">as</span> <span class="keyword">user</span>,</span><br><span class="line">    COMMAND,</span><br><span class="line">    <span class="type">TIME</span>,</span><br><span class="line">    STATE,</span><br><span class="line">    <span class="keyword">LEFT</span>(INFO, <span class="number">100</span>) <span class="keyword">as</span> query_snippet</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.PROCESSLIST </span><br><span class="line"><span class="keyword">WHERE</span> <span class="type">TIME</span> <span class="operator">&gt;</span> <span class="number">5</span> <span class="keyword">AND</span> COMMAND <span class="operator">!=</span> <span class="string">&#x27;Sleep&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="type">TIME</span> <span class="keyword">DESC</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. Buffer pool efficiency monitoring</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    ROUND((<span class="number">1</span> <span class="operator">-</span> (Innodb_buffer_pool_reads <span class="operator">/</span> Innodb_buffer_pool_read_requests)) <span class="operator">*</span> <span class="number">100</span>, <span class="number">2</span>) <span class="keyword">as</span> hit_ratio,</span><br><span class="line">    Innodb_buffer_pool_read_requests <span class="keyword">as</span> total_reads,</span><br><span class="line">    Innodb_buffer_pool_reads <span class="keyword">as</span> disk_reads</span><br><span class="line"><span class="keyword">FROM</span> </span><br><span class="line">    (<span class="keyword">SELECT</span> VARIABLE_VALUE <span class="keyword">as</span> Innodb_buffer_pool_reads <span class="keyword">FROM</span> performance_schema.global_status <span class="keyword">WHERE</span> VARIABLE_NAME <span class="operator">=</span> <span class="string">&#x27;Innodb_buffer_pool_reads&#x27;</span>) a,</span><br><span class="line">    (<span class="keyword">SELECT</span> VARIABLE_VALUE <span class="keyword">as</span> Innodb_buffer_pool_read_requests <span class="keyword">FROM</span> performance_schema.global_status <span class="keyword">WHERE</span> VARIABLE_NAME <span class="operator">=</span> <span class="string">&#x27;Innodb_buffer_pool_read_requests&#x27;</span>) b;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. Top queries by execution time</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    SCHEMA_NAME,</span><br><span class="line">    DIGEST_TEXT,</span><br><span class="line">    COUNT_STAR <span class="keyword">as</span> exec_count,</span><br><span class="line">    AVG_TIMER_WAIT<span class="operator">/</span><span class="number">1000000000</span> <span class="keyword">as</span> avg_exec_time_sec,</span><br><span class="line">    SUM_TIMER_WAIT<span class="operator">/</span><span class="number">1000000000</span> <span class="keyword">as</span> total_exec_time_sec</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.events_statements_summary_by_digest</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> SUM_TIMER_WAIT <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Follow systematic approach:</p>
+<ol>
+<li><strong>Identify symptoms</strong>: Slow queries, high CPU, lock waits</li>
+<li><strong>Gather metrics</strong>: Use Performance Schema and slow query log</li>
+<li><strong>Analyze bottlenecks</strong>: Focus on highest impact issues first</li>
+<li><strong>Implement fixes</strong>: Query optimization, indexing, configuration</li>
+<li><strong>Validate improvements</strong>: Measure before&#x2F;after performance</li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>“What key metrics do you monitor for MySQL performance?”</em></p>
+<p><strong>Critical Metrics</strong>:</p>
+<ul>
+<li><strong>Query response time</strong>: 95th percentile response times</li>
+<li><strong>Buffer pool hit ratio</strong>: Should be &gt;99%</li>
+<li><strong>Connection usage</strong>: Active vs maximum connections</li>
+<li><strong>Lock wait times</strong>: InnoDB lock waits and deadlocks</li>
+<li><strong>Replication lag</strong>: For master-slave setups</li>
+</ul>
+<h3 id="Query-Profiling-Techniques"><a href="#Query-Profiling-Techniques" class="headerlink" title="Query Profiling Techniques"></a>Query Profiling Techniques</h3><p><strong>Interview Question</strong>: <em>“How do you profile a specific query’s performance?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Enable profiling</span></span><br><span class="line"><span class="keyword">SET</span> profiling <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Execute your query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> complex_condition <span class="operator">=</span> <span class="string">&#x27;value&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- View profile</span></span><br><span class="line"><span class="keyword">SHOW</span> PROFILES;</span><br><span class="line"><span class="keyword">SHOW</span> PROFILE <span class="keyword">FOR</span> QUERY <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Detailed analysis with Performance Schema</span></span><br><span class="line"><span class="keyword">SELECT</span> EVENT_NAME, COUNT_STAR, AVG_TIMER_WAIT<span class="operator">/</span><span class="number">1000000</span> <span class="keyword">as</span> avg_ms</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.events_waits_summary_global_by_event_name</span><br><span class="line"><span class="keyword">WHERE</span> EVENT_NAME <span class="keyword">LIKE</span> <span class="string">&#x27;wait/io%&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> AVG_TIMER_WAIT <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Use multiple approaches:</p>
+<ul>
+<li><strong>EXPLAIN</strong>: Understand execution plan</li>
+<li><strong>EXPLAIN FORMAT&#x3D;JSON</strong>: Detailed cost analysis</li>
+<li><strong>Performance Schema</strong>: I&#x2F;O and wait event analysis</li>
+<li><strong>Query profiling</strong>: Break down query execution phases</li>
+</ul>
+<hr>
+<h2 id="Advanced-Optimization-Techniques"><a href="#Advanced-Optimization-Techniques" class="headerlink" title="Advanced Optimization Techniques"></a>Advanced Optimization Techniques</h2><h3 id="Read-Replica-Optimization"><a href="#Read-Replica-Optimization" class="headerlink" title="Read Replica Optimization"></a>Read Replica Optimization</h3><pre>
+<code class="mermaid">
+flowchart LR
+A[Application] --&gt; B[Load Balancer&#x2F;Proxy]
+B --&gt; C[Master DB - Writes]
+B --&gt; D[Read Replica 1]
+B --&gt; E[Read Replica 2]
+
+C --&gt; F[All Write Operations]
+D --&gt; G[Read Operations - Region 1]
+E --&gt; H[Read Operations - Region 2]
+
+C -.-&gt;|Async Replication| D
+C -.-&gt;|Async Replication| E
+</code>
+</pre>
+<pre>
+<code class="mermaid">
+flowchart LR
+subgraph &quot;Optimization Strategy&quot;
+    I[Route by Query Type]
+    J[Geographic Distribution]
+    K[Read Preference Policies]
+end
+</code>
+</pre>
+
+<p><strong>Interview Question</strong>: <em>“How do you handle read&#x2F;write splitting and replication lag?”</em></p>
+<p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Application-level routing</strong>: Route SELECTs to replicas, DML to master</li>
+<li><strong>Middleware solutions</strong>: ProxySQL, MySQL Router for automatic routing</li>
+<li><strong>Handle replication lag</strong>: <ul>
+<li>Read from master for critical consistency requirements</li>
+<li>Use <code>SELECT ... FOR UPDATE</code> to force master reads</li>
+<li>Monitor <code>SHOW SLAVE STATUS</code> for lag metrics</li>
+</ul>
+</li>
+</ul>
+<h3 id="Sharding-Strategy"><a href="#Sharding-Strategy" class="headerlink" title="Sharding Strategy"></a>Sharding Strategy</h3><p><strong>Interview Insight</strong>: <em>“When and how would you implement database sharding?”</em></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Horizontal sharding example</span></span><br><span class="line"><span class="comment">-- Shard by user_id hash</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users_shard_1 (</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    <span class="comment">-- Constraint: user_id % 4 = 1</span></span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users_shard_2 (</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    <span class="comment">-- Constraint: user_id % 4 = 2</span></span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Application logic for shard routing</span></span><br><span class="line">def get_shard_for_user(user_id):</span><br><span class="line">    <span class="keyword">return</span> f&quot;users_shard_&#123;user_id % 4 + 1&#125;&quot;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Sharding Considerations</strong>:</p>
+<ul>
+<li><strong>When to shard</strong>: When vertical scaling reaches limits (&gt;1TB, &gt;10K QPS)</li>
+<li><strong>Sharding key selection</strong>: Choose keys that distribute data evenly</li>
+<li><strong>Cross-shard queries</strong>: Avoid or implement at application level</li>
+<li><strong>Rebalancing</strong>: Plan for shard splitting and data redistribution</li>
+</ul>
+<h3 id="Caching-Strategies"><a href="#Caching-Strategies" class="headerlink" title="Caching Strategies"></a>Caching Strategies</h3><p><strong>Interview Question</strong>: <em>“How do you implement effective database caching?”</em></p>
+<p><strong>Multi-level Caching Architecture</strong>:</p>
+<pre>
+<code class="mermaid">
+flowchart TD
+A[Application Request] --&gt; B[L1: Application Cache]
+B --&gt;|Miss| C[L2: Redis&#x2F;Memcached]
+C --&gt;|Miss| D[MySQL Database]
+
+D --&gt; E[Query Result]
+E --&gt; F[Update L2 Cache]
+F --&gt; G[Update L1 Cache]
+G --&gt; H[Return to Application]
+
+</code>
+</pre>
+<pre>
+<code class="mermaid">
+flowchart TD
+ 
+subgraph &quot;Cache Strategies&quot;
+    I[Cache-Aside]
+    J[Write-Through]
+    K[Write-Behind]
+end
+</code>
+</pre>
+
+<p><strong>Implementation Example</strong>:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Cache frequently accessed data</span></span><br><span class="line"><span class="comment">-- Cache user profiles for 1 hour</span></span><br><span class="line">KEY: <span class="keyword">user</span>:profile:<span class="number">12345</span></span><br><span class="line"><span class="keyword">VALUE</span>: &#123;&quot;user_id&quot;: <span class="number">12345</span>, &quot;name&quot;: &quot;John&quot;, &quot;email&quot;: &quot;john@example.com&quot;&#125;</span><br><span class="line">TTL: <span class="number">3600</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Cache query results</span></span><br><span class="line"><span class="comment">-- Cache product search results for 15 minutes</span></span><br><span class="line">KEY: products:<span class="keyword">search</span>:electronics:page:<span class="number">1</span></span><br><span class="line"><span class="keyword">VALUE</span>: [&#123;&quot;id&quot;: <span class="number">1</span>, &quot;name&quot;: &quot;Phone&quot;&#125;, &#123;&quot;id&quot;: <span class="number">2</span>, &quot;name&quot;: &quot;Laptop&quot;&#125;]</span><br><span class="line">TTL: <span class="number">900</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Invalidation strategy</span></span><br><span class="line"><span class="comment">-- When user updates profile, invalidate cache</span></span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">user</span>:profile:<span class="number">12345</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Implement multi-tier caching:</p>
+<ol>
+<li><strong>Application cache</strong>: In-memory objects, fastest access</li>
+<li><strong>Distributed cache</strong>: Redis&#x2F;Memcached for shared data</li>
+<li><strong>Query result cache</strong>: Cache expensive query results</li>
+<li><strong>Page cache</strong>: Full page caching for read-heavy content</li>
+</ol>
+<p><strong>Cache Invalidation Patterns</strong>:</p>
+<ul>
+<li><strong>TTL-based</strong>: Simple time-based expiration</li>
+<li><strong>Tag-based</strong>: Invalidate related cache entries</li>
+<li><strong>Event-driven</strong>: Invalidate on data changes</li>
+</ul>
+<h3 id="Performance-Testing-and-Benchmarking"><a href="#Performance-Testing-and-Benchmarking" class="headerlink" title="Performance Testing and Benchmarking"></a>Performance Testing and Benchmarking</h3><p><strong>Interview Question</strong>: <em>“How do you benchmark MySQL performance?”</em></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># sysbench for MySQL benchmarking</span></span><br><span class="line">sysbench oltp_read_write \</span><br><span class="line">    --mysql-host=localhost \</span><br><span class="line">    --mysql-user=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-password=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-db=testdb \</span><br><span class="line">    --tables=10 \</span><br><span class="line">    --table-size=100000 \</span><br><span class="line">    prepare</span><br><span class="line"></span><br><span class="line">sysbench oltp_read_write \</span><br><span class="line">    --mysql-host=localhost \</span><br><span class="line">    --mysql-user=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-password=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-db=testdb \</span><br><span class="line">    --tables=10 \</span><br><span class="line">    --table-size=100000 \</span><br><span class="line">    --threads=16 \</span><br><span class="line">    --<span class="keyword">time</span>=300 \</span><br><span class="line">    run</span><br></pre></td></tr></table></figure>
+
+<p><strong>Answer</strong>: Use systematic benchmarking approach:</p>
+<ol>
+<li><strong>Baseline measurement</strong>: Establish current performance metrics</li>
+<li><strong>Controlled testing</strong>: Change one variable at a time</li>
+<li><strong>Load testing</strong>: Use tools like sysbench, MySQL Workbench</li>
+<li><strong>Real-world simulation</strong>: Test with production-like data and queries</li>
+<li><strong>Performance regression testing</strong>: Automated testing in CI&#x2F;CD pipelines</li>
+</ol>
+<p><strong>Key Metrics to Measure</strong>:</p>
+<ul>
+<li><strong>Throughput</strong>: Queries per second (QPS)</li>
+<li><strong>Latency</strong>: 95th percentile response times</li>
+<li><strong>Resource utilization</strong>: CPU, memory, I&#x2F;O usage</li>
+<li><strong>Scalability</strong>: Performance under increasing load</li>
+</ul>
+<hr>
+<h2 id="Final-Performance-Optimization-Checklist"><a href="#Final-Performance-Optimization-Checklist" class="headerlink" title="Final Performance Optimization Checklist"></a>Final Performance Optimization Checklist</h2><p><strong>Before Production Deployment</strong>:</p>
+<ol>
+<li><p><strong>✅ Index Analysis</strong></p>
+<ul>
+<li>All WHERE clause columns indexed appropriately</li>
+<li>Composite indexes follow left-most prefix rule</li>
+<li>No unused indexes consuming resources</li>
+</ul>
+</li>
+<li><p><strong>✅ Query Optimization</strong></p>
+<ul>
+<li>No functions in WHERE clauses</li>
+<li>JOINs use proper indexes</li>
+<li>Window functions replace correlated subqueries where applicable</li>
+</ul>
+</li>
+<li><p><strong>✅ Schema Design</strong></p>
+<ul>
+<li>Appropriate data types for all columns</li>
+<li>Normalization level matches query patterns</li>
+<li>Partitioning implemented for large tables</li>
+</ul>
+</li>
+<li><p><strong>✅ Configuration Tuning</strong></p>
+<ul>
+<li>Buffer pool sized correctly (70-80% RAM)</li>
+<li>Connection limits and timeouts configured</li>
+<li>Log file sizes optimized for workload</li>
+</ul>
+</li>
+<li><p><strong>✅ Monitoring Setup</strong></p>
+<ul>
+<li>Slow query log enabled and monitored</li>
+<li>Performance Schema collecting key metrics</li>
+<li>Alerting on critical performance thresholds</li>
+</ul>
+</li>
+</ol>
+<p><strong>Interview Final Question</strong>: <em>“What’s your philosophy on MySQL performance optimization?”</em></p>
+<p><strong>Answer</strong>: “Performance optimization is about understanding the business requirements first, then systematically identifying and removing bottlenecks. It’s not about applying every optimization technique, but choosing the right optimizations for your specific workload. Always measure first, optimize second, and validate the improvements. The goal is sustainable performance that scales with business growth.”</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -3192,402 +3724,6 @@ style Sync2 fill:#e1f5fe
 <li><strong>Use distributed locks carefully</strong> with proper timeout and renewal mechanisms</li>
 <li><strong>Monitor and optimize performance</strong> regularly</li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/01/Kafka-Notes-for-Interview/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/01/Kafka-Notes-for-Interview/" class="post-title-link" itemprop="url">Kafka Notes for Interview</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-06-01 15:58:13" itemprop="dateCreated datePublished" datetime="2025-06-01T15:58:13+08:00">2025-06-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-06-09 17:17:22" itemprop="dateModified" datetime="2025-06-09T17:17:22+08:00">2025-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/kafka/" itemprop="url" rel="index"><span itemprop="name">kafka</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <ul>
-<li><p>Kafka基础知识</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>消息队列、流平台</li>
-<li>主题、分区、副本</li>
-<li>生产者、消费者、broker、Zookeeper</li>
-<li>消费者组、offset</li>
-<li>ISR协议</li>
-</ul>
-</li>
-<li><p>消息队列的使用场景</p>
-<ul>
-<li>异步、解耦、削峰</li>
-<li>性能、扩展性、可用性</li>
-<li>使用场景<ul>
-<li>日志处理</li>
-<li>消息通信</li>
-<li>秒杀</li>
-<li>订单超时取消</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>kafka是一个分布式流处理平台，主要用于实时流数据的传输和处理。它可以将大量的消息和事件以分布式、持久化、高可靠性、高吞吐量的方式传输和存储。</p>
-</li>
-<li><p>消费者组</p>
-<ul>
-<li>kafka提供的可扩展且具有容错性的消费者机制。</li>
-<li>消费者组是一个有多个消费者实例构成的分组。多个实例共同订阅若干个主题，实现共同消费。同一个组下的每个实例都配置有相同的组ID，被分配不同的订阅分区。当某个实例挂掉的时候，其他实例会自动的承担起该实例负责消费的分区。</li>
-</ul>
-</li>
-<li><p>架构设计与实现</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>WAL顺序写</li>
-<li>元数据管理</li>
-</ul>
-</li>
-<li><p>协议和网络模块</p>
-</li>
-<li><p>数据存储</p>
-<ul>
-<li>元数据存储<ul>
-<li>目前，kafka使用zk存储集群元数据，进行成员管理、controller选举，以及其他一些管理类任务。</li>
-<li><strong>KIP-500</strong>提案之后，kafka将使用社区自研的基于raft的共识算法，替代zk，实现controller自选举。</li>
-</ul>
-</li>
-<li>消息数据存储<ul>
-<li>kafka使用WAL(write ahead log)日志来存储消息。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>生产者与消费者</p>
-<ul>
-<li>分区分配策略</li>
-<li>批量写入</li>
-<li>消费者组</li>
-</ul>
-</li>
-<li><p>HTTP协议支持和管控操作</p>
-</li>
-<li><p>集群构建</p>
-</li>
-<li><p>数据可靠性</p>
-</li>
-<li><p>可观测性</p>
-</li>
-<li><p>如何保证消息有序</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>WAL</li>
-<li>分区内有序</li>
-<li>数据不均匀</li>
-</ul>
-</li>
-<li><p>什么场景需要用到有序消息</p>
-<ul>
-<li>下单场景，产生创建订单消息和完成支付消息，业务上要求<strong>同一个订单</strong>的创建订单消息应该优先于完成支付消息。</li>
-</ul>
-</li>
-<li><p>全局有序使用单分区方案，有消息积压问题</p>
-</li>
-<li><p>多分区方案，有分区负载均衡问题</p>
-<ul>
-<li>生产者根据业务特征选取同一个业务id的消息，写入到同一个分区</li>
-<li>热点用户的数据写入同一个分区，导致该分区QPS很高，消费者也不一定来得及消费导致消息积压。</li>
-<li>正确计算目标分区，解决数据不均匀问题<ul>
-<li>类似redis的槽位分配机制</li>
-<li>一致性哈希算法</li>
-</ul>
-</li>
-<li>在单分区增加到多分区的时候，消费新分区的消费者在启动的时候，并不是立刻消费，暂停消费一段时间（比如三分钟、三十分钟），等待旧分区积压的消息都消费完成，避免可能的失序问题。</li>
-</ul>
-</li>
-<li><p>使用线程池消费数据时，如何保证消息有序</p>
-<ul>
-<li>根据业务特征选取同一个业务id的消息组成一组给同一个线程处理。</li>
-</ul>
-</li>
-<li><p>如何解决消息积压</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>一个分区最多只能有一个消费者</li>
-<li>增加分区、创建新Topic</li>
-</ul>
-</li>
-<li><p>分区数大于消费者数量时，增加消费者</p>
-</li>
-<li><p>增加分区</p>
-<ul>
-<li>分区数量预估</li>
-</ul>
-</li>
-<li><p>创建新Topic</p>
-</li>
-<li><p>优化消费者性能</p>
-<ul>
-<li>消费者使用了分布式锁，考虑能否去掉（同一个业务的消息发送到同一个分区后只会有一个消费者消费）。</li>
-<li>消费逻辑降级处理，消息积压时使用快路径，比如使用缓存数据。</li>
-<li>异步消费，消费线程拉取一批消息后使用线程池执行消费逻辑。通过批量提交，解决消费者宕机的数据丢失问题。处理逻辑保证幂等，解决重复消费问题。通过异步线程重试或者重新写入Topic，解决部分失败问题，注意重新次数。</li>
-</ul>
-</li>
-<li><p>生产者聚合多条消息，消费者使用批处理。</p>
-</li>
-<li><p>如何保证消息不丢失</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>消息写入语义</li>
-<li>消费者commit</li>
-</ul>
-</li>
-<li><p>消息丢失发送在哪个阶段</p>
-<ul>
-<li>生产存储消息<ul>
-<li>写入语义控制参数：acks</li>
-<li>ISR：指和主分区保持了主从同步的所有从分区。</li>
-<li>消息丢失场景：<ul>
-<li>批量写入，客户端请求还未发送时，生产者宕机；</li>
-<li>acks&#x3D;0，消息发送成功，但是未写入broker时，broker宕机。</li>
-<li>acks&#x3D;1，数据写入主分区后，主分区所在broker宕机，数据未同步，发生主分区选举。</li>
-<li>acks&#x3D;all，允许unclean选举的情况下，如果ISR中没有任务分区，会选出没有数据的主分区。</li>
-<li>acks&#x3D;all，禁用unclean选举，无论主分区还是从分区，数据都只是写入到了机器的PageCache，broker宕机任然可能丢失消息。</li>
-</ul>
-</li>
-<li>刷盘的参数控制</li>
-<li>确保发送方一定发了消息<ul>
-<li>本地消息表+补偿机制</li>
-<li>消息回查</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>消费消息<ul>
-<li>异步消费，未提交offset消费者宕机，或者提交了消费逻辑未执行。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>如何保证不重复消费</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li><strong>幂等</strong></li>
-<li><strong>唯一索引</strong></li>
-<li><strong>异步检测</strong></li>
-<li><strong>布隆过滤器判断不存在key</strong></li>
-<li><strong>redis记录key</strong></li>
-</ul>
-</li>
-<li><p>重复消费的原因</p>
-<ul>
-<li>生产者重复发送</li>
-<li>消费者处理完未提交宕机，重新启动后重新消费。</li>
-</ul>
-</li>
-<li><p>设计幂等的消费逻辑</p>
-<ul>
-<li>业务表唯一索引<ul>
-<li>开启本地事务将业务操作和插入数据到唯一索引两个操作提交，事务提交成功后提交消息。</li>
-</ul>
-</li>
-<li>分库分表情况下（业务表、唯一索引表不在一个数据库）<ul>
-<li><strong>异步检测</strong>，定时扫描唯一索引表的状态数据，与业务数据比较。</li>
-</ul>
-</li>
-<li><strong>布隆过滤器 + redis + 唯一索引</strong>：请求成功后将该请求的key记录到数据库唯一索引，再记录到redis或布隆过滤器。<ul>
-<li>布隆过滤器判断key不存在，那么处理请求</li>
-<li>查询redis是否存在，存在就直接返回，这个请求是重复请求</li>
-<li>数据库唯一索引冲突，则是重复请求</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>kafka的高吞吐实现</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li><strong>顺序读写（WAL）</strong></li>
-<li><strong>零拷贝(sendfile系统调用)：0次CPU拷贝、2次DMA拷贝，2次上下文切换</strong></li>
-<li>Page Cache：避免直接刷盘，同时缓解JVM的GC压力</li>
-<li>日志文件与索引文件分段：二分查找、稀疏索引</li>
-<li>批量发送</li>
-<li>数据压缩</li>
-</ul>
-</li>
-<li><p>kafka性能衰退的原因</p>
-<ul>
-<li>Topic或者分区太多<ul>
-<li>每个分区都有一个日志文件，不同分区之间就不是顺序写了。</li>
-<li>减少分区的使用</li>
-<li>合并Topic</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>生产消息的批量处理</p>
-<ul>
-<li>在 Producer 端，如果要改善吞吐量，通常的标配是增加消息批次的大小以及批次缓存时间，即 batch.size 和 linger.ms。</li>
-<li>linger.ms固定时间兜底</li>
-</ul>
-</li>
-<li><p>broker的高性能</p>
-<ul>
-<li>kafka在写数据的时候，一方面基于OS层面的PageCache(os cache)来写数据，所以性能很高。</li>
-<li>另一方面，它采用磁盘顺序写的方式，所以即使数据刷入磁盘的时候，性能也是极高的。</li>
-<li>零拷贝：从kafka消费数据的时候，数据读取的过程为：<strong>磁盘 -&gt; os cache -&gt; application cache   -&gt;  os socket缓存  -&gt; 网卡</strong>。其中数据从操作系统Cache里拷贝到应用进程的缓存里，接着又从应用程序缓存里拷贝会操作系统的socket缓存里，这两次数据拷贝是没有必要的。零拷贝技术，省略了这两次数据拷贝，数据直接从os Cache发送到网卡。</li>
-</ul>
-</li>
-<li><p>kafka的性能优化</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>优化生产者、broker、消费者</li>
-</ul>
-</li>
-<li><p>优化生产者</p>
-<ul>
-<li>acks<ul>
-<li>追求性能时acks&#x3D;0或acks&#x3D;1</li>
-<li>追求消息不丢失时只能acks&#x3D;all</li>
-</ul>
-</li>
-<li>调大批次<ul>
-<li>batch.size不是越大越好，实际项目中压测确定</li>
-<li>linger.ms间隔时间</li>
-</ul>
-</li>
-<li>调大buffer.memory缓冲池<ul>
-<li>由于Topic或分区数太多时，可能导致缓冲池不够用</li>
-</ul>
-</li>
-<li>压缩<ul>
-<li>开启压缩</li>
-<li>选择合适的压缩算法</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>优化broker</p>
-<ul>
-<li>swap<ul>
-<li>vm.swappiness参数追求性能调小（默认60，可以调到1-10之间）。</li>
-</ul>
-</li>
-<li>优化网络读写缓冲区<ul>
-<li>Socket 默认读写缓冲区大小</li>
-<li>Socket 最大读写缓冲区大小</li>
-<li>TCP 读写缓冲区</li>
-</ul>
-</li>
-<li>磁盘io<ul>
-<li>使用XFS文件系统，提升读写性能。</li>
-<li>禁用atime，文件读取不需要修改访问时间属性，提升性能。</li>
-</ul>
-</li>
-<li>主从同步<ul>
-<li>num.replica.fetchers：从分区拉取数据的线程数量，默认是 1。可以考虑设置成 3。</li>
-<li>replica.fetch.min.bytes：可以通过调大这个参数来避免小批量同步数据。</li>
-<li>replica.fetch.max.bytes：这个可以调大，比如说调整到 5m，但是不要小于 message.max.byte，也就是不要小于消息的最大长度。</li>
-<li>replica.fetch.wait.max.ms：如果主分区没有数据或者数据不够从分区的最大等待时间，可以考虑同步调大这个值和 replica.fetch.max.bytes。</li>
-</ul>
-</li>
-<li>JVM<ul>
-<li>Full GC会影响消息的写入性能，也可能触发重新选主，或影响ISR。</li>
-<li>调整堆内存大小（8G-16G），或CMS增大老年代。</li>
-<li>或者启用G1垃圾回收器，并设置-XX:MaxGCPauseMillis&#x3D;200，减少停顿时间。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>优化消费者</p>
-<ul>
-<li>解决消息积压</li>
-</ul>
-</li>
-<li><p>消息中间件对比</p>
-</li>
-<li><p>关键词</p>
-<ul>
-<li>RabbitMQ、RocketMQ、Kafka与Pulsar</li>
-<li>数据存储在不同的队列</li>
-<li>计算存储分离架构</li>
-</ul>
-</li>
-</ul>
 
       
     </div>

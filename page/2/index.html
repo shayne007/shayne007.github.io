@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,370 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/17/Java-Virtual-Machine-Memory-Structure-Complete-Guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/17/Java-Virtual-Machine-Memory-Structure-Complete-Guide/" class="post-title-link" itemprop="url">Java Virtual Machine Memory Structure - Complete Guide</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-17 18:56:24 / Modified: 20:26:28" itemprop="dateCreated datePublished" datetime="2025-06-17T18:56:24+08:00">2025-06-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="JVM-Architecture-Overview"><a href="#JVM-Architecture-Overview" class="headerlink" title="JVM Architecture Overview"></a>JVM Architecture Overview</h2><p>The Java Virtual Machine (JVM) is a runtime environment that executes Java bytecode. Understanding its memory structure is crucial for writing efficient, scalable applications and troubleshooting performance issues in production environments.</p>
+<pre>
+<code class="mermaid">
+graph TB
+A[Java Source Code] --&gt; B[javac Compiler]
+B --&gt; C[Bytecode .class files]
+C --&gt; D[Class Loader Subsystem]
+D --&gt; E[Runtime Data Areas]
+D --&gt; F[Execution Engine]
+E --&gt; G[Method Area]
+E --&gt; H[Heap Memory]
+E --&gt; I[Stack Memory]
+E --&gt; J[PC Registers]
+E --&gt; K[Native Method Stacks]
+F --&gt; L[Interpreter]
+F --&gt; M[JIT Compiler]
+F --&gt; N[Garbage Collector]
+</code>
+</pre>
+
+<h3 id="Core-JVM-Components"><a href="#Core-JVM-Components" class="headerlink" title="Core JVM Components"></a>Core JVM Components</h3><p>The JVM consists of three main subsystems that work together:</p>
+<p><strong>Class Loader Subsystem</strong>: Responsible for loading, linking, and initializing classes dynamically at runtime. This subsystem implements the crucial parent delegation model that ensures class uniqueness and security.</p>
+<p><strong>Runtime Data Areas</strong>: Memory regions where the JVM stores various types of data during program execution. These include heap memory for objects, method area for class metadata, stack memory for method calls, and other specialized regions.</p>
+<p><strong>Execution Engine</strong>: Converts bytecode into machine code through interpretation and Just-In-Time (JIT) compilation. It also manages garbage collection to reclaim unused memory.</p>
+<p><strong>Interview Insight</strong>: <em>A common question is “Explain how JVM components interact when executing a Java program.” Be prepared to walk through the complete flow from source code to execution.</em></p>
+<hr>
+<h2 id="Class-Loader-Subsystem-Deep-Dive"><a href="#Class-Loader-Subsystem-Deep-Dive" class="headerlink" title="Class Loader Subsystem Deep Dive"></a>Class Loader Subsystem Deep Dive</h2><h3 id="Class-Loader-Hierarchy-and-Types"><a href="#Class-Loader-Hierarchy-and-Types" class="headerlink" title="Class Loader Hierarchy and Types"></a>Class Loader Hierarchy and Types</h3><p>The class loading mechanism follows a hierarchical structure with three built-in class loaders:</p>
+<pre>
+<code class="mermaid">
+graph TD
+A[Bootstrap Class Loader] --&gt; B[Extension Class Loader]
+B --&gt; C[Application Class Loader]
+C --&gt; D[Custom Class Loaders]
+
+A1[rt.jar, core JDK classes] --&gt; A
+B1[ext directory, JAVA_HOME&#x2F;lib&#x2F;ext] --&gt; B
+C1[Classpath, application classes] --&gt; C
+D1[Web apps, plugins, frameworks] --&gt; D
+</code>
+</pre>
+
+<p><strong>Bootstrap Class Loader (Primordial)</strong>:</p>
+<ul>
+<li>Written in native code (C&#x2F;C++)</li>
+<li>Loads core Java classes from <code>rt.jar</code> and other core JDK libraries</li>
+<li>Parent of all other class loaders</li>
+<li>Cannot be instantiated in Java code</li>
+</ul>
+<p><strong>Extension Class Loader (Platform)</strong>:</p>
+<ul>
+<li>Loads classes from extension directories (<code>JAVA_HOME/lib/ext</code>)</li>
+<li>Implements standard extensions to the Java platform</li>
+<li>Child of Bootstrap Class Loader</li>
+</ul>
+<p><strong>Application Class Loader (System)</strong>:</p>
+<ul>
+<li>Loads classes from the application classpath</li>
+<li>Most commonly used class loader</li>
+<li>Child of Extension Class Loader</li>
+</ul>
+<h3 id="Parent-Delegation-Model"><a href="#Parent-Delegation-Model" class="headerlink" title="Parent Delegation Model"></a>Parent Delegation Model</h3><p>The parent delegation model is a security and consistency mechanism that ensures classes are loaded predictably.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Simplified implementation of parent delegation</span></span><br><span class="line"><span class="keyword">public</span> Class&lt;?&gt; loadClass(String name) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">    <span class="comment">// First, check if the class has already been loaded</span></span><br><span class="line">    Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (parent != <span class="literal">null</span>) &#123;</span><br><span class="line">                <span class="comment">// Delegate to parent class loader</span></span><br><span class="line">                c = parent.loadClass(name);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Use bootstrap class loader</span></span><br><span class="line">                c = findBootstrapClassOrNull(name);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">            <span class="comment">// Parent failed to load class</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (c == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="comment">// Find the class ourselves</span></span><br><span class="line">            c = findClass(name);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> c;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Key Benefits of Parent Delegation</strong>:</p>
+<ol>
+<li><strong>Security</strong>: Prevents malicious code from replacing core Java classes</li>
+<li><strong>Consistency</strong>: Ensures the same class is not loaded multiple times</li>
+<li><strong>Namespace Isolation</strong>: Different class loaders can load classes with the same name</li>
+</ol>
+<p><strong>Interview Insight</strong>: <em>Understand why <code>java.lang.String</code> cannot be overridden even if you create your own String class in the default package.</em></p>
+<h3 id="Class-Loading-Process-The-Five-Phases"><a href="#Class-Loading-Process-The-Five-Phases" class="headerlink" title="Class Loading Process - The Five Phases"></a>Class Loading Process - The Five Phases</h3><pre>
+<code class="mermaid">
+flowchart LR
+A[Loading] --&gt; B[Verification]
+B --&gt; C[Preparation]
+C --&gt; D[Resolution]
+D --&gt; E[Initialization]
+
+A1[Find and load .class file] --&gt; A
+B1[Verify bytecode integrity] --&gt; B
+C1[Allocate memory for static variables] --&gt; C
+D1[Resolve symbolic references] --&gt; D
+E1[Execute static initializers] --&gt; E
+</code>
+</pre>
+
+<h4 id="Loading-Phase"><a href="#Loading-Phase" class="headerlink" title="Loading Phase"></a>Loading Phase</h4><p>The JVM locates and reads the <code>.class</code> file, creating a binary representation in memory.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ClassLoadingExample</span> &#123;</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Class is being loaded and initialized&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">CONSTANT</span> <span class="operator">=</span> <span class="string">&quot;Hello World&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">counter</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">incrementCounter</span><span class="params">()</span> &#123;</span><br><span class="line">        counter++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="Verification-Phase"><a href="#Verification-Phase" class="headerlink" title="Verification Phase"></a>Verification Phase</h4><p>The JVM verifies that the bytecode is valid and doesn’t violate security constraints:</p>
+<ul>
+<li><strong>File format verification</strong>: Ensures proper <code>.class</code> file structure</li>
+<li><strong>Metadata verification</strong>: Validates class hierarchy and access modifiers</li>
+<li><strong>Bytecode verification</strong>: Ensures operations are type-safe</li>
+<li><strong>Symbolic reference verification</strong>: Validates method and field references</li>
+</ul>
+<h4 id="Preparation-Phase"><a href="#Preparation-Phase" class="headerlink" title="Preparation Phase"></a>Preparation Phase</h4><p>Memory is allocated for class-level (static) variables and initialized with default values:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PreparationExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> number;        <span class="comment">// Initialized to 0</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">boolean</span> flag;      <span class="comment">// Initialized to false</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> String text;       <span class="comment">// Initialized to null</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">CONSTANT</span> <span class="operator">=</span> <span class="number">100</span>; <span class="comment">// Initialized to 100 (final)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="Resolution-Phase"><a href="#Resolution-Phase" class="headerlink" title="Resolution Phase"></a>Resolution Phase</h4><p>Symbolic references in the constant pool are replaced with direct references:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ResolutionExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">methodA</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Symbolic reference to methodB is resolved to a direct reference</span></span><br><span class="line">        methodB();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">methodB</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Method B executed&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="Initialization-Phase"><a href="#Initialization-Phase" class="headerlink" title="Initialization Phase"></a>Initialization Phase</h4><p>Static initializers and static variable assignments are executed:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">InitializationExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">value</span> <span class="operator">=</span> initializeValue(); <span class="comment">// Called during initialization</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Static block executed&quot;</span>);</span><br><span class="line">        value += <span class="number">10</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">initializeValue</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Static method called&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">5</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Be able to explain the difference between class loading and class initialization, and when each phase occurs.</em></p>
+<hr>
+<h2 id="Runtime-Data-Areas"><a href="#Runtime-Data-Areas" class="headerlink" title="Runtime Data Areas"></a>Runtime Data Areas</h2><p>The JVM organizes memory into distinct regions, each serving specific purposes during program execution.</p>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;JVM Memory Structure&quot;
+    subgraph &quot;Shared Among All Threads&quot;
+        A[Method Area]
+        B[Heap Memory]
+        A1[Class metadata, Constants, Static variables] --&gt; A
+        B1[Objects, Instance variables, Arrays] --&gt; B
+    end
+    
+    subgraph &quot;Per Thread&quot;
+        C[JVM Stack]
+        D[PC Register]
+        E[Native Method Stack]
+        C1[Method frames, Local variables, Operand stack] --&gt; C
+        D1[Current executing instruction address] --&gt; D
+        E1[Native method calls] --&gt; E
+    end
+end
+</code>
+</pre>
+
+<h3 id="Method-Area-Metaspace-in-Java-8"><a href="#Method-Area-Metaspace-in-Java-8" class="headerlink" title="Method Area (Metaspace in Java 8+)"></a>Method Area (Metaspace in Java 8+)</h3><p>The Method Area stores class-level information shared across all threads:</p>
+<p><strong>Contents</strong>:</p>
+<ul>
+<li>Class metadata and structure information</li>
+<li>Method bytecode</li>
+<li>Constant pool</li>
+<li>Static variables</li>
+<li>Runtime constant pool</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MethodAreaExample</span> &#123;</span><br><span class="line">    <span class="comment">// Stored in Method Area</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">CONSTANT</span> <span class="operator">=</span> <span class="string">&quot;Stored in constant pool&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">staticVariable</span> <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Method bytecode stored in Method Area</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">instanceMethod</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Method implementation</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">staticMethod</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// Static method implementation</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Best Practice</strong>: Monitor Metaspace usage in Java 8+ applications, as it can lead to <code>OutOfMemoryError: Metaspace</code> if too many classes are loaded dynamically.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># JVM flags for Metaspace tuning</span></span><br><span class="line">-XX:MetaspaceSize=256m</span><br><span class="line">-XX:MaxMetaspaceSize=512m</span><br><span class="line">-XX:+UseCompressedOops</span><br></pre></td></tr></table></figure>
+
+<h3 id="Heap-Memory-Structure"><a href="#Heap-Memory-Structure" class="headerlink" title="Heap Memory Structure"></a>Heap Memory Structure</h3><p>The heap is where all objects and instance variables are stored. Modern JVMs typically implement generational garbage collection.</p>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Heap Memory&quot;
+    subgraph &quot;Young Generation&quot;
+        A[Eden Space]
+        B[Survivor Space 0]
+        C[Survivor Space 1]
+    end
+    
+    subgraph &quot;Old Generation&quot;
+        D[Tenured Space]
+    end
+    
+    E[Permanent Generation &#x2F; Metaspace]
+end
+
+F[New Objects] --&gt; A
+A --&gt; |GC| B
+B --&gt; |GC| C
+C --&gt; |Long-lived objects| D
+</code>
+</pre>
+
+<p><strong>Object Lifecycle Example</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HeapMemoryExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="comment">// Objects created in Eden space</span></span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">        List&lt;String&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// These objects may survive minor GC and move to Survivor space</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">            list.add(<span class="string">&quot;String &quot;</span> + i);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Long-lived objects eventually move to Old Generation</span></span><br><span class="line">        staticReference = list; <span class="comment">// This reference keeps the list alive</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> List&lt;String&gt; staticReference;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Production Tuning Example</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Heap size configuration</span></span><br><span class="line">-Xms2g -Xmx4g</span><br><span class="line"><span class="comment"># Young generation sizing</span></span><br><span class="line">-XX:NewRatio=3</span><br><span class="line">-XX:SurvivorRatio=8</span><br><span class="line"><span class="comment"># GC algorithm selection</span></span><br><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=200</span><br></pre></td></tr></table></figure>
+
+<h3 id="JVM-Stack-Thread-Stack"><a href="#JVM-Stack-Thread-Stack" class="headerlink" title="JVM Stack (Thread Stack)"></a>JVM Stack (Thread Stack)</h3><p>Each thread has its own stack containing method call frames.</p>
+<pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Thread Stack&quot;
+    A[Method Frame 3 - currentMethod]
+    B[Method Frame 2 - callerMethod]
+    C[Method Frame 1 - main]
+end
+
+subgraph &quot;Method Frame Structure&quot;
+    D[Local Variables Array]
+    E[Operand Stack]
+    F[Frame Data]
+end
+
+A --&gt; D
+A --&gt; E
+A --&gt; F
+</code>
+</pre>
+
+<p><strong>Stack Frame Components</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StackExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123; <span class="comment">// Frame 1</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">mainVar</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">        methodA(mainVar);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">methodA</span><span class="params">(<span class="type">int</span> param)</span> &#123; <span class="comment">// Frame 2</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">localVar</span> <span class="operator">=</span> param * <span class="number">2</span>;</span><br><span class="line">        methodB(localVar);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">methodB</span><span class="params">(<span class="type">int</span> value)</span> &#123; <span class="comment">// Frame 3</span></span><br><span class="line">        System.out.println(<span class="string">&quot;Value: &quot;</span> + value);</span><br><span class="line">        <span class="comment">// Stack trace shows: methodB -&gt; methodA -&gt; main</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Understand how method calls create stack frames and how local variables are stored versus instance variables in the heap.</em></p>
+<hr>
+<h2 id="Breaking-Parent-Delegation-Advanced-Scenarios"><a href="#Breaking-Parent-Delegation-Advanced-Scenarios" class="headerlink" title="Breaking Parent Delegation - Advanced Scenarios"></a>Breaking Parent Delegation - Advanced Scenarios</h2><h3 id="When-and-Why-to-Break-Parent-Delegation"><a href="#When-and-Why-to-Break-Parent-Delegation" class="headerlink" title="When and Why to Break Parent Delegation"></a>When and Why to Break Parent Delegation</h3><p>While parent delegation is generally beneficial, certain scenarios require custom class loading strategies:</p>
+<ol>
+<li><strong>Web Application Containers</strong> (Tomcat, Jetty)</li>
+<li><strong>Plugin Architectures</strong> </li>
+<li><strong>Hot Deployment</strong> scenarios</li>
+<li><strong>Framework Isolation</strong> requirements</li>
+</ol>
+<h3 id="Tomcat’s-Class-Loading-Architecture"><a href="#Tomcat’s-Class-Loading-Architecture" class="headerlink" title="Tomcat’s Class Loading Architecture"></a>Tomcat’s Class Loading Architecture</h3><p>Tomcat implements a sophisticated class loading hierarchy to support multiple web applications with potentially conflicting dependencies.</p>
+<pre>
+<code class="mermaid">
+graph TB
+A[Bootstrap] --&gt; B[System]
+B --&gt; C[Common]
+C --&gt; D[Catalina]
+C --&gt; E[Shared]
+E --&gt; F[WebApp1]
+E --&gt; G[WebApp2]
+
+A1[JDK core classes] --&gt; A
+B1[JVM system classes] --&gt; B
+C1[Tomcat common classes] --&gt; C
+D1[Tomcat internal classes] --&gt; D
+E1[Shared libraries] --&gt; E
+F1[Application 1 classes] --&gt; F
+G1[Application 2 classes] --&gt; G
+</code>
+</pre>
+
+<p><strong>Tomcat’s Modified Delegation Model</strong>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebappClassLoader</span> <span class="keyword">extends</span> <span class="title class_">URLClassLoader</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Class&lt;?&gt; loadClass(String name) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        <span class="keyword">return</span> loadClass(name, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Class&lt;?&gt; loadClass(String name, <span class="type">boolean</span> resolve) </span><br><span class="line">            <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        </span><br><span class="line">        Class&lt;?&gt; clazz = <span class="literal">null</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 1. Check the local cache first</span></span><br><span class="line">        clazz = findLoadedClass(name);</span><br><span class="line">        <span class="keyword">if</span> (clazz != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> clazz;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 2. Check if the class should be loaded by the parent (system classes)</span></span><br><span class="line">        <span class="keyword">if</span> (isSystemClass(name)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">super</span>.loadClass(name, resolve);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 3. Try to load from the web application first (breaking delegation!)</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            clazz = findClass(name);</span><br><span class="line">            <span class="keyword">if</span> (clazz != <span class="literal">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> clazz;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">            <span class="comment">// Fall through to parent delegation</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 4. Delegate to the parent as a last resort</span></span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.loadClass(name, resolve);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Custom-Class-Loader-Implementation"><a href="#Custom-Class-Loader-Implementation" class="headerlink" title="Custom Class Loader Implementation"></a>Custom Class Loader Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CustomClassLoader</span> <span class="keyword">extends</span> <span class="title class_">ClassLoader</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String classPath;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CustomClassLoader</span><span class="params">(String classPath, ClassLoader parent)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(parent);</span><br><span class="line">        <span class="built_in">this</span>.classPath = classPath;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Class&lt;?&gt; findClass(String name) <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">byte</span>[] classData = loadClassData(name);</span><br><span class="line">            <span class="keyword">return</span> defineClass(name, classData, <span class="number">0</span>, classData.length);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ClassNotFoundException</span>(<span class="string">&quot;Could not load class &quot;</span> + name, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="type">byte</span>[] loadClassData(String className) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">fileName</span> <span class="operator">=</span> className.replace(<span class="string">&#x27;.&#x27;</span>, <span class="string">&#x27;/&#x27;</span>) + <span class="string">&quot;.class&quot;</span>;</span><br><span class="line">        <span class="type">Path</span> <span class="variable">filePath</span> <span class="operator">=</span> Paths.get(classPath, fileName);</span><br><span class="line">        <span class="keyword">return</span> Files.readAllBytes(filePath);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Usage example</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CustomClassLoaderExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">CustomClassLoader</span> <span class="variable">loader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CustomClassLoader</span>(<span class="string">&quot;/custom/classes&quot;</span>, </span><br><span class="line">            ClassLoader.getSystemClassLoader());</span><br><span class="line">        </span><br><span class="line">        Class&lt;?&gt; customClass = loader.loadClass(<span class="string">&quot;com.example.CustomPlugin&quot;</span>);</span><br><span class="line">        <span class="type">Object</span> <span class="variable">instance</span> <span class="operator">=</span> customClass.getDeclaredConstructor().newInstance();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Use reflection to invoke methods</span></span><br><span class="line">        <span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> customClass.getMethod(<span class="string">&quot;execute&quot;</span>);</span><br><span class="line">        method.invoke(instance);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Hot-Deployment-Implementation"><a href="#Hot-Deployment-Implementation" class="headerlink" title="Hot Deployment Implementation"></a>Hot Deployment Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HotDeploymentManager</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, CustomClassLoader&gt; classLoaders = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> FileWatcher fileWatcher;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">HotDeploymentManager</span><span class="params">(String watchDirectory)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.fileWatcher = <span class="keyword">new</span> <span class="title class_">FileWatcher</span>(watchDirectory, <span class="built_in">this</span>::onFileChanged);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">onFileChanged</span><span class="params">(Path changedFile)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">className</span> <span class="operator">=</span> extractClassName(changedFile);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Create a new class loader for the updated class</span></span><br><span class="line">        <span class="type">CustomClassLoader</span> <span class="variable">newLoader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CustomClassLoader</span>(</span><br><span class="line">            changedFile.getParent().toString(),</span><br><span class="line">            getClass().getClassLoader()</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Replace old class loader</span></span><br><span class="line">        <span class="type">CustomClassLoader</span> <span class="variable">oldLoader</span> <span class="operator">=</span> classLoaders.put(className, newLoader);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Cleanup old loader (if possible)</span></span><br><span class="line">        <span class="keyword">if</span> (oldLoader != <span class="literal">null</span>) &#123;</span><br><span class="line">            cleanup(oldLoader);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        System.out.println(<span class="string">&quot;Reloaded class: &quot;</span> + className);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">createInstance</span><span class="params">(String className)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">CustomClassLoader</span> <span class="variable">loader</span> <span class="operator">=</span> classLoaders.get(className);</span><br><span class="line">        <span class="keyword">if</span> (loader == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ClassNotFoundException</span>(<span class="string">&quot;Class not found: &quot;</span> + className);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        Class&lt;?&gt; clazz = loader.loadClass(className);</span><br><span class="line">        <span class="keyword">return</span> clazz.getDeclaredConstructor().newInstance();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Interview Insight</strong>: <em>Be prepared to explain why Tomcat needs to break parent delegation and how it maintains isolation between web applications.</em></p>
+<hr>
+<h2 id="Memory-Management-Best-Practices"><a href="#Memory-Management-Best-Practices" class="headerlink" title="Memory Management Best Practices"></a>Memory Management Best Practices</h2><h3 id="Monitoring-and-Tuning"><a href="#Monitoring-and-Tuning" class="headerlink" title="Monitoring and Tuning"></a>Monitoring and Tuning</h3><p><strong>Essential JVM Flags for Production</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Memory sizing</span></span><br><span class="line">-Xms4g -Xmx4g                    <span class="comment"># Set initial and maximum heap size</span></span><br><span class="line">-XX:NewRatio=3                   <span class="comment"># Old:Young generation ratio</span></span><br><span class="line">-XX:SurvivorRatio=8              <span class="comment"># Eden:Survivor ratio</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Garbage Collection</span></span><br><span class="line">-XX:+UseG1GC                     <span class="comment"># Use G1 garbage collector</span></span><br><span class="line">-XX:MaxGCPauseMillis=200         <span class="comment"># Target max GC pause time</span></span><br><span class="line">-XX:G1HeapRegionSize=16m         <span class="comment"># G1 region size</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Metaspace (Java 8+)</span></span><br><span class="line">-XX:MetaspaceSize=256m           <span class="comment"># Initial metaspace size</span></span><br><span class="line">-XX:MaxMetaspaceSize=512m        <span class="comment"># Maximum metaspace size</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Monitoring and Debugging</span></span><br><span class="line">-XX:+PrintGC                     <span class="comment"># Print GC information</span></span><br><span class="line">-XX:+PrintGCDetails              <span class="comment"># Detailed GC information</span></span><br><span class="line">-XX:+PrintGCTimeStamps           <span class="comment"># GC timestamps</span></span><br><span class="line">-XX:+HeapDumpOnOutOfMemoryError  <span class="comment"># Generate heap dump on OOM</span></span><br><span class="line">-XX:HeapDumpPath=/path/to/dumps  <span class="comment"># Heap dump location</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Memory-Leak-Detection"><a href="#Memory-Leak-Detection" class="headerlink" title="Memory Leak Detection"></a>Memory Leak Detection</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MemoryLeakExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> List&lt;Object&gt; STATIC_LIST = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Memory leak: objects added to static collection never removed</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addToStaticCollection</span><span class="params">(Object obj)</span> &#123;</span><br><span class="line">        STATIC_LIST.add(obj);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Proper implementation with cleanup</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, Object&gt; cache = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addToCache</span><span class="params">(String key, Object value)</span> &#123;</span><br><span class="line">        cache.put(key, value);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Implement cache eviction policy</span></span><br><span class="line">        <span class="keyword">if</span> (cache.size() &gt; MAX_CACHE_SIZE) &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">oldestKey</span> <span class="operator">=</span> findOldestKey();</span><br><span class="line">            cache.remove(oldestKey);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Thread-Safety-in-Class-Loading"><a href="#Thread-Safety-in-Class-Loading" class="headerlink" title="Thread Safety in Class Loading"></a>Thread Safety in Class Loading</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ThreadSafeClassLoader</span> <span class="keyword">extends</span> <span class="title class_">ClassLoader</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;String, Class&lt;?&gt;&gt; classCache = </span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="type">boolean</span> resolve) </span><br><span class="line">            <span class="keyword">throws</span> ClassNotFoundException &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Thread-safe class loading with double-checked locking</span></span><br><span class="line">        Class&lt;?&gt; clazz = classCache.get(name);</span><br><span class="line">        <span class="keyword">if</span> (clazz == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">                clazz = classCache.get(name);</span><br><span class="line">                <span class="keyword">if</span> (clazz == <span class="literal">null</span>) &#123;</span><br><span class="line">                    clazz = <span class="built_in">super</span>.loadClass(name, resolve);</span><br><span class="line">                    classCache.put(name, clazz);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> clazz;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Common-Interview-Questions-and-Answers"><a href="#Common-Interview-Questions-and-Answers" class="headerlink" title="Common Interview Questions and Answers"></a>Common Interview Questions and Answers</h2><h3 id="Memory-Related-Questions"><a href="#Memory-Related-Questions" class="headerlink" title="Memory-Related Questions"></a>Memory-Related Questions</h3><p><strong>Q: Explain the difference between stack and heap memory.</strong></p>
+<p>A: Stack memory is thread-specific and stores method call frames with local variables and partial results. It follows the LIFO principle and has fast allocation&#x2F;deallocation. Heap memory is shared among all threads and stores objects and instance variables. It’s managed by garbage collection and has slower allocation, but supports dynamic sizing.</p>
+<p><strong>Q: What happens when you get OutOfMemoryError?</strong></p>
+<p>A: An OutOfMemoryError can occur in different memory areas:</p>
+<ul>
+<li><strong>Heap</strong>: Too many objects, increase <code>-Xmx</code> or optimize object lifecycle</li>
+<li><strong>Metaspace</strong>: Too many classes loaded, increase <code>-XX:MaxMetaspaceSize</code></li>
+<li><strong>Stack</strong>: Deep recursion, increase <code>-Xss</code> or fix recursive logic</li>
+<li><strong>Direct Memory</strong>: NIO operations, tune <code>-XX:MaxDirectMemorySize</code></li>
+</ul>
+<h3 id="Class-Loading-Questions"><a href="#Class-Loading-Questions" class="headerlink" title="Class Loading Questions"></a>Class Loading Questions</h3><p><strong>Q: Can you override java.lang.String class?</strong></p>
+<p>A: No, due to the parent delegation model. The Bootstrap class loader always loads <code>java.lang.String</code> from <code>rt.jar</code> first, preventing any custom String class from being loaded.</p>
+<p><strong>Q: How does Tomcat isolate different web applications?</strong></p>
+<p>A: Tomcat uses separate WebAppClassLoader instances for each web application and modifies the parent delegation model to load application-specific classes first, enabling different versions of the same library in different applications.</p>
+<hr>
+<h2 id="Advanced-Topics-and-Production-Insights"><a href="#Advanced-Topics-and-Production-Insights" class="headerlink" title="Advanced Topics and Production Insights"></a>Advanced Topics and Production Insights</h2><h3 id="Class-Unloading"><a href="#Class-Unloading" class="headerlink" title="Class Unloading"></a>Class Unloading</h3><p>Classes can be unloaded when their class loader becomes unreachable and eligible for garbage collection:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ClassUnloadingExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">demonstrateClassUnloading</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// Create custom class loader</span></span><br><span class="line">        <span class="type">URLClassLoader</span> <span class="variable">loader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">URLClassLoader</span>(</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">URL</span>[]&#123;<span class="keyword">new</span> <span class="title class_">File</span>(<span class="string">&quot;custom-classes/&quot;</span>).toURI().toURL()&#125;</span><br><span class="line">        );</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Load class using custom loader</span></span><br><span class="line">        Class&lt;?&gt; clazz = loader.loadClass(<span class="string">&quot;com.example.CustomClass&quot;</span>);</span><br><span class="line">        <span class="type">Object</span> <span class="variable">instance</span> <span class="operator">=</span> clazz.getDeclaredConstructor().newInstance();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Use the instance</span></span><br><span class="line">        clazz.getMethod(<span class="string">&quot;doSomething&quot;</span>).invoke(instance);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Clear references</span></span><br><span class="line">        instance = <span class="literal">null</span>;</span><br><span class="line">        clazz = <span class="literal">null</span>;</span><br><span class="line">        loader.close();</span><br><span class="line">        loader = <span class="literal">null</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Force garbage collection</span></span><br><span class="line">        System.gc();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Class may be unloaded if no other references exist</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Performance-Optimization-Tips"><a href="#Performance-Optimization-Tips" class="headerlink" title="Performance Optimization Tips"></a>Performance Optimization Tips</h3><ol>
+<li><strong>Minimize Class Loading</strong>: Reduce the number of classes loaded at startup</li>
+<li><strong>Optimize Class Path</strong>: Keep class path short and organized</li>
+<li><strong>Use Appropriate GC</strong>: Choose GC algorithm based on application needs</li>
+<li><strong>Monitor Memory Usage</strong>: Use tools like JVisualVM, JProfiler, or APM solutions</li>
+<li><strong>Implement Proper Caching</strong>: Cache frequently used objects appropriately</li>
+</ol>
+<h3 id="Production-Monitoring"><a href="#Production-Monitoring" class="headerlink" title="Production Monitoring"></a>Production Monitoring</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JMX bean for monitoring class loading</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ClassLoadingMonitor</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ClassLoadingMXBean classLoadingBean;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> MemoryMXBean memoryBean;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ClassLoadingMonitor</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.classLoadingBean = ManagementFactory.getClassLoadingMXBean();</span><br><span class="line">        <span class="built_in">this</span>.memoryBean = ManagementFactory.getMemoryMXBean();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">printClassLoadingStats</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Loaded Classes: &quot;</span> + classLoadingBean.getLoadedClassCount());</span><br><span class="line">        System.out.println(<span class="string">&quot;Total Loaded: &quot;</span> + classLoadingBean.getTotalLoadedClassCount());</span><br><span class="line">        System.out.println(<span class="string">&quot;Unloaded Classes: &quot;</span> + classLoadingBean.getUnloadedClassCount());</span><br><span class="line">        </span><br><span class="line">        <span class="type">MemoryUsage</span> <span class="variable">heapUsage</span> <span class="operator">=</span> memoryBean.getHeapMemoryUsage();</span><br><span class="line">        System.out.println(<span class="string">&quot;Heap Used: &quot;</span> + heapUsage.getUsed() / (<span class="number">1024</span> * <span class="number">1024</span>) + <span class="string">&quot; MB&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;Heap Max: &quot;</span> + heapUsage.getMax() / (<span class="number">1024</span> * <span class="number">1024</span>) + <span class="string">&quot; MB&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This comprehensive guide covers the essential aspects of JVM memory structure, from basic concepts to advanced production scenarios. Understanding these concepts is crucial for developing efficient Java applications and troubleshooting performance issues in production environments.</p>
+<h2 id="Essential-Tools-and-Commands"><a href="#Essential-Tools-and-Commands" class="headerlink" title="Essential Tools and Commands"></a>Essential Tools and Commands</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Memory analysis tools</span></span><br><span class="line">jmap -dump:live,format=b,file=heap.hprof &lt;pid&gt;</span><br><span class="line">jhat heap.hprof  <span class="comment"># Heap analysis tool</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Class loading monitoring</span></span><br><span class="line">jstat -class &lt;pid&gt; 1s  <span class="comment"># Monitor class loading every second</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Garbage collection monitoring</span></span><br><span class="line">jstat -gc &lt;pid&gt; 1s     <span class="comment"># Monitor GC activity</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># JVM process information</span></span><br><span class="line">jps -v                 <span class="comment"># List JVM processes with arguments</span></span><br><span class="line">jinfo &lt;pid&gt;           <span class="comment"># Print JVM configuration</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="References-and-Further-Reading"><a href="#References-and-Further-Reading" class="headerlink" title="References and Further Reading"></a>References and Further Reading</h2><ul>
+<li><strong>Oracle JVM Specification</strong>: Comprehensive technical documentation</li>
+<li><strong>Java Performance: The Definitive Guide</strong> by Scott Oaks</li>
+<li><strong>Effective Java</strong> by Joshua Bloch - Best practices for memory management</li>
+<li><strong>G1GC Documentation</strong>: For modern garbage collection strategies</li>
+<li><strong>JProfiler&#x2F;VisualVM</strong>: Professional memory profiling tools</li>
+</ul>
+<p>Understanding JVM memory structure is fundamental for Java developers, especially for performance tuning, debugging memory issues, and building scalable applications. Regular monitoring and profiling should be part of your development workflow to ensure optimal application performance.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2961,433 +3325,6 @@ M3 --&gt; M4
 </ul>
 <h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>The Universal Message Queue Component SDK provides a robust, production-ready solution for abstracting message queue implementations while maintaining high performance and reliability. By leveraging the SPI mechanism, implementing comprehensive failure handling, and supporting advanced patterns like async RPC, this SDK enables organizations to build resilient distributed systems that can evolve with changing technology requirements.</p>
 <p>The key to success with this SDK lies in understanding the trade-offs between abstraction and performance, implementing proper monitoring and observability, and following established patterns for distributed system design. With careful attention to schema evolution, security, and operational concerns, this SDK can serve as a foundation for scalable microservices architectures.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/13/Design-File-Storage-Service/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/13/Design-File-Storage-Service/" class="post-title-link" itemprop="url">Design File Storage Service</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2025-06-13 17:50:00" itemprop="dateCreated datePublished" datetime="2025-06-13T17:50:00+08:00">2025-06-13</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2025-07-02 17:40:41" itemprop="dateModified" datetime="2025-07-02T17:40:41+08:00">2025-07-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/system-design/" itemprop="url" rel="index"><span itemprop="name">system-design</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="System-Overview"><a href="#System-Overview" class="headerlink" title="System Overview"></a>System Overview</h2><h3 id="Vision"><a href="#Vision" class="headerlink" title="Vision"></a>Vision</h3><p>Design a scalable, extensible file storage service that abstracts multiple storage backends (HDFS, NFS) through a unified interface, providing seamless file operations for distributed applications.</p>
-<h3 id="Key-Design-Principles"><a href="#Key-Design-Principles" class="headerlink" title="Key Design Principles"></a>Key Design Principles</h3><ul>
-<li><strong>Pluggability</strong>: SPI-based driver architecture for easy backend integration</li>
-<li><strong>Scalability</strong>: Handle millions of files with horizontal scaling</li>
-<li><strong>Reliability</strong>: 99.9% availability with fault tolerance</li>
-<li><strong>Performance</strong>: Sub-second response times for file operations</li>
-<li><strong>Security</strong>: Enterprise-grade access control and encryption</li>
-</ul>
-<h3 id="High-Level-Architecture"><a href="#High-Level-Architecture" class="headerlink" title="High-Level Architecture"></a>High-Level Architecture</h3><pre>
-<code class="mermaid">
-graph TB
-Client[Client Applications] --&gt; SDK[FileSystem SDK]
-SDK --&gt; LB[Load Balancer]
-LB --&gt; API[File Storage API Gateway]
-
-API --&gt; Service[FileStorageService]
-Service --&gt; SPI[SPI Framework]
-
-SPI --&gt; HDFS[HDFS Driver]
-SPI --&gt; NFS[NFS Driver]
-SPI --&gt; S3[S3 Driver]
-
-HDFS --&gt; HDFSCluster[HDFS Cluster]
-NFS --&gt; NFSServer[NFS Server]
-S3 --&gt; S3Bucket[S3 Storage]
-
-Service --&gt; Cache[Redis Cache]
-Service --&gt; DB[Metadata DB]
-Service --&gt; MQ[Message Queue]
-</code>
-</pre>
-
-<p><strong>💡 Interview Insight</strong>: <em>When discussing system architecture, emphasize the separation of concerns - API layer handles routing and validation, service layer manages business logic, and SPI layer provides storage abstraction. This demonstrates understanding of layered architecture patterns.</em></p>
-<hr>
-<h2 id="Architecture-Design"><a href="#Architecture-Design" class="headerlink" title="Architecture Design"></a>Architecture Design</h2><h3 id="Component-Interaction-Flow"><a href="#Component-Interaction-Flow" class="headerlink" title="Component Interaction Flow"></a>Component Interaction Flow</h3><pre>
-<code class="mermaid">
-sequenceDiagram
-participant Client
-participant SDK
-participant Gateway
-participant FileService
-participant SPI
-participant Storage
-participant MetadataDB
-
-Client-&gt;&gt;SDK: uploadFile(file, metadata)
-SDK-&gt;&gt;Gateway: POST &#x2F;files&#x2F;upload
-Gateway-&gt;&gt;FileService: processUpload()
-FileService-&gt;&gt;SPI: store(fileData)
-SPI-&gt;&gt;Storage: writeFile()
-Storage--&gt;&gt;SPI: fileLocation
-SPI--&gt;&gt;FileService: storageResult
-FileService-&gt;&gt;MetadataDB: saveMetadata()
-FileService--&gt;&gt;Gateway: uploadResponse
-Gateway--&gt;&gt;SDK: HTTP 201 + fileUrl
-SDK--&gt;&gt;Client: FileUploadResult
-</code>
-</pre>
-
-<h3 id="Design-Patterns-Applied"><a href="#Design-Patterns-Applied" class="headerlink" title="Design Patterns Applied"></a>Design Patterns Applied</h3><ol>
-<li><strong>Strategy Pattern</strong>: SPI drivers implement different storage strategies</li>
-<li><strong>Factory Pattern</strong>: Driver creation based on configuration</li>
-<li><strong>Template Method</strong>: Common file operations with backend-specific implementations</li>
-<li><strong>Circuit Breaker</strong>: Fault tolerance for external storage systems</li>
-<li><strong>Observer Pattern</strong>: Event-driven notifications for file operations</li>
-</ol>
-<p><strong>💡 Interview Insight</strong>: <em>Discussing design patterns shows architectural maturity. Mention how the Strategy pattern enables runtime switching between storage backends without code changes, which is crucial for multi-cloud deployments.</em></p>
-<hr>
-<h2 id="Core-Components"><a href="#Core-Components" class="headerlink" title="Core Components"></a>Core Components</h2><h3 id="1-FileStorageService"><a href="#1-FileStorageService" class="headerlink" title="1. FileStorageService"></a>1. FileStorageService</h3><p>The central orchestrator managing all file operations:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileStorageService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> FileSystemSPIManager spiManager;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> MetadataRepository metadataRepo;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> CacheManager cacheManager;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> FileUploadResult <span class="title function_">uploadFile</span><span class="params">(FileUploadRequest request)</span> &#123;</span><br><span class="line">        <span class="comment">// 1. Validate file and metadata</span></span><br><span class="line">        validateFile(request.getFile());</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 2. Generate unique file ID</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">fileId</span> <span class="operator">=</span> generateFileId();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 3. Determine storage backend based on policy</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">driverType</span> <span class="operator">=</span> determineStorageBackend(request);</span><br><span class="line">        <span class="type">FileSystemDriver</span> <span class="variable">driver</span> <span class="operator">=</span> spiManager.getDriver(driverType);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 4. Store file using appropriate driver</span></span><br><span class="line">        <span class="type">StorageResult</span> <span class="variable">result</span> <span class="operator">=</span> driver.store(fileId, request.getFile());</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 5. Save metadata</span></span><br><span class="line">        <span class="type">FileMetadata</span> <span class="variable">metadata</span> <span class="operator">=</span> createMetadata(fileId, request, result);</span><br><span class="line">        metadataRepo.save(metadata);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 6. Cache metadata for quick access</span></span><br><span class="line">        cacheManager.put(fileId, metadata);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 7. Generate download URL</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">downloadUrl</span> <span class="operator">=</span> generateDownloadUrl(fileId);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">FileUploadResult</span>(fileId, downloadUrl, metadata);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> FileDownloadResult <span class="title function_">downloadFile</span><span class="params">(String fileId)</span> &#123;</span><br><span class="line">        <span class="comment">// Implementation with caching and fallback strategies</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-Metadata-Management"><a href="#2-Metadata-Management" class="headerlink" title="2. Metadata Management"></a>2. Metadata Management</h3><pre>
-<code class="mermaid">
-erDiagram
-FILE_METADATA {
-    string file_id PK
-    string original_name
-    string content_type
-    long file_size
-    string storage_backend
-    string storage_path
-    string checksum
-    timestamp created_at
-    timestamp updated_at
-    string created_by
-    json custom_attributes
-    enum status
-}
-
-FILE_ACCESS_LOG {
-    string log_id PK
-    string file_id FK
-    string operation_type
-    string client_ip
-    timestamp access_time
-    boolean success
-    string error_message
-}
-
-STORAGE_QUOTA {
-    string tenant_id PK
-    long total_quota
-    long used_space
-    long file_count
-    timestamp last_updated
-}
-</code>
-</pre>
-
-<p><strong>💡 Interview Insight</strong>: <em>Metadata design is crucial for system scalability. Discuss partitioning strategies - file_id can be hash-partitioned, and time-based partitioning for access logs enables efficient historical data management.</em></p>
-<hr>
-<h2 id="SPI-Framework-Implementation"><a href="#SPI-Framework-Implementation" class="headerlink" title="SPI Framework Implementation"></a>SPI Framework Implementation</h2><h3 id="SPI-Architecture"><a href="#SPI-Architecture" class="headerlink" title="SPI Architecture"></a>SPI Architecture</h3><pre>
-<code class="mermaid">
-classDiagram
-class FileSystemDriver {
-    &lt;&lt;interface&gt;&gt;
-    +store(fileId, fileData) StorageResult
-    +retrieve(fileId) FileData
-    +delete(fileId) boolean
-    +exists(fileId) boolean
-    +generateDownloadUrl(fileId) String
-}
-
-class HDFSDriver {
-    -hdfsConfig: Configuration
-    -fileSystem: FileSystem
-    +store(fileId, fileData) StorageResult
-    +retrieve(fileId) FileData
-}
-
-class NFSDriver {
-    -nfsConfig: NFSConfig
-    -mountPoint: String
-    +store(fileId, fileData) StorageResult
-    +retrieve(fileId) FileData
-}
-
-class S3Driver {
-    -s3Client: AmazonS3
-    -bucketName: String
-    +store(fileId, fileData) StorageResult
-    +retrieve(fileId) FileData
-}
-
-class DriverFactory {
-    +createDriver(driverType) FileSystemDriver
-}
-
-class SPIManager {
-    -drivers: Map~String,FileSystemDriver~
-    +getDriver(type) FileSystemDriver
-    +registerDriver(type, driver)
-}
-
-FileSystemDriver &lt;|-- HDFSDriver
-FileSystemDriver &lt;|-- NFSDriver
-FileSystemDriver &lt;|-- S3Driver
-DriverFactory --&gt; FileSystemDriver
-SPIManager --&gt; FileSystemDriver
-</code>
-</pre>
-
-<h3 id="SPI-Configuration"><a href="#SPI-Configuration" class="headerlink" title="SPI Configuration"></a>SPI Configuration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// META-INF/services/com.fileservice.spi.FileSystemDriver</span></span><br><span class="line">com.fileservice.driver.HDFSDriver</span><br><span class="line">com.fileservice.driver.NFSDriver</span><br><span class="line">com.fileservice.driver.S3Driver</span><br><span class="line"></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileSystemSPIManager</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, FileSystemDriver&gt; drivers = <span class="keyword">new</span> <span class="title class_">ConcurrentHashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@PostConstruct</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">initializeDrivers</span><span class="params">()</span> &#123;</span><br><span class="line">        ServiceLoader&lt;FileSystemDriver&gt; loader = </span><br><span class="line">            ServiceLoader.load(FileSystemDriver.class);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> (FileSystemDriver driver : loader) &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">driverType</span> <span class="operator">=</span> driver.getDriverType();</span><br><span class="line">            drivers.put(driverType, driver);</span><br><span class="line">            logger.info(<span class="string">&quot;Registered driver: &#123;&#125;&quot;</span>, driverType);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> FileSystemDriver <span class="title function_">getDriver</span><span class="params">(String driverType)</span> &#123;</span><br><span class="line">        <span class="type">FileSystemDriver</span> <span class="variable">driver</span> <span class="operator">=</span> drivers.get(driverType);</span><br><span class="line">        <span class="keyword">if</span> (driver == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">UnsupportedDriverException</span>(<span class="string">&quot;Driver not found: &quot;</span> + driverType);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> driver;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>💡 Interview Insight</strong>: <em>SPI demonstrates understanding of extensibility patterns. Mention that this approach allows adding new storage backends without modifying core service code, following the Open-Closed Principle.</em></p>
-<hr>
-<h2 id="API-Design"><a href="#API-Design" class="headerlink" title="API Design"></a>API Design</h2><h3 id="RESTful-API-Endpoints"><a href="#RESTful-API-Endpoints" class="headerlink" title="RESTful API Endpoints"></a>RESTful API Endpoints</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">openapi:</span> <span class="number">3.0</span><span class="number">.0</span></span><br><span class="line"><span class="attr">info:</span></span><br><span class="line">  <span class="attr">title:</span> <span class="string">File</span> <span class="string">Storage</span> <span class="string">Service</span> <span class="string">API</span></span><br><span class="line">  <span class="attr">version:</span> <span class="number">1.0</span><span class="number">.0</span></span><br><span class="line"></span><br><span class="line"><span class="attr">paths:</span></span><br><span class="line">  <span class="string">/api/v1/files:</span></span><br><span class="line">    <span class="attr">post:</span></span><br><span class="line">      <span class="attr">summary:</span> <span class="string">Upload</span> <span class="string">file</span></span><br><span class="line">      <span class="attr">requestBody:</span></span><br><span class="line">        <span class="attr">content:</span></span><br><span class="line">          <span class="attr">multipart/form-data:</span></span><br><span class="line">            <span class="attr">schema:</span></span><br><span class="line">              <span class="attr">type:</span> <span class="string">object</span></span><br><span class="line">              <span class="attr">properties:</span></span><br><span class="line">                <span class="attr">file:</span></span><br><span class="line">                  <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">                  <span class="attr">format:</span> <span class="string">binary</span></span><br><span class="line">                <span class="attr">metadata:</span></span><br><span class="line">                  <span class="attr">type:</span> <span class="string">object</span></span><br><span class="line">                <span class="attr">storagePreference:</span></span><br><span class="line">                  <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">                  <span class="attr">enum:</span> [<span class="string">hdfs</span>, <span class="string">nfs</span>, <span class="string">s3</span>]</span><br><span class="line">      <span class="attr">responses:</span></span><br><span class="line">        <span class="attr">&#x27;201&#x27;:</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">File</span> <span class="string">uploaded</span> <span class="string">successfully</span></span><br><span class="line">          <span class="attr">content:</span></span><br><span class="line">            <span class="attr">application/json:</span></span><br><span class="line">              <span class="attr">schema:</span></span><br><span class="line">                <span class="string">$ref:</span> <span class="string">&#x27;#/components/schemas/FileUploadResponse&#x27;</span></span><br><span class="line">    </span><br><span class="line">    <span class="attr">get:</span></span><br><span class="line">      <span class="attr">summary:</span> <span class="string">List</span> <span class="string">files</span> <span class="string">with</span> <span class="string">pagination</span></span><br><span class="line">      <span class="attr">parameters:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">page</span></span><br><span class="line">          <span class="attr">in:</span> <span class="string">query</span></span><br><span class="line">          <span class="attr">schema:</span></span><br><span class="line">            <span class="attr">type:</span> <span class="string">integer</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">size</span></span><br><span class="line">          <span class="attr">in:</span> <span class="string">query</span></span><br><span class="line">          <span class="attr">schema:</span></span><br><span class="line">            <span class="attr">type:</span> <span class="string">integer</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">filter</span></span><br><span class="line">          <span class="attr">in:</span> <span class="string">query</span></span><br><span class="line">          <span class="attr">schema:</span></span><br><span class="line">            <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">      <span class="attr">responses:</span></span><br><span class="line">        <span class="attr">&#x27;200&#x27;:</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">Files</span> <span class="string">retrieved</span> <span class="string">successfully</span></span><br><span class="line"></span><br><span class="line">  <span class="string">/api/v1/files/&#123;fileId&#125;:</span></span><br><span class="line">    <span class="attr">get:</span></span><br><span class="line">      <span class="attr">summary:</span> <span class="string">Get</span> <span class="string">file</span> <span class="string">metadata</span></span><br><span class="line">      <span class="attr">parameters:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">fileId</span></span><br><span class="line">          <span class="attr">in:</span> <span class="string">path</span></span><br><span class="line">          <span class="attr">required:</span> <span class="literal">true</span></span><br><span class="line">          <span class="attr">schema:</span></span><br><span class="line">            <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">      <span class="attr">responses:</span></span><br><span class="line">        <span class="attr">&#x27;200&#x27;:</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">File</span> <span class="string">metadata</span> <span class="string">retrieved</span></span><br><span class="line">    </span><br><span class="line">    <span class="attr">delete:</span></span><br><span class="line">      <span class="attr">summary:</span> <span class="string">Delete</span> <span class="string">file</span></span><br><span class="line">      <span class="attr">responses:</span></span><br><span class="line">        <span class="attr">&#x27;204&#x27;:</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">File</span> <span class="string">deleted</span> <span class="string">successfully</span></span><br><span class="line"></span><br><span class="line">  <span class="string">/api/v1/files/&#123;fileId&#125;/download:</span></span><br><span class="line">    <span class="attr">get:</span></span><br><span class="line">      <span class="attr">summary:</span> <span class="string">Download</span> <span class="string">file</span></span><br><span class="line">      <span class="attr">responses:</span></span><br><span class="line">        <span class="attr">&#x27;200&#x27;:</span></span><br><span class="line">          <span class="attr">description:</span> <span class="string">File</span> <span class="string">content</span></span><br><span class="line">          <span class="attr">content:</span></span><br><span class="line">            <span class="attr">application/octet-stream:</span></span><br><span class="line">              <span class="attr">schema:</span></span><br><span class="line">                <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">                <span class="attr">format:</span> <span class="string">binary</span></span><br><span class="line"></span><br><span class="line"><span class="attr">components:</span></span><br><span class="line">  <span class="attr">schemas:</span></span><br><span class="line">    <span class="attr">FileUploadResponse:</span></span><br><span class="line">      <span class="attr">type:</span> <span class="string">object</span></span><br><span class="line">      <span class="attr">properties:</span></span><br><span class="line">        <span class="attr">fileId:</span></span><br><span class="line">          <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">        <span class="attr">downloadUrl:</span></span><br><span class="line">          <span class="attr">type:</span> <span class="string">string</span></span><br><span class="line">        <span class="attr">metadata:</span></span><br><span class="line">          <span class="string">$ref:</span> <span class="string">&#x27;#/components/schemas/FileMetadata&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Request-Response-Flow"><a href="#Request-Response-Flow" class="headerlink" title="Request&#x2F;Response Flow"></a>Request&#x2F;Response Flow</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[Client Request] --&gt; B{Request Validation}
-B --&gt;|Valid| C[Authentication &amp; Authorization]
-B --&gt;|Invalid| D[Return 400 Bad Request]
-
-C --&gt;|Authorized| E[Route to Service]
-C --&gt;|Unauthorized| F[Return 401&#x2F;403]
-
-E --&gt; G[Business Logic Processing]
-G --&gt; H{Storage Operation}
-
-H --&gt;|Success| I[Update Metadata]
-H --&gt;|Failure| J[Rollback &amp; Error Response]
-
-I --&gt; K[Generate Response]
-K --&gt; L[Return Success Response]
-
-J --&gt; M[Return Error Response]
-</code>
-</pre>
-
-<p><strong>💡 Interview Insight</strong>: <em>API design considerations include idempotency for upload operations, proper HTTP status codes, and consistent error response format. Discuss rate limiting and API versioning strategies for production systems.</em></p>
-<hr>
-<h2 id="Client-SDK"><a href="#Client-SDK" class="headerlink" title="Client SDK"></a>Client SDK</h2><h3 id="SDK-Architecture"><a href="#SDK-Architecture" class="headerlink" title="SDK Architecture"></a>SDK Architecture</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileStorageClient</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String baseUrl;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> HttpClient httpClient;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AuthenticationProvider authProvider;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> RetryPolicy retryPolicy;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">FileStorageClient</span><span class="params">(FileStorageConfig config)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.baseUrl = config.getBaseUrl();</span><br><span class="line">        <span class="built_in">this</span>.httpClient = createHttpClient(config);</span><br><span class="line">        <span class="built_in">this</span>.authProvider = <span class="keyword">new</span> <span class="title class_">AuthenticationProvider</span>(config);</span><br><span class="line">        <span class="built_in">this</span>.retryPolicy = RetryPolicy.exponentialBackoff();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> CompletableFuture&lt;FileUploadResult&gt; <span class="title function_">uploadFileAsync</span><span class="params">(</span></span><br><span class="line"><span class="params">            String filePath, </span></span><br><span class="line"><span class="params">            FileUploadOptions options)</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> uploadFileInternal(filePath, options);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">FileStorageException</span>(<span class="string">&quot;Upload failed&quot;</span>, e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> FileDownloadResult <span class="title function_">downloadFile</span><span class="params">(String fileId, String destPath)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> retryPolicy.execute(() -&gt; &#123;</span><br><span class="line">            <span class="type">HttpRequest</span> <span class="variable">request</span> <span class="operator">=</span> buildDownloadRequest(fileId);</span><br><span class="line">            HttpResponse&lt;<span class="type">byte</span>[]&gt; response = httpClient.send(request, </span><br><span class="line">                HttpResponse.BodyHandlers.ofByteArray());</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (response.statusCode() == <span class="number">200</span>) &#123;</span><br><span class="line">                Files.write(Paths.get(destPath), response.body());</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">FileDownloadResult</span>(fileId, destPath);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">FileStorageException</span>(<span class="string">&quot;Download failed: &quot;</span> + response.statusCode());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="SDK-Features"><a href="#SDK-Features" class="headerlink" title="SDK Features"></a>SDK Features</h3><ol>
-<li><strong>Async Operations</strong>: Non-blocking file operations</li>
-<li><strong>Retry Logic</strong>: Exponential backoff with jitter</li>
-<li><strong>Progress Tracking</strong>: Upload&#x2F;download progress callbacks</li>
-<li><strong>Connection Pooling</strong>: Efficient HTTP connection management</li>
-<li><strong>Error Handling</strong>: Comprehensive exception hierarchy</li>
-</ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Usage Example</span></span><br><span class="line"><span class="type">FileStorageClient</span> <span class="variable">client</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileStorageClient</span>(config);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Async upload with progress tracking</span></span><br><span class="line">CompletableFuture&lt;FileUploadResult&gt; future = client.uploadFileAsync(</span><br><span class="line">    <span class="string">&quot;large-file.zip&quot;</span>,</span><br><span class="line">    FileUploadOptions.builder()</span><br><span class="line">        .storageBackend(<span class="string">&quot;hdfs&quot;</span>)</span><br><span class="line">        .progressCallback(progress -&gt; </span><br><span class="line">            System.out.println(<span class="string">&quot;Upload progress: &quot;</span> + progress.getPercentage() + <span class="string">&quot;%&quot;</span>))</span><br><span class="line">        .build()</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">future.thenAccept(result -&gt; &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;File uploaded: &quot;</span> + result.getDownloadUrl());</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<p><strong>💡 Interview Insight</strong>: <em>SDK design demonstrates client-side engineering skills. Discuss thread safety, connection pooling, and how to handle large file uploads with chunking and resume capabilities.</em></p>
-<hr>
-<h2 id="Storage-Backends"><a href="#Storage-Backends" class="headerlink" title="Storage Backends"></a>Storage Backends</h2><h3 id="HDFS-Integration"><a href="#HDFS-Integration" class="headerlink" title="HDFS Integration"></a>HDFS Integration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HDFSDriver</span> <span class="keyword">implements</span> <span class="title class_">FileSystemDriver</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> FileSystem hdfsFileSystem;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Configuration hadoopConfig;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> StorageResult <span class="title function_">store</span><span class="params">(String fileId, FileData fileData)</span> &#123;</span><br><span class="line">        <span class="type">Path</span> <span class="variable">hdfsPath</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Path</span>(<span class="string">&quot;/fileservice/&quot;</span> + generatePath(fileId));</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> (<span class="type">FSDataOutputStream</span> <span class="variable">outputStream</span> <span class="operator">=</span> hdfsFileSystem.create(hdfsPath)) &#123;</span><br><span class="line">            IOUtils.copyBytes(fileData.getInputStream(), outputStream, <span class="number">4096</span>, <span class="literal">false</span>);</span><br><span class="line">            </span><br><span class="line">            <span class="type">FileStatus</span> <span class="variable">fileStatus</span> <span class="operator">=</span> hdfsFileSystem.getFileStatus(hdfsPath);</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span> StorageResult.builder()</span><br><span class="line">                .fileId(fileId)</span><br><span class="line">                .storagePath(hdfsPath.toString())</span><br><span class="line">                .size(fileStatus.getLen())</span><br><span class="line">                .checksum(calculateChecksum(fileData))</span><br><span class="line">                .build();</span><br><span class="line">                </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StorageException</span>(<span class="string">&quot;HDFS store failed&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> FileData <span class="title function_">retrieve</span><span class="params">(String fileId)</span> &#123;</span><br><span class="line">        <span class="type">Path</span> <span class="variable">hdfsPath</span> <span class="operator">=</span> getPathFromFileId(fileId);</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">FSDataInputStream</span> <span class="variable">inputStream</span> <span class="operator">=</span> hdfsFileSystem.open(hdfsPath);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">FileData</span>(inputStream, hdfsFileSystem.getFileStatus(hdfsPath).getLen());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StorageException</span>(<span class="string">&quot;HDFS retrieve failed&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> String <span class="title function_">generatePath</span><span class="params">(String fileId)</span> &#123;</span><br><span class="line">        <span class="comment">// Generate hierarchical path: /2023/12/15/abc123...</span></span><br><span class="line">        <span class="keyword">return</span> String.format(<span class="string">&quot;%s/%s/%s/%s&quot;</span>, </span><br><span class="line">            LocalDate.now().getYear(),</span><br><span class="line">            LocalDate.now().getMonthValue(),</span><br><span class="line">            LocalDate.now().getDayOfMonth(),</span><br><span class="line">            fileId);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="NFS-Integration"><a href="#NFS-Integration" class="headerlink" title="NFS Integration"></a>NFS Integration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span>  </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NFSDriver</span> <span class="keyword">implements</span> <span class="title class_">FileSystemDriver</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String mountPoint;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> FileSystem nfsFileSystem;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> StorageResult <span class="title function_">store</span><span class="params">(String fileId, FileData fileData)</span> &#123;</span><br><span class="line">        <span class="type">Path</span> <span class="variable">nfsPath</span> <span class="operator">=</span> Paths.get(mountPoint, generatePath(fileId));</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Files.createDirectories(nfsPath.getParent());</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">try</span> (<span class="type">InputStream</span> <span class="variable">input</span> <span class="operator">=</span> fileData.getInputStream();</span><br><span class="line">                 <span class="type">OutputStream</span> <span class="variable">output</span> <span class="operator">=</span> Files.newOutputStream(nfsPath)) &#123;</span><br><span class="line">                </span><br><span class="line">                <span class="type">long</span> <span class="variable">bytesTransferred</span> <span class="operator">=</span> input.transferTo(output);</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">return</span> StorageResult.builder()</span><br><span class="line">                    .fileId(fileId)</span><br><span class="line">                    .storagePath(nfsPath.toString())</span><br><span class="line">                    .size(bytesTransferred)</span><br><span class="line">                    .checksum(calculateChecksum(nfsPath))</span><br><span class="line">                    .build();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StorageException</span>(<span class="string">&quot;NFS store failed&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Storage-Selection-Strategy"><a href="#Storage-Selection-Strategy" class="headerlink" title="Storage Selection Strategy"></a>Storage Selection Strategy</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[File Upload Request] --&gt; B{File Size Check}
-B --&gt;|&lt; 100MB| C{Performance Priority?}
-B --&gt;|&gt; 100MB| D{Durability Priority?}
-
-C --&gt;|Yes| E[NFS - Low Latency]
-C --&gt;|No| F[HDFS - Cost Effective]
-
-D --&gt;|Yes| G[HDFS - Replication]
-D --&gt;|No| H[S3 - Archival]
-
-E --&gt; I[Store in NFS]
-F --&gt; J[Store in HDFS]
-G --&gt; J
-H --&gt; K[Store in S3]
-</code>
-</pre>
-
-<p><strong>💡 Interview Insight</strong>: <em>Storage selection demonstrates understanding of trade-offs. NFS offers low latency but limited scalability, HDFS provides distributed storage with replication, S3 offers infinite scale but higher latency. Discuss when to use each based on access patterns.</em></p>
-<hr>
-<h2 id="Security-Performance"><a href="#Security-Performance" class="headerlink" title="Security &amp; Performance"></a>Security &amp; Performance</h2><h3 id="Security-Implementation"><a href="#Security-Implementation" class="headerlink" title="Security Implementation"></a>Security Implementation</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="meta">@RequestMapping(&quot;/api/v1/files&quot;)</span></span><br><span class="line"><span class="meta">@PreAuthorize(&quot;hasRole(&#x27;FILE_USER&#x27;)&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileController</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)</span></span><br><span class="line">    <span class="meta">@PreAuthorize(&quot;@fileSecurityService.canUpload(authentication.name, #request.storageBackend)&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> ResponseEntity&lt;FileUploadResponse&gt; <span class="title function_">uploadFile</span><span class="params">(</span></span><br><span class="line"><span class="params">            <span class="meta">@RequestParam(&quot;file&quot;)</span> MultipartFile file,</span></span><br><span class="line"><span class="params">            <span class="meta">@RequestParam(&quot;metadata&quot;)</span> String metadata,</span></span><br><span class="line"><span class="params">            FileUploadRequest request)</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Validate file type and size</span></span><br><span class="line">        fileValidationService.validateFile(file);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Scan for malware</span></span><br><span class="line">        <span class="keyword">if</span> (!malwareScanService.isFileSafe(file)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SecurityException</span>(<span class="string">&quot;File failed security scan&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="type">FileUploadResult</span> <span class="variable">result</span> <span class="operator">=</span> fileStorageService.uploadFile(request);</span><br><span class="line">        <span class="keyword">return</span> ResponseEntity.status(HttpStatus.CREATED).body(result);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileSecurityService</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">canUpload</span><span class="params">(String username, String storageBackend)</span> &#123;</span><br><span class="line">        <span class="type">UserPermissions</span> <span class="variable">permissions</span> <span class="operator">=</span> userService.getPermissions(username);</span><br><span class="line">        <span class="keyword">return</span> permissions.hasStorageAccess(storageBackend);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">generateSignedUrl</span><span class="params">(String fileId, Duration expiry)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">token</span> <span class="operator">=</span> jwtService.createToken(</span><br><span class="line">            Map.of(<span class="string">&quot;fileId&quot;</span>, fileId, <span class="string">&quot;action&quot;</span>, <span class="string">&quot;download&quot;</span>),</span><br><span class="line">            expiry</span><br><span class="line">        );</span><br><span class="line">        <span class="keyword">return</span> baseUrl + <span class="string">&quot;/files/&quot;</span> + fileId + <span class="string">&quot;/download?token=&quot;</span> + token;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Performance-Optimizations"><a href="#Performance-Optimizations" class="headerlink" title="Performance Optimizations"></a>Performance Optimizations</h3><ol>
-<li><strong>Connection Pooling</strong>: HTTP and database connection pools</li>
-<li><strong>Caching Strategy</strong>: Multi-level caching (Redis + Local)</li>
-<li><strong>Async Processing</strong>: Non-blocking I&#x2F;O operations</li>
-<li><strong>Compression</strong>: Automatic compression for large files</li>
-<li><strong>CDN Integration</strong>: Geographic distribution for downloads</li>
-</ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PerformanceConfig</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> ThreadPoolTaskExecutor <span class="title function_">fileProcessingExecutor</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">ThreadPoolTaskExecutor</span> <span class="variable">executor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ThreadPoolTaskExecutor</span>();</span><br><span class="line">        executor.setCorePoolSize(<span class="number">10</span>);</span><br><span class="line">        executor.setMaxPoolSize(<span class="number">50</span>);</span><br><span class="line">        executor.setQueueCapacity(<span class="number">100</span>);</span><br><span class="line">        executor.setThreadNamePrefix(<span class="string">&quot;file-processor-&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> executor;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> CacheManager <span class="title function_">cacheManager</span><span class="params">()</span> &#123;</span><br><span class="line">        RedisCacheManager.<span class="type">Builder</span> <span class="variable">builder</span> <span class="operator">=</span> RedisCacheManager</span><br><span class="line">            .RedisCacheManagerBuilder</span><br><span class="line">            .fromConnectionFactory(redisConnectionFactory())</span><br><span class="line">            .cacheDefaults(cacheConfiguration());</span><br><span class="line">        <span class="keyword">return</span> builder.build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>💡 Interview Insight</strong>: <em>Performance discussions should cover caching strategies (what to cache, cache invalidation), connection pooling, and async processing. Mention specific metrics like P99 latency targets and throughput requirements.</em></p>
-<hr>
-<h2 id="Monitoring-Operations"><a href="#Monitoring-Operations" class="headerlink" title="Monitoring &amp; Operations"></a>Monitoring &amp; Operations</h2><h3 id="Metrics-and-Monitoring"><a href="#Metrics-and-Monitoring" class="headerlink" title="Metrics and Monitoring"></a>Metrics and Monitoring</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileStorageMetrics</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Counter</span> <span class="variable">uploadCounter</span> <span class="operator">=</span> Counter.builder(<span class="string">&quot;file.uploads.total&quot;</span>)</span><br><span class="line">        .description(<span class="string">&quot;Total file uploads&quot;</span>)</span><br><span class="line">        .tag(<span class="string">&quot;storage_backend&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">        .register(Metrics.globalRegistry);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Timer</span> <span class="variable">uploadTimer</span> <span class="operator">=</span> Timer.builder(<span class="string">&quot;file.upload.duration&quot;</span>)</span><br><span class="line">        .description(<span class="string">&quot;File upload duration&quot;</span>)</span><br><span class="line">        .register(Metrics.globalRegistry);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Gauge</span> <span class="variable">storageUsage</span> <span class="operator">=</span> Gauge.builder(<span class="string">&quot;storage.usage.bytes&quot;</span>)</span><br><span class="line">        .description(<span class="string">&quot;Storage usage by backend&quot;</span>)</span><br><span class="line">        .tag(<span class="string">&quot;backend&quot;</span>, <span class="string">&quot;&quot;</span>)</span><br><span class="line">        .register(Metrics.globalRegistry, <span class="built_in">this</span>, FileStorageMetrics::getStorageUsage);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">recordUpload</span><span class="params">(String backend, Duration duration)</span> &#123;</span><br><span class="line">        uploadCounter.increment(Tags.of(<span class="string">&quot;storage_backend&quot;</span>, backend));</span><br><span class="line">        uploadTimer.record(duration);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Health-Checks"><a href="#Health-Checks" class="headerlink" title="Health Checks"></a>Health Checks</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileStorageHealthIndicator</span> <span class="keyword">implements</span> <span class="title class_">HealthIndicator</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Health <span class="title function_">health</span><span class="params">()</span> &#123;</span><br><span class="line">        Health.<span class="type">Builder</span> <span class="variable">status</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Health</span>.Builder();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// Check storage backends</span></span><br><span class="line">        <span class="keyword">for</span> (String backend : spiManager.getAvailableBackends()) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="type">FileSystemDriver</span> <span class="variable">driver</span> <span class="operator">=</span> spiManager.getDriver(backend);</span><br><span class="line">                <span class="type">boolean</span> <span class="variable">healthy</span> <span class="operator">=</span> driver.healthCheck();</span><br><span class="line">                status.withDetail(backend, healthy ? <span class="string">&quot;UP&quot;</span> : <span class="string">&quot;DOWN&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                status.withDetail(backend, <span class="string">&quot;ERROR: &quot;</span> + e.getMessage());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> status.up().build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Observability-Dashboard"><a href="#Observability-Dashboard" class="headerlink" title="Observability Dashboard"></a>Observability Dashboard</h3><pre>
-<code class="mermaid">
-graph LR
-subgraph &quot;Application Metrics&quot;
-    A[Upload Rate]
-    B[Download Rate]
-    C[Error Rate]
-    D[Response Time]
-end
-
-subgraph &quot;Infrastructure Metrics&quot;
-    E[CPU Usage]
-    F[Memory Usage]
-    G[Disk I&#x2F;O]
-    H[Network I&#x2F;O]
-end
-
-subgraph &quot;Business Metrics&quot;
-    I[Storage Usage]
-    J[Active Users]
-    K[File Types]
-    L[Storage Costs]
-end
-
-A --&gt; M[Grafana Dashboard]
-B --&gt; M
-C --&gt; M
-D --&gt; M
-E --&gt; M
-F --&gt; M
-G --&gt; M
-H --&gt; M
-I --&gt; M
-J --&gt; M
-K --&gt; M
-L --&gt; M
-</code>
-</pre>
-
-<p><strong>💡 Interview Insight</strong>: <em>Observability is crucial for production systems. Discuss the difference between metrics (quantitative), logs (qualitative), and traces (request flow). Mention SLA&#x2F;SLO concepts and how monitoring supports them.</em></p>
-<hr>
-<h2 id="Deployment-Strategy"><a href="#Deployment-Strategy" class="headerlink" title="Deployment Strategy"></a>Deployment Strategy</h2><h3 id="Containerized-Deployment"><a href="#Containerized-Deployment" class="headerlink" title="Containerized Deployment"></a>Containerized Deployment</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># docker-compose.yml</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.8&#x27;</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">file-storage-service:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">file-storage-service:latest</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8080:8080&quot;</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SPRING_PROFILES_ACTIVE=production</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">STORAGE_BACKENDS=hdfs,nfs,s3</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config:/app/config</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">redis</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">postgres</span></span><br><span class="line">      </span><br><span class="line">  <span class="attr">redis:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">redis:alpine</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;6379:6379&quot;</span></span><br><span class="line">      </span><br><span class="line">  <span class="attr">postgres:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">postgres:13</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">POSTGRES_DB:</span> <span class="string">fileservice</span></span><br><span class="line">      <span class="attr">POSTGRES_USER:</span> <span class="string">fileuser</span></span><br><span class="line">      <span class="attr">POSTGRES_PASSWORD:</span> <span class="string">filepass</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Kubernetes-Deployment"><a href="#Kubernetes-Deployment" class="headerlink" title="Kubernetes Deployment"></a>Kubernetes Deployment</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">file-storage-service</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">file-storage-service</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">file-storage-service</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">file-storage-service</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">file-storage-service:latest</span></span><br><span class="line">        <span class="attr">ports:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">8080</span></span><br><span class="line">        <span class="attr">env:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">STORAGE_BACKENDS</span></span><br><span class="line">          <span class="attr">value:</span> <span class="string">&quot;hdfs,s3&quot;</span></span><br><span class="line">        <span class="attr">resources:</span></span><br><span class="line">          <span class="attr">requests:</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">&quot;512Mi&quot;</span></span><br><span class="line">            <span class="attr">cpu:</span> <span class="string">&quot;500m&quot;</span></span><br><span class="line">          <span class="attr">limits:</span></span><br><span class="line">            <span class="attr">memory:</span> <span class="string">&quot;1Gi&quot;</span></span><br><span class="line">            <span class="attr">cpu:</span> <span class="string">&quot;1000m&quot;</span></span><br><span class="line">        <span class="attr">livenessProbe:</span></span><br><span class="line">          <span class="attr">httpGet:</span></span><br><span class="line">            <span class="attr">path:</span> <span class="string">/actuator/health</span></span><br><span class="line">            <span class="attr">port:</span> <span class="number">8080</span></span><br><span class="line">          <span class="attr">initialDelaySeconds:</span> <span class="number">30</span></span><br><span class="line">          <span class="attr">periodSeconds:</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="Scaling-Strategy"><a href="#Scaling-Strategy" class="headerlink" title="Scaling Strategy"></a>Scaling Strategy</h3><pre>
-<code class="mermaid">
-graph TD
-A[Load Balancer] --&gt; B[File Service Instance 1]
-A --&gt; C[File Service Instance 2]
-A --&gt; D[File Service Instance N]
-
-B --&gt; E[Storage Backend Pool]
-C --&gt; E
-D --&gt; E
-
-E --&gt; F[HDFS Cluster]
-E --&gt; G[NFS Servers]
-E --&gt; H[S3 Storage]
-
-I[Auto Scaler] --&gt; A
-I --&gt; B
-I --&gt; C
-I --&gt; D
-</code>
-</pre>
-
-<p><strong>💡 Interview Insight</strong>: <em>Deployment discussions should cover horizontal vs vertical scaling, stateless service design, and data partitioning strategies. Mention circuit breakers for external dependencies and graceful degradation patterns.</em></p>
-<hr>
-<h2 id="Interview-Key-Points-Summary"><a href="#Interview-Key-Points-Summary" class="headerlink" title="Interview Key Points Summary"></a>Interview Key Points Summary</h2><h3 id="System-Design-Fundamentals"><a href="#System-Design-Fundamentals" class="headerlink" title="System Design Fundamentals"></a>System Design Fundamentals</h3><ul>
-<li><strong>Scalability</strong>: Horizontal scaling through stateless services</li>
-<li><strong>Reliability</strong>: Circuit breakers, retries, and failover mechanisms</li>
-<li><strong>Consistency</strong>: Eventual consistency for metadata with strong consistency for file operations</li>
-<li><strong>Availability</strong>: Multi-region deployment with data replication</li>
-</ul>
-<h3 id="Technical-Deep-Dives"><a href="#Technical-Deep-Dives" class="headerlink" title="Technical Deep Dives"></a>Technical Deep Dives</h3><ul>
-<li><strong>SPI Pattern</strong>: Demonstrates extensibility and loose coupling</li>
-<li><strong>Caching Strategy</strong>: Multi-level caching with proper invalidation</li>
-<li><strong>Security</strong>: Authentication, authorization, and file validation</li>
-<li><strong>Monitoring</strong>: Metrics, logging, and distributed tracing</li>
-</ul>
-<h3 id="Trade-offs-and-Decisions"><a href="#Trade-offs-and-Decisions" class="headerlink" title="Trade-offs and Decisions"></a>Trade-offs and Decisions</h3><ul>
-<li><strong>Storage Selection</strong>: Performance vs cost vs durability</li>
-<li><strong>Consistency Models</strong>: CAP theorem considerations</li>
-<li><strong>API Design</strong>: REST vs GraphQL vs gRPC</li>
-<li><strong>Technology Choices</strong>: Java ecosystem vs alternatives</li>
-</ul>
-<h3 id="Production-Readiness"><a href="#Production-Readiness" class="headerlink" title="Production Readiness"></a>Production Readiness</h3><ul>
-<li><strong>Operations</strong>: Deployment, monitoring, and incident response</li>
-<li><strong>Performance</strong>: Benchmarking and optimization strategies</li>
-<li><strong>Security</strong>: Threat modeling and security testing</li>
-<li><strong>Compliance</strong>: Data protection and regulatory requirements</li>
-</ul>
-<p>This comprehensive design demonstrates understanding of distributed systems, software architecture patterns, and production engineering practices essential for senior engineering roles.</p>
 
       
     </div>

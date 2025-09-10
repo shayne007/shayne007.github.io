@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,633 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/10/Redis-Deployment-Modes-Theory-Practice-and-Interview-Insights/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/10/Redis-Deployment-Modes-Theory-Practice-and-Interview-Insights/" class="post-title-link" itemprop="url">Redis Deployment Modes: Theory, Practice, and Interview Insights</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2025-06-10 16:21:06 / Modified: 17:17:39" itemprop="dateCreated datePublished" datetime="2025-06-10T16:21:06+08:00">2025-06-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Redis supports multiple deployment modes, each designed for different use cases, scalability requirements, and availability needs. Understanding these modes is crucial for designing robust, scalable systems.</p>
+<p><strong>🎯 Common Interview Question</strong>: <em>“How do you decide which Redis deployment mode to use for a given application?”</em></p>
+<p><strong>Answer Framework</strong>: Consider these factors:</p>
+<ul>
+<li><strong>Data size</strong>: Single instance practical limits (~25GB operational recommendation)</li>
+<li><strong>Availability requirements</strong>: RTO&#x2F;RPO expectations</li>
+<li><strong>Read&#x2F;write patterns</strong>: Read-heavy vs write-heavy workloads</li>
+<li><strong>Geographic distribution</strong>: Single vs multi-region</li>
+<li><strong>Operational complexity</strong>: Team expertise and maintenance overhead</li>
+</ul>
+<h2 id="Standalone-Redis"><a href="#Standalone-Redis" class="headerlink" title="Standalone Redis"></a>Standalone Redis</h2><h3 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h3><p>Standalone Redis is the simplest deployment mode where a single Redis instance handles all operations. It’s ideal for development, testing, and small-scale applications.</p>
+<h3 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
+<code class="mermaid">
+graph TB
+A[Client Applications] --&gt; B[Redis Instance]
+B --&gt; C[Disk Storage]
+
+style B fill:#ff9999
+style A fill:#99ccff
+style C fill:#99ff99
+</code>
+</pre>
+
+<h3 id="Configuration-Example"><a href="#Configuration-Example" class="headerlink" title="Configuration Example"></a>Configuration Example</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># redis.conf for standalone</span><br><span class="line">port 6379</span><br><span class="line">bind 127.0.0.1</span><br><span class="line">maxmemory 2gb</span><br><span class="line">maxmemory-policy allkeys-lru</span><br><span class="line">save 900 1</span><br><span class="line">save 300 10</span><br><span class="line">save 60 10000</span><br><span class="line">appendonly yes</span><br><span class="line">appendfsync everysec</span><br></pre></td></tr></table></figure>
+
+<h3 id="Best-Practices"><a href="#Best-Practices" class="headerlink" title="Best Practices"></a>Best Practices</h3><ol>
+<li><p><strong>Memory Management</strong></p>
+<ul>
+<li>Set <code>maxmemory</code> to 75% of available RAM</li>
+<li>Choose appropriate eviction policy based on use case</li>
+<li>Monitor memory fragmentation ratio</li>
+</ul>
+</li>
+<li><p><strong>Persistence Configuration</strong></p>
+<ul>
+<li>Use AOF for critical data (better durability)</li>
+<li>RDB for faster restarts and backups</li>
+<li>Consider hybrid persistence for optimal balance</li>
+</ul>
+</li>
+<li><p><strong>Security</strong></p>
+<ul>
+<li>Enable AUTH with strong passwords</li>
+<li>Use TLS for client connections</li>
+<li>Bind to specific interfaces, avoid 0.0.0.0</li>
+</ul>
+</li>
+</ol>
+<h3 id="Limitations-and-Use-Cases"><a href="#Limitations-and-Use-Cases" class="headerlink" title="Limitations and Use Cases"></a>Limitations and Use Cases</h3><p><strong>Limitations:</strong></p>
+<ul>
+<li>Single point of failure</li>
+<li>Limited by single machine resources</li>
+<li>No automatic failover</li>
+</ul>
+<p><strong>Optimal Use Cases:</strong></p>
+<ul>
+<li>Development and testing environments</li>
+<li>Applications with &lt; 25GB data (to avoid RDB performance impact)</li>
+<li>Non-critical applications where downtime is acceptable</li>
+<li>Cache-only scenarios with acceptable data loss</li>
+</ul>
+<p><strong>🎯 Interview Insight</strong>: <em>“When would you NOT use standalone Redis?”</em><br>Answer: When you need high availability (&gt;99.9% uptime), <strong>data sizes exceed 25GB</strong> (RDB operations impact performance), or when application criticality requires zero data loss guarantees.</p>
+<h3 id="RDB-Operation-Impact-Analysis"><a href="#RDB-Operation-Impact-Analysis" class="headerlink" title="RDB Operation Impact Analysis"></a>RDB Operation Impact Analysis</h3><p><strong>Critical Production Insight</strong>: The <strong>25GB threshold</strong> is where RDB operations start significantly impacting online business:</p>
+<pre>
+<code class="mermaid">
+graph LR
+A[BGSAVE Command] --&gt; B[&quot;fork() syscall&quot;]
+B --&gt; C[Copy-on-Write Memory]
+C --&gt; D[Memory Usage Spike]
+D --&gt; E[Potential OOM]
+
+F[Write Operations] --&gt; G[COW Page Copies]
+G --&gt; H[Increased Latency]
+H --&gt; I[Client Timeouts]
+
+style D fill:#ff9999
+style E fill:#ff6666
+style H fill:#ffcc99
+style I fill:#ff9999
+</code>
+</pre>
+
+<p><strong>Real-world Impact at 25GB+:</strong></p>
+<ul>
+<li><strong>Memory spike</strong>: Up to 2x memory usage during fork</li>
+<li><strong>Latency impact</strong>: P99 latencies can spike from 1ms to 100ms+</li>
+<li><strong>CPU impact</strong>: Fork operation can freeze Redis for 100ms-1s</li>
+<li><strong>I&#x2F;O saturation</strong>: Large RDB writes competing with normal operations</li>
+</ul>
+<p><strong>Mitigation Strategies:</strong></p>
+<ol>
+<li><strong>Disable automatic RDB</strong>: Use <code>save &quot;&quot;</code> and only manual BGSAVE during low traffic</li>
+<li><strong>AOF-only persistence</strong>: More predictable performance impact</li>
+<li><strong>Slave-based backups</strong>: Perform RDB operations on slave instances</li>
+<li><strong>Memory optimization</strong>: Use compression, optimize data structures</li>
+</ol>
+<h2 id="Redis-Replication-Master-Slave"><a href="#Redis-Replication-Master-Slave" class="headerlink" title="Redis Replication (Master-Slave)"></a>Redis Replication (Master-Slave)</h2><h3 id="Overview-1"><a href="#Overview-1" class="headerlink" title="Overview"></a>Overview</h3><p>Redis replication creates exact copies of the master instance on one or more slave instances. It provides read scalability and basic redundancy.</p>
+<h3 id="Architecture-1"><a href="#Architecture-1" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
+<code class="mermaid">
+graph TB
+A[Client - Writes] --&gt; B[Redis Master]
+C[Client - Reads] --&gt; D[Redis Slave 1]
+E[Client - Reads] --&gt; F[Redis Slave 2]
+
+B --&gt; D
+B --&gt; F
+
+B --&gt; G[Disk Storage Master]
+D --&gt; H[Disk Storage Slave 1]
+F --&gt; I[Disk Storage Slave 2]
+
+style B fill:#ff9999
+style D fill:#ffcc99
+style F fill:#ffcc99
+</code>
+</pre>
+
+<h3 id="Configuration"><a href="#Configuration" class="headerlink" title="Configuration"></a>Configuration</h3><p><strong>Master Configuration:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># master.conf</span><br><span class="line">port 6379</span><br><span class="line">bind 0.0.0.0</span><br><span class="line">requirepass masterpassword123</span><br><span class="line">masterauth slavepassword123</span><br></pre></td></tr></table></figure>
+
+<p><strong>Slave Configuration:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># slave.conf</span><br><span class="line">port 6380</span><br><span class="line">bind 0.0.0.0</span><br><span class="line">slaveof 192.168.1.100 6379</span><br><span class="line">masterauth masterpassword123</span><br><span class="line">requirepass slavepassword123</span><br><span class="line">slave-read-only yes</span><br></pre></td></tr></table></figure>
+
+<h3 id="Replication-Process-Flow"><a href="#Replication-Process-Flow" class="headerlink" title="Replication Process Flow"></a>Replication Process Flow</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant M as Master
+participant S as Slave
+participant C as Client
+
+Note over S: Initial Connection
+S-&gt;&gt;M: PSYNC replicationid offset
+M-&gt;&gt;S: +FULLRESYNC runid offset
+M-&gt;&gt;S: RDB snapshot
+Note over S: Load RDB data
+M-&gt;&gt;S: Replication backlog commands
+
+Note over M,S: Ongoing Replication
+C-&gt;&gt;M: SET key value
+M-&gt;&gt;S: SET key value
+C-&gt;&gt;S: GET key
+S-&gt;&gt;C: value
+</code>
+</pre>
+
+<h3 id="Best-Practices-1"><a href="#Best-Practices-1" class="headerlink" title="Best Practices"></a>Best Practices</h3><ol>
+<li><p><strong>Network Optimization</strong></p>
+<ul>
+<li>Use <code>repl-diskless-sync yes</code> for fast networks</li>
+<li>Configure <code>repl-backlog-size</code> based on network latency</li>
+<li>Monitor replication lag with <code>INFO replication</code></li>
+</ul>
+</li>
+<li><p><strong>Slave Configuration</strong></p>
+<ul>
+<li>Set <code>slave-read-only yes</code> to prevent accidental writes</li>
+<li>Use <code>slave-priority</code> for failover preferences</li>
+<li>Configure appropriate <code>slave-serve-stale-data</code> behavior</li>
+</ul>
+</li>
+<li><p><strong>Monitoring Key Metrics</strong></p>
+<ul>
+<li>Replication offset difference</li>
+<li>Last successful sync time</li>
+<li>Number of connected slaves</li>
+</ul>
+</li>
+</ol>
+<h3 id="Production-Showcase"><a href="#Production-Showcase" class="headerlink" title="Production Showcase"></a>Production Showcase</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Production deployment script for master-slave setup</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Start master</span></span><br><span class="line">redis-server /etc/redis/master.conf --daemonize <span class="built_in">yes</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Wait for master to be ready</span></span><br><span class="line">redis-cli ping</span><br><span class="line"></span><br><span class="line"><span class="comment"># Start slaves</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..2&#125;; <span class="keyword">do</span></span><br><span class="line">    redis-server /etc/redis/slave<span class="variable">$&#123;i&#125;</span>.conf --daemonize <span class="built_in">yes</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Verify replication</span></span><br><span class="line">redis-cli -p 6379 INFO replication</span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Question</strong>: <em>“How do you handle slave promotion in a master-slave setup?”</em></p>
+<p><strong>Answer</strong>: Manual promotion involves:</p>
+<ol>
+<li>Stop writes to current master</li>
+<li>Ensure slave is caught up (<code>LASTSAVE</code> comparison)</li>
+<li>Execute <code>SLAVEOF NO ONE</code> on chosen slave</li>
+<li>Update application configuration to point to new master</li>
+<li>Configure other slaves to replicate from new master</li>
+</ol>
+<p><strong>Limitation</strong>: No automatic failover - requires manual intervention or external tooling.</p>
+<h2 id="Redis-Sentinel"><a href="#Redis-Sentinel" class="headerlink" title="Redis Sentinel"></a>Redis Sentinel</h2><h3 id="Overview-2"><a href="#Overview-2" class="headerlink" title="Overview"></a>Overview</h3><p>Redis Sentinel provides high availability for Redis through automatic failover, monitoring, and configuration management. It’s the recommended solution for automatic failover in non-clustered environments.</p>
+<h3 id="Architecture-2"><a href="#Architecture-2" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Redis Instances&quot;
+    M[Redis Master]
+    S1[Redis Slave 1]
+    S2[Redis Slave 2]
+end
+
+subgraph &quot;Sentinel Cluster&quot;
+    SE1[Sentinel 1]
+    SE2[Sentinel 2]
+    SE3[Sentinel 3]
+end
+
+subgraph &quot;Applications&quot;
+    A1[App Instance 1]
+    A2[App Instance 2]
+end
+
+M --&gt; S1
+M --&gt; S2
+
+SE1 -.-&gt; M
+SE1 -.-&gt; S1
+SE1 -.-&gt; S2
+SE2 -.-&gt; M
+SE2 -.-&gt; S1
+SE2 -.-&gt; S2
+SE3 -.-&gt; M
+SE3 -.-&gt; S1
+SE3 -.-&gt; S2
+
+A1 --&gt; SE1
+A2 --&gt; SE2
+
+style M fill:#ff9999
+style S1 fill:#ffcc99
+style S2 fill:#ffcc99
+style SE1 fill:#99ccff
+style SE2 fill:#99ccff
+style SE3 fill:#99ccff
+</code>
+</pre>
+
+<h3 id="Sentinel-Configuration"><a href="#Sentinel-Configuration" class="headerlink" title="Sentinel Configuration"></a>Sentinel Configuration</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># sentinel.conf</span><br><span class="line">port 26379</span><br><span class="line">bind 0.0.0.0</span><br><span class="line"></span><br><span class="line"># Monitor master named &quot;mymaster&quot;</span><br><span class="line">sentinel monitor mymaster 192.168.1.100 6379 2</span><br><span class="line">sentinel auth-pass mymaster masterpassword123</span><br><span class="line"></span><br><span class="line"># Failover configuration</span><br><span class="line">sentinel down-after-milliseconds mymaster 5000</span><br><span class="line">sentinel failover-timeout mymaster 10000</span><br><span class="line">sentinel parallel-syncs mymaster 1</span><br><span class="line"></span><br><span class="line"># Notification scripts</span><br><span class="line">sentinel notification-script mymaster /path/to/notify.sh</span><br><span class="line">sentinel client-reconfig-script mymaster /path/to/reconfig.sh</span><br></pre></td></tr></table></figure>
+
+<h3 id="Failover-Process"><a href="#Failover-Process" class="headerlink" title="Failover Process"></a>Failover Process</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant S1 as Sentinel 1
+participant S2 as Sentinel 2
+participant S3 as Sentinel 3
+participant M as Master
+participant SL as Slave
+participant A as Application
+
+Note over S1,S3: Normal Monitoring
+S1-&gt;&gt;M: PING
+M--xS1: No Response
+S1-&gt;&gt;S2: Master seems down
+S1-&gt;&gt;S3: Master seems down
+
+Note over S1,S3: Quorum Check
+S2-&gt;&gt;M: PING
+M--xS2: No Response
+S3-&gt;&gt;M: PING
+M--xS3: No Response
+
+Note over S1,S3: Failover Decision
+S1-&gt;&gt;S2: Start failover?
+S2-&gt;&gt;S1: Agreed
+S1-&gt;&gt;SL: SLAVEOF NO ONE
+S1-&gt;&gt;A: New master notification
+</code>
+</pre>
+
+<h3 id="Best-Practices-2"><a href="#Best-Practices-2" class="headerlink" title="Best Practices"></a>Best Practices</h3><ol>
+<li><p><strong>Quorum Configuration</strong></p>
+<ul>
+<li>Use odd number of sentinels (3, 5, 7)</li>
+<li>Set quorum to majority (e.g., 2 for 3 sentinels)</li>
+<li>Deploy sentinels across different failure domains</li>
+</ul>
+</li>
+<li><p><strong>Timing Parameters</strong></p>
+<ul>
+<li><code>down-after-milliseconds</code>: 5-30 seconds based on network conditions</li>
+<li><code>failover-timeout</code>: 2-3x down-after-milliseconds</li>
+<li><code>parallel-syncs</code>: Usually 1 to avoid overwhelming new master</li>
+</ul>
+</li>
+<li><p><strong>Client Integration</strong></p>
+</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis.sentinel</span><br><span class="line"></span><br><span class="line"><span class="comment"># Python client example</span></span><br><span class="line">sentinels = [(<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26379</span>), (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26380</span>), (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">26381</span>)]</span><br><span class="line">sentinel = redis.sentinel.Sentinel(sentinels, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Discover master</span></span><br><span class="line">master = sentinel.master_for(<span class="string">&#x27;mymaster&#x27;</span>, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line">slave = sentinel.slave_for(<span class="string">&#x27;mymaster&#x27;</span>, socket_timeout=<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use connections</span></span><br><span class="line">master.<span class="built_in">set</span>(<span class="string">&#x27;key&#x27;</span>, <span class="string">&#x27;value&#x27;</span>)</span><br><span class="line">value = slave.get(<span class="string">&#x27;key&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Production-Monitoring-Script"><a href="#Production-Monitoring-Script" class="headerlink" title="Production Monitoring Script"></a>Production Monitoring Script</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Sentinel health check script</span></span><br><span class="line"></span><br><span class="line">SENTINEL_PORT=26379</span><br><span class="line">MASTER_NAME=<span class="string">&quot;mymaster&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check sentinel status</span></span><br><span class="line"><span class="keyword">for</span> port <span class="keyword">in</span> 26379 26380 26381; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Checking Sentinel on port <span class="variable">$port</span>&quot;</span></span><br><span class="line">    redis-cli -p <span class="variable">$port</span> SENTINEL masters | grep -A 20 <span class="variable">$MASTER_NAME</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;---&quot;</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Check master discovery</span></span><br><span class="line">redis-cli -p <span class="variable">$SENTINEL_PORT</span> SENTINEL get-master-addr-by-name <span class="variable">$MASTER_NAME</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Question</strong>: <em>“How does Redis Sentinel handle split-brain scenarios?”</em></p>
+<p><strong>Answer</strong>: Sentinel prevents split-brain through:</p>
+<ol>
+<li><strong>Quorum requirement</strong>: Only majority can initiate failover</li>
+<li><strong>Epoch mechanism</strong>: Each failover gets unique epoch number</li>
+<li><strong>Leader election</strong>: Only one sentinel leads failover process</li>
+<li><strong>Configuration propagation</strong>: All sentinels must agree on new configuration</li>
+</ol>
+<p><strong>Key Point</strong>: Even if network partitions occur, only the partition with quorum majority can perform failover, preventing multiple masters.</p>
+<h2 id="Redis-Cluster"><a href="#Redis-Cluster" class="headerlink" title="Redis Cluster"></a>Redis Cluster</h2><h3 id="Overview-3"><a href="#Overview-3" class="headerlink" title="Overview"></a>Overview</h3><p>Redis Cluster provides horizontal scaling and high availability through data sharding across multiple nodes. It’s designed for applications requiring both high performance and large data sets.</p>
+<h3 id="Architecture-3"><a href="#Architecture-3" class="headerlink" title="Architecture"></a>Architecture</h3><pre>
+<code class="mermaid">
+graph TB
+subgraph &quot;Redis Cluster&quot;
+    subgraph &quot;Shard 1&quot;
+        M1[Master 1&lt;br&#x2F;&gt;Slots 0-5460]
+        S1[Slave 1]
+    end
+    
+    subgraph &quot;Shard 2&quot;
+        M2[Master 2&lt;br&#x2F;&gt;Slots 5461-10922]
+        S2[Slave 2]
+    end
+    
+    subgraph &quot;Shard 3&quot;
+        M3[Master 3&lt;br&#x2F;&gt;Slots 10923-16383]
+        S3[Slave 3]
+    end
+end
+
+M1 --&gt; S1
+M2 --&gt; S2
+M3 --&gt; S3
+
+M1 -.-&gt; M2
+M1 -.-&gt; M3
+M2 -.-&gt; M3
+
+A[Application] --&gt; M1
+A --&gt; M2
+A --&gt; M3
+
+style M1 fill:#ff9999
+style M2 fill:#ff9999
+style M3 fill:#ff9999
+style S1 fill:#ffcc99
+style S2 fill:#ffcc99
+style S3 fill:#ffcc99
+</code>
+</pre>
+
+<h3 id="Hash-Slot-Distribution"><a href="#Hash-Slot-Distribution" class="headerlink" title="Hash Slot Distribution"></a>Hash Slot Distribution</h3><p>Redis Cluster uses consistent hashing with 16,384 slots:</p>
+<pre>
+<code class="mermaid">
+graph LR
+A[Key] --&gt; B[CRC16]
+B --&gt; C[% 16384]
+C --&gt; D[Hash Slot]
+D --&gt; E[Node Assignment]
+
+F[Example: user:1000] --&gt; G[CRC16 &#x3D; 31949]
+G --&gt; H[31949 % 16384 &#x3D; 15565]
+H --&gt; I[Slot 15565 → Node 3]
+</code>
+</pre>
+
+<h3 id="Cluster-Configuration"><a href="#Cluster-Configuration" class="headerlink" title="Cluster Configuration"></a>Cluster Configuration</h3><p><strong>Node Configuration:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># cluster-node.conf</span><br><span class="line">port 7000</span><br><span class="line">cluster-enabled yes</span><br><span class="line">cluster-config-file nodes-7000.conf</span><br><span class="line">cluster-node-timeout 5000</span><br><span class="line">appendonly yes</span><br></pre></td></tr></table></figure>
+
+<p><strong>Cluster Setup Script:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Create 6-node cluster (3 masters, 3 slaves)</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Start nodes</span></span><br><span class="line"><span class="keyword">for</span> port <span class="keyword">in</span> 7000 7001 7002 7003 7004 7005; <span class="keyword">do</span></span><br><span class="line">    redis-server --port <span class="variable">$port</span> --cluster-enabled <span class="built_in">yes</span> \</span><br><span class="line">                 --cluster-config-file nodes-<span class="variable">$&#123;port&#125;</span>.conf \</span><br><span class="line">                 --cluster-node-timeout 5000 \</span><br><span class="line">                 --appendonly <span class="built_in">yes</span> --daemonize <span class="built_in">yes</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Create cluster</span></span><br><span class="line">redis-cli --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \</span><br><span class="line">                           127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 \</span><br><span class="line">                           --cluster-replicas 1</span><br></pre></td></tr></table></figure>
+
+<h3 id="Data-Distribution-and-Client-Routing"><a href="#Data-Distribution-and-Client-Routing" class="headerlink" title="Data Distribution and Client Routing"></a>Data Distribution and Client Routing</h3><pre>
+<code class="mermaid">
+sequenceDiagram
+participant C as Client
+participant N1 as Node 1
+participant N2 as Node 2
+participant N3 as Node 3
+
+C-&gt;&gt;N1: GET user:1000
+Note over N1: Check slot ownership
+alt Key belongs to N1
+    N1-&gt;&gt;C: value
+else Key belongs to N2
+    N1-&gt;&gt;C: MOVED 15565 192.168.1.102:7001
+    C-&gt;&gt;N2: GET user:1000
+    N2-&gt;&gt;C: value
+end
+</code>
+</pre>
+
+<h3 id="Advanced-Operations"><a href="#Advanced-Operations" class="headerlink" title="Advanced Operations"></a>Advanced Operations</h3><p><strong>Resharding Example:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Move 1000 slots from node 1 to node 4</span></span><br><span class="line">redis-cli --cluster reshard 127.0.0.1:7000 \</span><br><span class="line">          --cluster-from 1a2b3c4d... \</span><br><span class="line">          --cluster-to 5e6f7g8h... \</span><br><span class="line">          --cluster-slots 1000</span><br></pre></td></tr></table></figure>
+
+<p><strong>Adding New Nodes:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Add new master</span></span><br><span class="line">redis-cli --cluster add-node 127.0.0.1:7006 127.0.0.1:7000</span><br><span class="line"></span><br><span class="line"><span class="comment"># Add new slave</span></span><br><span class="line">redis-cli --cluster add-node 127.0.0.1:7007 127.0.0.1:7000 --cluster-slave</span><br></pre></td></tr></table></figure>
+
+<h3 id="Client-Implementation-Best-Practices"><a href="#Client-Implementation-Best-Practices" class="headerlink" title="Client Implementation Best Practices"></a>Client Implementation Best Practices</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> redis.cluster</span><br><span class="line"></span><br><span class="line"><span class="comment"># Python cluster client</span></span><br><span class="line">startup_nodes = [</span><br><span class="line">    &#123;<span class="string">&quot;host&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;port&quot;</span>: <span class="string">&quot;7000&quot;</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;host&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;port&quot;</span>: <span class="string">&quot;7001&quot;</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;host&quot;</span>: <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;port&quot;</span>: <span class="string">&quot;7002&quot;</span>&#125;</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">cluster = redis.cluster.RedisCluster(</span><br><span class="line">    startup_nodes=startup_nodes,</span><br><span class="line">    decode_responses=<span class="literal">True</span>,</span><br><span class="line">    skip_full_coverage_check=<span class="literal">True</span>,</span><br><span class="line">    health_check_interval=<span class="number">30</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Hash tags for multi-key operations</span></span><br><span class="line">cluster.mset(&#123;</span><br><span class="line">    <span class="string">&quot;user:&#123;1000&#125;:name&quot;</span>: <span class="string">&quot;Alice&quot;</span>,</span><br><span class="line">    <span class="string">&quot;user:&#123;1000&#125;:email&quot;</span>: <span class="string">&quot;alice@example.com&quot;</span>,</span><br><span class="line">    <span class="string">&quot;user:&#123;1000&#125;:age&quot;</span>: <span class="string">&quot;30&quot;</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Limitations-and-Considerations"><a href="#Limitations-and-Considerations" class="headerlink" title="Limitations and Considerations"></a>Limitations and Considerations</h3><ol>
+<li><strong>Multi-key Operations</strong>: Limited to same hash slot</li>
+<li><strong>Lua Scripts</strong>: All keys must be in same slot</li>
+<li><strong>Database Selection</strong>: Only database 0 supported</li>
+<li><strong>Client Complexity</strong>: Requires cluster-aware clients</li>
+</ol>
+<p><strong>🎯 Interview Question</strong>: <em>“How do you handle hotspot keys in Redis Cluster?”</em></p>
+<p><strong>Answer Strategies</strong>:</p>
+<ol>
+<li><strong>Hash tags</strong>: Distribute related hot keys across slots</li>
+<li><strong>Client-side caching</strong>: Cache frequently accessed data</li>
+<li><strong>Read replicas</strong>: Use slave nodes for read operations</li>
+<li><strong>Application-level sharding</strong>: Pre-shard at application layer</li>
+<li><strong>Monitoring</strong>: Use <code>redis-cli --hotkeys</code> to identify patterns</li>
+</ol>
+<h2 id="Deployment-Architecture-Comparison"><a href="#Deployment-Architecture-Comparison" class="headerlink" title="Deployment Architecture Comparison"></a>Deployment Architecture Comparison</h2><h3 id="Feature-Matrix"><a href="#Feature-Matrix" class="headerlink" title="Feature Matrix"></a>Feature Matrix</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Standalone</th>
+<th>Replication</th>
+<th>Sentinel</th>
+<th>Cluster</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>High Availability</strong></td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Automatic Failover</strong></td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Horizontal Scaling</strong></td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Read Scaling</strong></td>
+<td>❌</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Operational Complexity</strong></td>
+<td>Low</td>
+<td>Low</td>
+<td>Medium</td>
+<td>High</td>
+</tr>
+<tr>
+<td><strong>Multi-key Operations</strong></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>Limited</td>
+</tr>
+<tr>
+<td><strong>Max Data Size</strong></td>
+<td>Single Node</td>
+<td>Single Node</td>
+<td>Single Node</td>
+<td>Multi-Node</td>
+</tr>
+</tbody></table>
+<h3 id="Decision-Flow-Chart"><a href="#Decision-Flow-Chart" class="headerlink" title="Decision Flow Chart"></a>Decision Flow Chart</h3><pre>
+<code class="mermaid">
+flowchart TD
+A[Start: Redis Deployment Decision] --&gt; B{Data Size &gt; 25GB?}
+B --&gt;|Yes| C{Can tolerate RDB impact?}
+C --&gt;|No| D[Consider Redis Cluster]
+C --&gt;|Yes| E{High Availability Required?}
+B --&gt;|No| E
+E --&gt;|No| F{Read Scaling Needed?}
+F --&gt;|Yes| G[Master-Slave Replication]
+F --&gt;|No| H[Standalone Redis]
+E --&gt;|Yes| I{Automatic Failover Needed?}
+I --&gt;|Yes| J[Redis Sentinel]
+I --&gt;|No| G
+
+style D fill:#ff6b6b
+style J fill:#4ecdc4
+style G fill:#45b7d1
+style H fill:#96ceb4
+</code>
+</pre>
+
+<h2 id="Production-Considerations"><a href="#Production-Considerations" class="headerlink" title="Production Considerations"></a>Production Considerations</h2><h3 id="Hardware-Sizing-Guidelines"><a href="#Hardware-Sizing-Guidelines" class="headerlink" title="Hardware Sizing Guidelines"></a>Hardware Sizing Guidelines</h3><p><strong>CPU Requirements:</strong></p>
+<ul>
+<li>Standalone&#x2F;Replication: 2-4 cores</li>
+<li>Sentinel: 1-2 cores per sentinel</li>
+<li>Cluster: 4-8 cores per node</li>
+</ul>
+<p><strong>Memory Guidelines:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Total RAM = (Dataset Size × 1.5) + OS overhead</span><br><span class="line">Example: 100GB dataset = 150GB + 16GB = 166GB total RAM</span><br></pre></td></tr></table></figure>
+
+<p><strong>Network Considerations:</strong></p>
+<ul>
+<li>Replication: 1Gbps minimum for large datasets</li>
+<li>Cluster: Low latency (&lt;1ms) between nodes</li>
+<li>Client connections: Plan for connection pooling</li>
+</ul>
+<h3 id="Security-Best-Practices"><a href="#Security-Best-Practices" class="headerlink" title="Security Best Practices"></a>Security Best Practices</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># Production security configuration</span><br><span class="line">bind 127.0.0.1 10.0.0.0/8</span><br><span class="line">protected-mode yes</span><br><span class="line">requirepass your-secure-password-here</span><br><span class="line">rename-command FLUSHDB &quot;&quot;</span><br><span class="line">rename-command FLUSHALL &quot;&quot;</span><br><span class="line">rename-command CONFIG &quot;CONFIG_b9f8e7a6d2c1&quot;</span><br><span class="line"></span><br><span class="line"># TLS configuration</span><br><span class="line">tls-port 6380</span><br><span class="line">tls-cert-file /path/to/redis.crt</span><br><span class="line">tls-key-file /path/to/redis.key</span><br><span class="line">tls-ca-cert-file /path/to/ca.crt</span><br></pre></td></tr></table></figure>
+
+<h3 id="Backup-and-Recovery-Strategy"><a href="#Backup-and-Recovery-Strategy" class="headerlink" title="Backup and Recovery Strategy"></a>Backup and Recovery Strategy</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Comprehensive backup script</span></span><br><span class="line"></span><br><span class="line">REDIS_HOST=<span class="string">&quot;localhost&quot;</span></span><br><span class="line">REDIS_PORT=<span class="string">&quot;6379&quot;</span></span><br><span class="line">BACKUP_DIR=<span class="string">&quot;/var/backups/redis&quot;</span></span><br><span class="line">DATE=$(<span class="built_in">date</span> +%Y%m%d_%H%M%S)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create RDB backup</span></span><br><span class="line">redis-cli -h <span class="variable">$REDIS_HOST</span> -p <span class="variable">$REDIS_PORT</span> BGSAVE</span><br><span class="line"><span class="built_in">sleep</span> 5</span><br><span class="line"></span><br><span class="line"><span class="comment"># Wait for background save to complete</span></span><br><span class="line"><span class="keyword">while</span> [ $(redis-cli -h <span class="variable">$REDIS_HOST</span> -p <span class="variable">$REDIS_PORT</span> LASTSAVE) -eq <span class="variable">$LASTSAVE</span> ]; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 1</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy files</span></span><br><span class="line"><span class="built_in">cp</span> /var/lib/redis/dump.rdb <span class="variable">$BACKUP_DIR</span>/dump_<span class="variable">$DATE</span>.rdb</span><br><span class="line"><span class="built_in">cp</span> /var/lib/redis/appendonly.aof <span class="variable">$BACKUP_DIR</span>/aof_<span class="variable">$DATE</span>.aof</span><br><span class="line"></span><br><span class="line"><span class="comment"># Compress and upload to S3</span></span><br><span class="line">tar -czf <span class="variable">$BACKUP_DIR</span>/redis_backup_<span class="variable">$DATE</span>.tar.gz <span class="variable">$BACKUP_DIR</span>/*_<span class="variable">$DATE</span>.*</span><br><span class="line">aws s3 <span class="built_in">cp</span> <span class="variable">$BACKUP_DIR</span>/redis_backup_<span class="variable">$DATE</span>.tar.gz s3://redis-backups/</span><br></pre></td></tr></table></figure>
+
+<h2 id="Monitoring-and-Operations"><a href="#Monitoring-and-Operations" class="headerlink" title="Monitoring and Operations"></a>Monitoring and Operations</h2><h3 id="Key-Performance-Metrics"><a href="#Key-Performance-Metrics" class="headerlink" title="Key Performance Metrics"></a>Key Performance Metrics</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># Redis monitoring script</span></span><br><span class="line"></span><br><span class="line">redis-cli INFO all | grep -E <span class="string">&quot;(used_memory_human|connected_clients|total_commands_processed|keyspace_hits|keyspace_misses|role|master_repl_offset)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Cluster-specific monitoring</span></span><br><span class="line"><span class="keyword">if</span> redis-cli CLUSTER NODES &amp;&gt;/dev/null; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;=== Cluster Status ===&quot;</span></span><br><span class="line">    redis-cli CLUSTER NODES</span><br><span class="line">    redis-cli CLUSTER INFO</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Alerting-Thresholds"><a href="#Alerting-Thresholds" class="headerlink" title="Alerting Thresholds"></a>Alerting Thresholds</h3><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Warning</th>
+<th>Critical</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Memory Usage</strong></td>
+<td>&gt;80%</td>
+<td>&gt;90%</td>
+</tr>
+<tr>
+<td><strong>Hit Ratio</strong></td>
+<td>&lt;90%</td>
+<td>&lt;80%</td>
+</tr>
+<tr>
+<td><strong>Connected Clients</strong></td>
+<td>&gt;80% max</td>
+<td>&gt;95% max</td>
+</tr>
+<tr>
+<td><strong>Replication Lag</strong></td>
+<td>&gt;10s</td>
+<td>&gt;30s</td>
+</tr>
+<tr>
+<td><strong>Cluster State</strong></td>
+<td>degraded</td>
+<td>fail</td>
+</tr>
+</tbody></table>
+<h3 id="Troubleshooting-Common-Issues"><a href="#Troubleshooting-Common-Issues" class="headerlink" title="Troubleshooting Common Issues"></a>Troubleshooting Common Issues</h3><p><strong>Memory Fragmentation:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Check fragmentation ratio</span></span><br><span class="line">redis-cli INFO memory | grep mem_fragmentation_ratio</span><br><span class="line"></span><br><span class="line"><span class="comment"># If ratio &gt; 1.5, consider:</span></span><br><span class="line"><span class="comment"># 1. Restart Redis during maintenance window</span></span><br><span class="line"><span class="comment"># 2. Enable active defragmentation</span></span><br><span class="line">CONFIG SET activedefrag <span class="built_in">yes</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Slow Queries:</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Enable slow log</span></span><br><span class="line">CONFIG SET slowlog-log-slower-than 10000</span><br><span class="line">CONFIG SET slowlog-max-len 128</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check slow queries</span></span><br><span class="line">SLOWLOG GET 10</span><br></pre></td></tr></table></figure>
+
+<p><strong>🎯 Interview Question</strong>: <em>“How do you handle Redis memory pressure in production?”</em></p>
+<p><strong>Comprehensive Answer</strong>:</p>
+<ol>
+<li><strong>Immediate actions</strong>: Check <code>maxmemory-policy</code>, verify no memory leaks</li>
+<li><strong>Short-term</strong>: Scale vertically, optimize data structures, enable compression</li>
+<li><strong>Long-term</strong>: Implement data archiving, consider clustering, optimize application usage patterns</li>
+<li><strong>Monitoring</strong>: Set up alerts for memory usage, track key expiration patterns</li>
+</ol>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Choosing the right Redis deployment mode depends on your specific requirements for availability, scalability, and operational complexity. Start simple with standalone or replication for smaller applications, progress to Sentinel for high availability needs, and adopt Cluster for large-scale, horizontally distributed systems.</p>
+<p><strong>Final Interview Insight</strong>: The key to Redis success in production is not just choosing the right deployment mode, but also implementing proper monitoring, backup strategies, and operational procedures. Always plan for failure scenarios and test your disaster recovery procedures regularly.</p>
+<p>Remember: <strong>“The best Redis deployment is the simplest one that meets your requirements.”</strong></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -4216,538 +4843,6 @@ end
 <figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Production-ready storage configuration</span></span><br><span class="line"><span class="attr">log.dirs</span>=<span class="string">/var/kafka-logs-1,/var/kafka-logs-2</span></span><br><span class="line"><span class="attr">log.segment.bytes</span>=<span class="string">536870912          # 512MB</span></span><br><span class="line"><span class="attr">log.retention.hours</span>=<span class="string">168              # 1 week</span></span><br><span class="line"><span class="attr">log.retention.check.interval.ms</span>=<span class="string">300000</span></span><br><span class="line"><span class="attr">log.cleanup.policy</span>=<span class="string">delete</span></span><br><span class="line"><span class="attr">min.insync.replicas</span>=<span class="string">2</span></span><br><span class="line"><span class="attr">unclean.leader.election.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="attr">auto.create.topics.enable</span>=<span class="string">false</span></span><br></pre></td></tr></table></figure>
 
 <p>This comprehensive guide provides the foundation for understanding Kafka’s storage architecture while preparing you for both operational challenges and technical interviews. The key is to understand not just the “what” but the “why” behind each design decision.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/09/MySQL-Performance-Optimization-Complete-Guide/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Charlie Feng">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charlie Feng's Tech Space">
-      <meta itemprop="description" content="This place is for thinking and sharing.">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/06/09/MySQL-Performance-Optimization-Complete-Guide/" class="post-title-link" itemprop="url">MySQL Performance Optimization: Complete Guide</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-      
-
-      <time title="Created: 2025-06-09 15:31:30 / Modified: 16:12:42" itemprop="dateCreated datePublished" datetime="2025-06-09T15:31:30+08:00">2025-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">In</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="MySQL-Query-Execution-Architecture"><a href="#MySQL-Query-Execution-Architecture" class="headerlink" title="MySQL Query Execution Architecture"></a>MySQL Query Execution Architecture</h2><p>Understanding MySQL’s internal architecture is crucial for optimization. Here’s how MySQL processes queries:</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[SQL Query] --&gt; B[Connection Layer]
-B --&gt; C[Parser]
-C --&gt; D[Optimizer]
-D --&gt; E[Execution Engine]
-E --&gt; F[Storage Engine]
-F --&gt; G[Physical Data]
-
-D --&gt; H[Query Plan Cache]
-H --&gt; E
-
-subgraph &quot;Query Optimizer&quot;
-    D1[Cost-Based Optimization]
-    D2[Statistics Analysis]
-    D3[Index Selection]
-    D4[Join Order]
-end
-
-D --&gt; D1
-D --&gt; D2
-D --&gt; D3
-D --&gt; D4
-</code>
-</pre>
-
-<h3 id="Key-Components-and-Performance-Impact"><a href="#Key-Components-and-Performance-Impact" class="headerlink" title="Key Components and Performance Impact"></a>Key Components and Performance Impact</h3><p><strong>Connection Layer</strong>: Manages client connections and authentication</p>
-<ul>
-<li><strong>Optimization</strong>: Use connection pooling to reduce overhead</li>
-<li><strong>Interview Question</strong>: <em>“How would you handle connection pool exhaustion?”</em> <ul>
-<li><strong>Answer</strong>: Implement proper connection limits, timeouts, and monitoring. Use connection pooling middleware like ProxySQL or application-level pools.</li>
-</ul>
-</li>
-</ul>
-<p><strong>Parser &amp; Optimizer</strong>: Creates execution plans</p>
-<ul>
-<li><strong>Critical Point</strong>: The optimizer’s cost-based decisions directly impact query performance</li>
-<li><strong>Interview Insight</strong>: <em>“What factors influence MySQL’s query execution plan?”</em><ul>
-<li>Table statistics, index cardinality, join order, and available indexes</li>
-<li>Use <code>ANALYZE TABLE</code> to update statistics regularly</li>
-</ul>
-</li>
-</ul>
-<p><strong>Storage Engine Layer</strong>:</p>
-<ul>
-<li><strong>InnoDB</strong>: Row-level locking, ACID compliance, better for concurrent writes</li>
-<li><strong>MyISAM</strong>: Table-level locking, faster for read-heavy workloads</li>
-<li><strong>Interview Question</strong>: <em>“When would you choose MyISAM over InnoDB?”</em><ul>
-<li><strong>Answer</strong>: Rarely in modern applications. Only for read-only data warehouses or when storage space is extremely limited.</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h2 id="Index-Optimization-Strategy"><a href="#Index-Optimization-Strategy" class="headerlink" title="Index Optimization Strategy"></a>Index Optimization Strategy</h2><p>Indexes are the foundation of MySQL performance. Understanding when and how to use them is essential.</p>
-<h3 id="Index-Types-and-Use-Cases"><a href="#Index-Types-and-Use-Cases" class="headerlink" title="Index Types and Use Cases"></a>Index Types and Use Cases</h3><pre>
-<code class="mermaid">
-flowchart LR
-A[Index Types] --&gt; B[B-Tree Index]
-A --&gt; C[Hash Index]
-A --&gt; D[Full-Text Index]
-A --&gt; E[Spatial Index]
-
-B --&gt; B1[Primary Key]
-B --&gt; B2[Unique Index]
-B --&gt; B3[Composite Index]
-B --&gt; B4[Covering Index]
-
-B1 --&gt; B1a[Clustered Storage]
-B3 --&gt; B3a[Left-Most Prefix Rule]
-B4 --&gt; B4a[Index-Only Scans]
-</code>
-</pre>
-
-<h3 id="Composite-Index-Design-Strategy"><a href="#Composite-Index-Design-Strategy" class="headerlink" title="Composite Index Design Strategy"></a>Composite Index Design Strategy</h3><p><strong>Interview Question</strong>: <em>“Why is column order important in composite indexes?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- WRONG: Separate indexes</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_user_id <span class="keyword">ON</span> orders (user_id);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_status <span class="keyword">ON</span> orders (status);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_date <span class="keyword">ON</span> orders (order_date);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- RIGHT: Composite index following cardinality rules</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_orders_composite <span class="keyword">ON</span> orders (status, user_id, order_date);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Query that benefits from the composite index</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders </span><br><span class="line"><span class="keyword">WHERE</span> status <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span> </span><br><span class="line">  <span class="keyword">AND</span> user_id <span class="operator">=</span> <span class="number">12345</span> </span><br><span class="line">  <span class="keyword">AND</span> order_date <span class="operator">&gt;=</span> <span class="string">&#x27;2024-01-01&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: MySQL uses the left-most prefix rule. The above index can serve queries filtering on:</p>
-<ul>
-<li><code>status</code> only</li>
-<li><code>status + user_id</code></li>
-<li><code>status + user_id + order_date</code></li>
-<li>But NOT <code>user_id</code> only or <code>order_date</code> only</li>
-</ul>
-<p><strong>Best Practice</strong>: Order columns by selectivity (most selective first) and query patterns.</p>
-<h3 id="Covering-Index-Optimization"><a href="#Covering-Index-Optimization" class="headerlink" title="Covering Index Optimization"></a>Covering Index Optimization</h3><p><strong>Interview Insight</strong>: <em>“How do covering indexes improve performance?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Original query requiring table lookup</span></span><br><span class="line"><span class="keyword">SELECT</span> user_id, order_date, total_amount </span><br><span class="line"><span class="keyword">FROM</span> orders </span><br><span class="line"><span class="keyword">WHERE</span> status <span class="operator">=</span> <span class="string">&#x27;completed&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Covering index eliminates table lookup</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_covering <span class="keyword">ON</span> orders (status, user_id, order_date, total_amount);</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Covering indexes eliminate the need for table lookups by including all required columns in the index itself, reducing I&#x2F;O by 70-90% for read-heavy workloads.</p>
-<h3 id="Index-Maintenance-Considerations"><a href="#Index-Maintenance-Considerations" class="headerlink" title="Index Maintenance Considerations"></a>Index Maintenance Considerations</h3><p><strong>Interview Question</strong>: <em>“How do you identify unused indexes?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Find unused indexes</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    OBJECT_SCHEMA <span class="keyword">as</span> db_name,</span><br><span class="line">    OBJECT_NAME <span class="keyword">as</span> table_name,</span><br><span class="line">    INDEX_NAME <span class="keyword">as</span> index_name</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.table_io_waits_summary_by_index_usage </span><br><span class="line"><span class="keyword">WHERE</span> INDEX_NAME <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> </span><br><span class="line">  <span class="keyword">AND</span> COUNT_STAR <span class="operator">=</span> <span class="number">0</span> </span><br><span class="line">  <span class="keyword">AND</span> OBJECT_SCHEMA <span class="keyword">NOT</span> <span class="keyword">IN</span> (<span class="string">&#x27;mysql&#x27;</span>, <span class="string">&#x27;performance_schema&#x27;</span>, <span class="string">&#x27;information_schema&#x27;</span>);</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Use Performance Schema to monitor index usage patterns and remove unused indexes that consume storage and slow down DML operations.</p>
-<hr>
-<h2 id="Query-Optimization-Techniques"><a href="#Query-Optimization-Techniques" class="headerlink" title="Query Optimization Techniques"></a>Query Optimization Techniques</h2><h3 id="Join-Optimization-Hierarchy"><a href="#Join-Optimization-Hierarchy" class="headerlink" title="Join Optimization Hierarchy"></a>Join Optimization Hierarchy</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[Join Types by Performance] --&gt; B[Nested Loop Join]
-A --&gt; C[Block Nested Loop Join]
-A --&gt; D[Hash Join MySQL 8.0+]
-A --&gt; E[Index Nested Loop Join]
-
-B --&gt; B1[O（n*m） - Worst Case]
-C --&gt; C1[Better for Large Tables]
-D --&gt; D1[Best for Equi-joins]
-E --&gt; E1[Optimal with Proper Indexes]
-
-style E fill:#90EE90
-style B fill:#FFB6C1
-</code>
-</pre>
-
-<p><strong>Interview Question</strong>: <em>“How does MySQL choose join algorithms?”</em></p>
-<p><strong>Answer</strong>: MySQL’s optimizer considers:</p>
-<ul>
-<li>Table sizes and cardinality</li>
-<li>Available indexes on join columns</li>
-<li>Memory available for join buffers</li>
-<li>MySQL 8.0+ includes hash joins for better performance on large datasets</li>
-</ul>
-<h3 id="Subquery-vs-JOIN-Performance"><a href="#Subquery-vs-JOIN-Performance" class="headerlink" title="Subquery vs JOIN Performance"></a>Subquery vs JOIN Performance</h3><p><strong>Interview Insight</strong>: <em>“When would you use EXISTS vs JOIN?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- SLOW: Correlated subquery</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> users u</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">EXISTS</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> orders o </span><br><span class="line">    <span class="keyword">WHERE</span> o.user_id <span class="operator">=</span> u.id </span><br><span class="line">      <span class="keyword">AND</span> o.status <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- FAST: JOIN with proper indexing</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span> u.<span class="operator">*</span> <span class="keyword">FROM</span> users u</span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> orders o <span class="keyword">ON</span> u.id <span class="operator">=</span> o.user_id</span><br><span class="line"><span class="keyword">WHERE</span> o.status <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Index to support the JOIN</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX idx_orders_user_status <span class="keyword">ON</span> orders (user_id, status);</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>:</p>
-<ul>
-<li><strong>EXISTS</strong>: When you only need to check presence (doesn’t return duplicates naturally)</li>
-<li><strong>JOIN</strong>: When you need data from both tables or better performance with proper indexes</li>
-<li><strong>Performance tip</strong>: JOINs are typically faster when properly indexed</li>
-</ul>
-<h3 id="Window-Functions-vs-GROUP-BY"><a href="#Window-Functions-vs-GROUP-BY" class="headerlink" title="Window Functions vs GROUP BY"></a>Window Functions vs GROUP BY</h3><p><strong>Interview Question</strong>: <em>“How do window functions improve performance over traditional approaches?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Traditional approach with self-join (SLOW)</span></span><br><span class="line"><span class="keyword">SELECT</span> u1.<span class="operator">*</span>, </span><br><span class="line">       (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> users u2 <span class="keyword">WHERE</span> u2.department <span class="operator">=</span> u1.department) <span class="keyword">as</span> dept_count</span><br><span class="line"><span class="keyword">FROM</span> users u1;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Optimized with window function (FAST)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span>, </span><br><span class="line">       <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">OVER</span> (<span class="keyword">PARTITION</span> <span class="keyword">BY</span> department) <span class="keyword">as</span> dept_count</span><br><span class="line"><span class="keyword">FROM</span> users;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Window functions reduce multiple passes through data, improving performance by 40-60% by eliminating correlated subqueries and self-joins.</p>
-<h3 id="Query-Rewriting-Patterns"><a href="#Query-Rewriting-Patterns" class="headerlink" title="Query Rewriting Patterns"></a>Query Rewriting Patterns</h3><p><strong>Interview Insight</strong>: <em>“What are common query anti-patterns that hurt performance?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- ANTI-PATTERN 1: Functions in WHERE clauses</span></span><br><span class="line"><span class="comment">-- SLOW: Function prevents index usage</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders <span class="keyword">WHERE</span> <span class="keyword">YEAR</span>(order_date) <span class="operator">=</span> <span class="number">2024</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- FAST: Range condition uses index</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> orders </span><br><span class="line"><span class="keyword">WHERE</span> order_date <span class="operator">&gt;=</span> <span class="string">&#x27;2024-01-01&#x27;</span> </span><br><span class="line">  <span class="keyword">AND</span> order_date <span class="operator">&lt;</span> <span class="string">&#x27;2025-01-01&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- ANTI-PATTERN 2: Leading wildcards in LIKE</span></span><br><span class="line"><span class="comment">-- SLOW: Cannot use index</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;%phone%&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- BETTER: Full-text search</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> products </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">MATCH</span>(name) AGAINST(<span class="string">&#x27;phone&#x27;</span> <span class="keyword">IN</span> <span class="keyword">NATURAL</span> <span class="keyword">LANGUAGE</span> MODE);</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Avoid functions in WHERE clauses, leading wildcards, and OR conditions that prevent index usage. Rewrite queries to enable index scans.</p>
-<hr>
-<h2 id="Schema-Design-Best-Practices"><a href="#Schema-Design-Best-Practices" class="headerlink" title="Schema Design Best Practices"></a>Schema Design Best Practices</h2><h3 id="Normalization-vs-Denormalization-Trade-offs"><a href="#Normalization-vs-Denormalization-Trade-offs" class="headerlink" title="Normalization vs Denormalization Trade-offs"></a>Normalization vs Denormalization Trade-offs</h3><pre>
-<code class="mermaid">
-flowchart LR
-A[Schema Design Decision] --&gt; B[Normalize]
-A --&gt; C[Denormalize]
-
-B --&gt; B1[Reduce Data Redundancy]
-B --&gt; B2[Maintain Data Integrity]
-B --&gt; B3[More Complex Queries]
-
-C --&gt; C1[Improve Read Performance]
-C --&gt; C2[Reduce JOINs]
-C --&gt; C3[Increase Storage]
-
-</code>
-</pre>
-<pre>
-<code class="mermaid">
-flowchart LR
-  
-subgraph &quot;Decision Factors&quot;
-    D1[Read&#x2F;Write Ratio]
-    D2[Query Complexity]
-    D3[Data Consistency Requirements]
-end
-</code>
-</pre>
-
-<p><strong>Interview Question</strong>: <em>“How do you decide between normalization and denormalization?”</em></p>
-<p><strong>Answer</strong>: Consider the read&#x2F;write ratio:</p>
-<ul>
-<li><strong>High read, low write</strong>: Denormalize for performance</li>
-<li><strong>High write, moderate read</strong>: Normalize for consistency</li>
-<li><strong>Mixed workload</strong>: Hybrid approach with materialized views or summary tables</li>
-</ul>
-<h3 id="Data-Type-Optimization"><a href="#Data-Type-Optimization" class="headerlink" title="Data Type Optimization"></a>Data Type Optimization</h3><p><strong>Interview Insight</strong>: <em>“How do data types affect performance?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- INEFFICIENT: Using wrong data types</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users (</span><br><span class="line">    id <span class="type">VARCHAR</span>(<span class="number">50</span>),           <span class="comment">-- Should be INT or BIGINT</span></span><br><span class="line">    age <span class="type">VARCHAR</span>(<span class="number">10</span>),          <span class="comment">-- Should be TINYINT</span></span><br><span class="line">    salary <span class="type">DECIMAL</span>(<span class="number">20</span>,<span class="number">2</span>),     <span class="comment">-- Excessive precision</span></span><br><span class="line">    created_at <span class="type">VARCHAR</span>(<span class="number">50</span>)    <span class="comment">-- Should be DATETIME/TIMESTAMP</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- OPTIMIZED: Proper data types</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users (</span><br><span class="line">    id <span class="type">BIGINT</span> UNSIGNED AUTO_INCREMENT <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    age TINYINT UNSIGNED,</span><br><span class="line">    salary <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>),</span><br><span class="line">    created_at <span class="type">TIMESTAMP</span> <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-
-<p><strong>Performance Impact Analysis</strong>:</p>
-<ul>
-<li><strong>INT vs VARCHAR</strong>: INT operations are 3-5x faster, use 4 bytes vs variable storage</li>
-<li><strong>TINYINT vs INT</strong>: TINYINT uses 1 byte vs 4 bytes for age (0-255 range sufficient)</li>
-<li><strong>Fixed vs Variable length</strong>: CHAR vs VARCHAR impacts row storage and scanning speed</li>
-</ul>
-<h3 id="Partitioning-Strategy"><a href="#Partitioning-Strategy" class="headerlink" title="Partitioning Strategy"></a>Partitioning Strategy</h3><p><strong>Interview Question</strong>: <em>“When and how would you implement table partitioning?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Range partitioning for time-series data</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> sales (</span><br><span class="line">    id <span class="type">BIGINT</span>,</span><br><span class="line">    sale_date <span class="type">DATE</span>,</span><br><span class="line">    amount <span class="type">DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>)</span><br><span class="line">) <span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span> (<span class="keyword">YEAR</span>(sale_date)) (</span><br><span class="line">    <span class="keyword">PARTITION</span> p2023 <span class="keyword">VALUES</span> LESS THAN (<span class="number">2024</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p2024 <span class="keyword">VALUES</span> LESS THAN (<span class="number">2025</span>),</span><br><span class="line">    <span class="keyword">PARTITION</span> p2025 <span class="keyword">VALUES</span> LESS THAN (<span class="number">2026</span>)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Hash partitioning for even distribution</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> user_activities (</span><br><span class="line">    id <span class="type">BIGINT</span>,</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    activity_type <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    created_at <span class="type">TIMESTAMP</span></span><br><span class="line">) <span class="keyword">PARTITION</span> <span class="keyword">BY</span> HASH(user_id) PARTITIONS <span class="number">8</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Use partitioning when:</p>
-<ul>
-<li><strong>Tables exceed 100GB</strong></li>
-<li><strong>Clear partitioning key exists</strong> (date, region, etc.)</li>
-<li><strong>Query patterns align with partitioning scheme</strong></li>
-</ul>
-<p><strong>Benefits</strong>:</p>
-<ul>
-<li><strong>Query pruning</strong>: Only relevant partitions are scanned</li>
-<li><strong>Parallel processing</strong>: Operations can run on multiple partitions</li>
-<li><strong>Maintenance efficiency</strong>: Drop old partitions instead of DELETE operations</li>
-</ul>
-<hr>
-<h2 id="Configuration-Tuning"><a href="#Configuration-Tuning" class="headerlink" title="Configuration Tuning"></a>Configuration Tuning</h2><h3 id="Memory-Configuration-Hierarchy"><a href="#Memory-Configuration-Hierarchy" class="headerlink" title="Memory Configuration Hierarchy"></a>Memory Configuration Hierarchy</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[MySQL Memory Allocation] --&gt; B[Global Buffers]
-A --&gt; C[Per-Connection Buffers]
-
-B --&gt; B1[InnoDB Buffer Pool]
-B --&gt; B2[Key Buffer Size]
-B --&gt; B3[Query Cache Deprecated]
-
-C --&gt; C1[Sort Buffer Size]
-C --&gt; C2[Join Buffer Size]
-C --&gt; C3[Read Buffer Size]
-
-B1 --&gt; B1a[70-80% of RAM for dedicated servers]
-C1 --&gt; C1a[256KB-2MB per connection]
-
-style B1 fill:#90EE90
-style C1 fill:#FFD700
-</code>
-</pre>
-
-<p><strong>Interview Question</strong>: <em>“How would you size the InnoDB buffer pool?”</em></p>
-<h3 id="Critical-Configuration-Parameters"><a href="#Critical-Configuration-Parameters" class="headerlink" title="Critical Configuration Parameters"></a>Critical Configuration Parameters</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Key InnoDB settings for performance</span></span><br><span class="line">[mysqld]</span><br><span class="line"># Buffer pool <span class="operator">-</span> most critical setting</span><br><span class="line">innodb_buffer_pool_size <span class="operator">=</span> <span class="number">6</span>G  # <span class="number">70</span><span class="number">-80</span><span class="operator">%</span> <span class="keyword">of</span> RAM <span class="keyword">for</span> dedicated servers</span><br><span class="line">innodb_buffer_pool_instances <span class="operator">=</span> <span class="number">8</span>  # <span class="number">1</span> instance <span class="keyword">per</span> GB <span class="keyword">of</span> buffer pool</span><br><span class="line"></span><br><span class="line"># Log files <span class="keyword">for</span> write performance</span><br><span class="line">innodb_log_file_size <span class="operator">=</span> <span class="number">1</span>G    # <span class="number">25</span><span class="operator">%</span> <span class="keyword">of</span> buffer pool size</span><br><span class="line">innodb_log_buffer_size <span class="operator">=</span> <span class="number">64</span>M</span><br><span class="line">innodb_flush_log_at_trx_commit <span class="operator">=</span> <span class="number">2</span>  # Balance performance vs durability</span><br><span class="line"></span><br><span class="line"># Connection settings</span><br><span class="line">max_connections <span class="operator">=</span> <span class="number">200</span></span><br><span class="line">thread_cache_size <span class="operator">=</span> <span class="number">16</span></span><br><span class="line"></span><br><span class="line"># Query optimization</span><br><span class="line">sort_buffer_size <span class="operator">=</span> <span class="number">2</span>M         # <span class="keyword">Per</span> connection</span><br><span class="line">join_buffer_size <span class="operator">=</span> <span class="number">2</span>M         # <span class="keyword">Per</span> <span class="keyword">JOIN</span> operation</span><br><span class="line">tmp_table_size <span class="operator">=</span> <span class="number">64</span>M</span><br><span class="line">max_heap_table_size <span class="operator">=</span> <span class="number">64</span>M</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer Strategy</strong>:</p>
-<ol>
-<li><strong>Start with 70-80%</strong> of available RAM for dedicated database servers</li>
-<li><strong>Monitor buffer pool hit ratio</strong> (should be &gt;99%)</li>
-<li><strong>Adjust based on working set size</strong> and query patterns</li>
-<li><strong>Use multiple buffer pool instances</strong> for systems with &gt;8GB buffer pool</li>
-</ol>
-<p><strong>Interview Insight</strong>: <em>“What’s the relationship between buffer pool size and performance?”</em></p>
-<p><strong>Answer</strong>: The buffer pool caches data pages in memory. Larger buffer pools reduce disk I&#x2F;O, but too large can cause:</p>
-<ul>
-<li><strong>OS paging</strong>: If total MySQL memory exceeds available RAM</li>
-<li><strong>Longer crash recovery</strong>: Larger logs and memory structures</li>
-<li><strong>Checkpoint storms</strong>: During heavy write periods</li>
-</ul>
-<h3 id="Connection-and-Query-Tuning"><a href="#Connection-and-Query-Tuning" class="headerlink" title="Connection and Query Tuning"></a>Connection and Query Tuning</h3><p><strong>Interview Question</strong>: <em>“How do you handle connection management in high-concurrency environments?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Monitor connection usage</span></span><br><span class="line"><span class="keyword">SHOW</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Threads_%&#x27;</span>;</span><br><span class="line"><span class="keyword">SHOW</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Connections&#x27;</span>;</span><br><span class="line"><span class="keyword">SHOW</span> STATUS <span class="keyword">LIKE</span> <span class="string">&#x27;Max_used_connections&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Optimize connection handling</span></span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> thread_cache_size <span class="operator">=</span> <span class="number">16</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> max_connections <span class="operator">=</span> <span class="number">500</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> connect_timeout <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> interactive_timeout <span class="operator">=</span> <span class="number">300</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> wait_timeout <span class="operator">=</span> <span class="number">300</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: </p>
-<ul>
-<li><strong>Use connection pooling</strong> at application level</li>
-<li><strong>Set appropriate timeouts</strong> to prevent connection leaks</li>
-<li><strong>Monitor thread cache efficiency</strong>: Thread_cache_hit_rate should be &gt;90%</li>
-<li><strong>Consider ProxySQL</strong> for advanced connection management</li>
-</ul>
-<hr>
-<h2 id="Monitoring-and-Profiling"><a href="#Monitoring-and-Profiling" class="headerlink" title="Monitoring and Profiling"></a>Monitoring and Profiling</h2><h3 id="Performance-Monitoring-Workflow"><a href="#Performance-Monitoring-Workflow" class="headerlink" title="Performance Monitoring Workflow"></a>Performance Monitoring Workflow</h3><pre>
-<code class="mermaid">
-flowchart TD
-A[Performance Issue] --&gt; B[Identify Bottleneck]
-B --&gt; C[Slow Query Log]
-B --&gt; D[Performance Schema]
-B --&gt; E[EXPLAIN Analysis]
-
-C --&gt; F[Query Optimization]
-D --&gt; G[Resource Optimization]
-E --&gt; H[Index Optimization]
-
-F --&gt; I[Validate Improvement]
-G --&gt; I
-H --&gt; I
-
-I --&gt; J{Performance Acceptable?}
-J --&gt;|No| B
-J --&gt;|Yes| K[Document Solution]
-</code>
-</pre>
-
-<p><strong>Interview Question</strong>: <em>“What’s your approach to troubleshooting MySQL performance issues?”</em></p>
-<h3 id="Essential-Monitoring-Queries"><a href="#Essential-Monitoring-Queries" class="headerlink" title="Essential Monitoring Queries"></a>Essential Monitoring Queries</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. Find slow queries in real-time</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    CONCAT(<span class="keyword">USER</span>, <span class="string">&#x27;@&#x27;</span>, HOST) <span class="keyword">as</span> <span class="keyword">user</span>,</span><br><span class="line">    COMMAND,</span><br><span class="line">    <span class="type">TIME</span>,</span><br><span class="line">    STATE,</span><br><span class="line">    <span class="keyword">LEFT</span>(INFO, <span class="number">100</span>) <span class="keyword">as</span> query_snippet</span><br><span class="line"><span class="keyword">FROM</span> INFORMATION_SCHEMA.PROCESSLIST </span><br><span class="line"><span class="keyword">WHERE</span> <span class="type">TIME</span> <span class="operator">&gt;</span> <span class="number">5</span> <span class="keyword">AND</span> COMMAND <span class="operator">!=</span> <span class="string">&#x27;Sleep&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="type">TIME</span> <span class="keyword">DESC</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. Buffer pool efficiency monitoring</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    ROUND((<span class="number">1</span> <span class="operator">-</span> (Innodb_buffer_pool_reads <span class="operator">/</span> Innodb_buffer_pool_read_requests)) <span class="operator">*</span> <span class="number">100</span>, <span class="number">2</span>) <span class="keyword">as</span> hit_ratio,</span><br><span class="line">    Innodb_buffer_pool_read_requests <span class="keyword">as</span> total_reads,</span><br><span class="line">    Innodb_buffer_pool_reads <span class="keyword">as</span> disk_reads</span><br><span class="line"><span class="keyword">FROM</span> </span><br><span class="line">    (<span class="keyword">SELECT</span> VARIABLE_VALUE <span class="keyword">as</span> Innodb_buffer_pool_reads <span class="keyword">FROM</span> performance_schema.global_status <span class="keyword">WHERE</span> VARIABLE_NAME <span class="operator">=</span> <span class="string">&#x27;Innodb_buffer_pool_reads&#x27;</span>) a,</span><br><span class="line">    (<span class="keyword">SELECT</span> VARIABLE_VALUE <span class="keyword">as</span> Innodb_buffer_pool_read_requests <span class="keyword">FROM</span> performance_schema.global_status <span class="keyword">WHERE</span> VARIABLE_NAME <span class="operator">=</span> <span class="string">&#x27;Innodb_buffer_pool_read_requests&#x27;</span>) b;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 3. Top queries by execution time</span></span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    SCHEMA_NAME,</span><br><span class="line">    DIGEST_TEXT,</span><br><span class="line">    COUNT_STAR <span class="keyword">as</span> exec_count,</span><br><span class="line">    AVG_TIMER_WAIT<span class="operator">/</span><span class="number">1000000000</span> <span class="keyword">as</span> avg_exec_time_sec,</span><br><span class="line">    SUM_TIMER_WAIT<span class="operator">/</span><span class="number">1000000000</span> <span class="keyword">as</span> total_exec_time_sec</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.events_statements_summary_by_digest</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> SUM_TIMER_WAIT <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Follow systematic approach:</p>
-<ol>
-<li><strong>Identify symptoms</strong>: Slow queries, high CPU, lock waits</li>
-<li><strong>Gather metrics</strong>: Use Performance Schema and slow query log</li>
-<li><strong>Analyze bottlenecks</strong>: Focus on highest impact issues first</li>
-<li><strong>Implement fixes</strong>: Query optimization, indexing, configuration</li>
-<li><strong>Validate improvements</strong>: Measure before&#x2F;after performance</li>
-</ol>
-<p><strong>Interview Insight</strong>: <em>“What key metrics do you monitor for MySQL performance?”</em></p>
-<p><strong>Critical Metrics</strong>:</p>
-<ul>
-<li><strong>Query response time</strong>: 95th percentile response times</li>
-<li><strong>Buffer pool hit ratio</strong>: Should be &gt;99%</li>
-<li><strong>Connection usage</strong>: Active vs maximum connections</li>
-<li><strong>Lock wait times</strong>: InnoDB lock waits and deadlocks</li>
-<li><strong>Replication lag</strong>: For master-slave setups</li>
-</ul>
-<h3 id="Query-Profiling-Techniques"><a href="#Query-Profiling-Techniques" class="headerlink" title="Query Profiling Techniques"></a>Query Profiling Techniques</h3><p><strong>Interview Question</strong>: <em>“How do you profile a specific query’s performance?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Enable profiling</span></span><br><span class="line"><span class="keyword">SET</span> profiling <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Execute your query</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> large_table <span class="keyword">WHERE</span> complex_condition <span class="operator">=</span> <span class="string">&#x27;value&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- View profile</span></span><br><span class="line"><span class="keyword">SHOW</span> PROFILES;</span><br><span class="line"><span class="keyword">SHOW</span> PROFILE <span class="keyword">FOR</span> QUERY <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Detailed analysis with Performance Schema</span></span><br><span class="line"><span class="keyword">SELECT</span> EVENT_NAME, COUNT_STAR, AVG_TIMER_WAIT<span class="operator">/</span><span class="number">1000000</span> <span class="keyword">as</span> avg_ms</span><br><span class="line"><span class="keyword">FROM</span> performance_schema.events_waits_summary_global_by_event_name</span><br><span class="line"><span class="keyword">WHERE</span> EVENT_NAME <span class="keyword">LIKE</span> <span class="string">&#x27;wait/io%&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> AVG_TIMER_WAIT <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Use multiple approaches:</p>
-<ul>
-<li><strong>EXPLAIN</strong>: Understand execution plan</li>
-<li><strong>EXPLAIN FORMAT&#x3D;JSON</strong>: Detailed cost analysis</li>
-<li><strong>Performance Schema</strong>: I&#x2F;O and wait event analysis</li>
-<li><strong>Query profiling</strong>: Break down query execution phases</li>
-</ul>
-<hr>
-<h2 id="Advanced-Optimization-Techniques"><a href="#Advanced-Optimization-Techniques" class="headerlink" title="Advanced Optimization Techniques"></a>Advanced Optimization Techniques</h2><h3 id="Read-Replica-Optimization"><a href="#Read-Replica-Optimization" class="headerlink" title="Read Replica Optimization"></a>Read Replica Optimization</h3><pre>
-<code class="mermaid">
-flowchart LR
-A[Application] --&gt; B[Load Balancer&#x2F;Proxy]
-B --&gt; C[Master DB - Writes]
-B --&gt; D[Read Replica 1]
-B --&gt; E[Read Replica 2]
-
-C --&gt; F[All Write Operations]
-D --&gt; G[Read Operations - Region 1]
-E --&gt; H[Read Operations - Region 2]
-
-C -.-&gt;|Async Replication| D
-C -.-&gt;|Async Replication| E
-</code>
-</pre>
-<pre>
-<code class="mermaid">
-flowchart LR
-subgraph &quot;Optimization Strategy&quot;
-    I[Route by Query Type]
-    J[Geographic Distribution]
-    K[Read Preference Policies]
-end
-</code>
-</pre>
-
-<p><strong>Interview Question</strong>: <em>“How do you handle read&#x2F;write splitting and replication lag?”</em></p>
-<p><strong>Answer</strong>:</p>
-<ul>
-<li><strong>Application-level routing</strong>: Route SELECTs to replicas, DML to master</li>
-<li><strong>Middleware solutions</strong>: ProxySQL, MySQL Router for automatic routing</li>
-<li><strong>Handle replication lag</strong>: <ul>
-<li>Read from master for critical consistency requirements</li>
-<li>Use <code>SELECT ... FOR UPDATE</code> to force master reads</li>
-<li>Monitor <code>SHOW SLAVE STATUS</code> for lag metrics</li>
-</ul>
-</li>
-</ul>
-<h3 id="Sharding-Strategy"><a href="#Sharding-Strategy" class="headerlink" title="Sharding Strategy"></a>Sharding Strategy</h3><p><strong>Interview Insight</strong>: <em>“When and how would you implement database sharding?”</em></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Horizontal sharding example</span></span><br><span class="line"><span class="comment">-- Shard by user_id hash</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users_shard_1 (</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    <span class="comment">-- Constraint: user_id % 4 = 1</span></span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> users_shard_2 (</span><br><span class="line">    user_id <span class="type">BIGINT</span>,</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">    <span class="comment">-- Constraint: user_id % 4 = 2</span></span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Application logic for shard routing</span></span><br><span class="line">def get_shard_for_user(user_id):</span><br><span class="line">    <span class="keyword">return</span> f&quot;users_shard_&#123;user_id % 4 + 1&#125;&quot;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Sharding Considerations</strong>:</p>
-<ul>
-<li><strong>When to shard</strong>: When vertical scaling reaches limits (&gt;1TB, &gt;10K QPS)</li>
-<li><strong>Sharding key selection</strong>: Choose keys that distribute data evenly</li>
-<li><strong>Cross-shard queries</strong>: Avoid or implement at application level</li>
-<li><strong>Rebalancing</strong>: Plan for shard splitting and data redistribution</li>
-</ul>
-<h3 id="Caching-Strategies"><a href="#Caching-Strategies" class="headerlink" title="Caching Strategies"></a>Caching Strategies</h3><p><strong>Interview Question</strong>: <em>“How do you implement effective database caching?”</em></p>
-<p><strong>Multi-level Caching Architecture</strong>:</p>
-<pre>
-<code class="mermaid">
-flowchart TD
-A[Application Request] --&gt; B[L1: Application Cache]
-B --&gt;|Miss| C[L2: Redis&#x2F;Memcached]
-C --&gt;|Miss| D[MySQL Database]
-
-D --&gt; E[Query Result]
-E --&gt; F[Update L2 Cache]
-F --&gt; G[Update L1 Cache]
-G --&gt; H[Return to Application]
-
-</code>
-</pre>
-<pre>
-<code class="mermaid">
-flowchart TD
- 
-subgraph &quot;Cache Strategies&quot;
-    I[Cache-Aside]
-    J[Write-Through]
-    K[Write-Behind]
-end
-</code>
-</pre>
-
-<p><strong>Implementation Example</strong>:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Cache frequently accessed data</span></span><br><span class="line"><span class="comment">-- Cache user profiles for 1 hour</span></span><br><span class="line">KEY: <span class="keyword">user</span>:profile:<span class="number">12345</span></span><br><span class="line"><span class="keyword">VALUE</span>: &#123;&quot;user_id&quot;: <span class="number">12345</span>, &quot;name&quot;: &quot;John&quot;, &quot;email&quot;: &quot;john@example.com&quot;&#125;</span><br><span class="line">TTL: <span class="number">3600</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Cache query results</span></span><br><span class="line"><span class="comment">-- Cache product search results for 15 minutes</span></span><br><span class="line">KEY: products:<span class="keyword">search</span>:electronics:page:<span class="number">1</span></span><br><span class="line"><span class="keyword">VALUE</span>: [&#123;&quot;id&quot;: <span class="number">1</span>, &quot;name&quot;: &quot;Phone&quot;&#125;, &#123;&quot;id&quot;: <span class="number">2</span>, &quot;name&quot;: &quot;Laptop&quot;&#125;]</span><br><span class="line">TTL: <span class="number">900</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Invalidation strategy</span></span><br><span class="line"><span class="comment">-- When user updates profile, invalidate cache</span></span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">user</span>:profile:<span class="number">12345</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Implement multi-tier caching:</p>
-<ol>
-<li><strong>Application cache</strong>: In-memory objects, fastest access</li>
-<li><strong>Distributed cache</strong>: Redis&#x2F;Memcached for shared data</li>
-<li><strong>Query result cache</strong>: Cache expensive query results</li>
-<li><strong>Page cache</strong>: Full page caching for read-heavy content</li>
-</ol>
-<p><strong>Cache Invalidation Patterns</strong>:</p>
-<ul>
-<li><strong>TTL-based</strong>: Simple time-based expiration</li>
-<li><strong>Tag-based</strong>: Invalidate related cache entries</li>
-<li><strong>Event-driven</strong>: Invalidate on data changes</li>
-</ul>
-<h3 id="Performance-Testing-and-Benchmarking"><a href="#Performance-Testing-and-Benchmarking" class="headerlink" title="Performance Testing and Benchmarking"></a>Performance Testing and Benchmarking</h3><p><strong>Interview Question</strong>: <em>“How do you benchmark MySQL performance?”</em></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># sysbench for MySQL benchmarking</span></span><br><span class="line">sysbench oltp_read_write \</span><br><span class="line">    --mysql-host=localhost \</span><br><span class="line">    --mysql-user=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-password=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-db=testdb \</span><br><span class="line">    --tables=10 \</span><br><span class="line">    --table-size=100000 \</span><br><span class="line">    prepare</span><br><span class="line"></span><br><span class="line">sysbench oltp_read_write \</span><br><span class="line">    --mysql-host=localhost \</span><br><span class="line">    --mysql-user=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-password=<span class="built_in">test</span> \</span><br><span class="line">    --mysql-db=testdb \</span><br><span class="line">    --tables=10 \</span><br><span class="line">    --table-size=100000 \</span><br><span class="line">    --threads=16 \</span><br><span class="line">    --<span class="keyword">time</span>=300 \</span><br><span class="line">    run</span><br></pre></td></tr></table></figure>
-
-<p><strong>Answer</strong>: Use systematic benchmarking approach:</p>
-<ol>
-<li><strong>Baseline measurement</strong>: Establish current performance metrics</li>
-<li><strong>Controlled testing</strong>: Change one variable at a time</li>
-<li><strong>Load testing</strong>: Use tools like sysbench, MySQL Workbench</li>
-<li><strong>Real-world simulation</strong>: Test with production-like data and queries</li>
-<li><strong>Performance regression testing</strong>: Automated testing in CI&#x2F;CD pipelines</li>
-</ol>
-<p><strong>Key Metrics to Measure</strong>:</p>
-<ul>
-<li><strong>Throughput</strong>: Queries per second (QPS)</li>
-<li><strong>Latency</strong>: 95th percentile response times</li>
-<li><strong>Resource utilization</strong>: CPU, memory, I&#x2F;O usage</li>
-<li><strong>Scalability</strong>: Performance under increasing load</li>
-</ul>
-<hr>
-<h2 id="Final-Performance-Optimization-Checklist"><a href="#Final-Performance-Optimization-Checklist" class="headerlink" title="Final Performance Optimization Checklist"></a>Final Performance Optimization Checklist</h2><p><strong>Before Production Deployment</strong>:</p>
-<ol>
-<li><p><strong>✅ Index Analysis</strong></p>
-<ul>
-<li>All WHERE clause columns indexed appropriately</li>
-<li>Composite indexes follow left-most prefix rule</li>
-<li>No unused indexes consuming resources</li>
-</ul>
-</li>
-<li><p><strong>✅ Query Optimization</strong></p>
-<ul>
-<li>No functions in WHERE clauses</li>
-<li>JOINs use proper indexes</li>
-<li>Window functions replace correlated subqueries where applicable</li>
-</ul>
-</li>
-<li><p><strong>✅ Schema Design</strong></p>
-<ul>
-<li>Appropriate data types for all columns</li>
-<li>Normalization level matches query patterns</li>
-<li>Partitioning implemented for large tables</li>
-</ul>
-</li>
-<li><p><strong>✅ Configuration Tuning</strong></p>
-<ul>
-<li>Buffer pool sized correctly (70-80% RAM)</li>
-<li>Connection limits and timeouts configured</li>
-<li>Log file sizes optimized for workload</li>
-</ul>
-</li>
-<li><p><strong>✅ Monitoring Setup</strong></p>
-<ul>
-<li>Slow query log enabled and monitored</li>
-<li>Performance Schema collecting key metrics</li>
-<li>Alerting on critical performance thresholds</li>
-</ul>
-</li>
-</ol>
-<p><strong>Interview Final Question</strong>: <em>“What’s your philosophy on MySQL performance optimization?”</em></p>
-<p><strong>Answer</strong>: “Performance optimization is about understanding the business requirements first, then systematically identifying and removing bottlenecks. It’s not about applying every optimization technique, but choosing the right optimizations for your specific workload. Always measure first, optimize second, and validate the improvements. The goal is sustainable performance that scales with business growth.”</p>
 
       
     </div>
