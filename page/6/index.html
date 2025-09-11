@@ -140,7 +140,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -168,6 +168,316 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://shayne007.github.io/2025/06/01/Redis-Notes-for-Interview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Charlie Feng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charlie Feng's Tech Space">
+      <meta itemprop="description" content="This place is for thinking and sharing.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Charlie Feng's Tech Space">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/06/01/Redis-Notes-for-Interview/" class="post-title-link" itemprop="url">Redis Notes for Interview</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2025-06-01 16:20:52" itemprop="dateCreated datePublished" datetime="2025-06-01T16:20:52+08:00">2025-06-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2025-06-17 20:35:31" itemprop="dateModified" datetime="2025-06-17T20:35:31+08:00">2025-06-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Redis-Fundamentals"><a href="#Redis-Fundamentals" class="headerlink" title="Redis Fundamentals"></a>Redis Fundamentals</h2><h3 id="Key-Concepts"><a href="#Key-Concepts" class="headerlink" title="Key Concepts"></a>Key Concepts</h3><ul>
+<li><strong>In-memory database</strong></li>
+<li><strong>Data structures</strong>: string, hash, set, sorted set, list, geo, hyperloglog</li>
+<li><strong>Cluster modes</strong>: master-slave, sentinel, cluster sharding</li>
+<li><strong>Performance optimization through caching</strong></li>
+</ul>
+<h3 id="Why-Use-Redis"><a href="#Why-Use-Redis" class="headerlink" title="Why Use Redis?"></a>Why Use Redis?</h3><p><strong>Performance</strong>: When encountering SQL queries that take a long time to execute and have results that don’t change frequently, it’s ideal to store the results in cache. This allows subsequent requests to read from cache, enabling rapid response times.</p>
+<p><strong>Concurrency</strong>: Under high concurrency, if all requests directly access the database, connection exceptions will occur. Redis serves as a buffer, allowing requests to access Redis first instead of directly hitting the database. (MySQL supports ~1,500 QPS, while Redis supports 20,000-50,000 QPS)</p>
+<h3 id="Redis-Use-Cases"><a href="#Redis-Use-Cases" class="headerlink" title="Redis Use Cases"></a>Redis Use Cases</h3><ul>
+<li>Caching</li>
+<li>Flash sales&#x2F;spike traffic handling</li>
+<li>Distributed locking</li>
+</ul>
+<h2 id="Redis-Single-Threading-Model"><a href="#Redis-Single-Threading-Model" class="headerlink" title="Redis Single-Threading Model"></a>Redis Single-Threading Model</h2><h3 id="Key-Concepts-1"><a href="#Key-Concepts-1" class="headerlink" title="Key Concepts"></a>Key Concepts</h3><ul>
+<li><strong>Thread tasks</strong>: command processing, I&#x2F;O handling, persistence, data synchronization</li>
+<li><strong>Version 6.0+</strong>: configurable multi-threading support</li>
+<li><strong>epoll + reactor pattern</strong></li>
+</ul>
+<h3 id="High-Performance-Reasons"><a href="#High-Performance-Reasons" class="headerlink" title="High Performance Reasons"></a>High Performance Reasons</h3><p><strong>Memory operations</strong>: All data operations occur in memory</p>
+<p><strong>I&#x2F;O Model on Linux</strong>: Uses epoll combined with reactor pattern</p>
+<ul>
+<li><p><strong>epoll fundamentals</strong>: Manages multiple socket file descriptors</p>
+<ul>
+<li><strong>Red-black tree</strong> structure maintains all monitored file descriptors</li>
+<li><strong>Doubly linked list</strong> maintains the ready list</li>
+<li><strong>Interrupt mechanism</strong> adds ready file descriptors</li>
+<li><strong>Key APIs</strong>: <code>epoll_create</code>, <code>epoll_ctl</code>, <code>epoll_wait</code></li>
+<li><strong>Advantages over poll&#x2F;select</strong>: More efficient for large numbers of connections</li>
+</ul>
+</li>
+<li><p><strong>Reactor pattern</strong>:</p>
+<ul>
+<li><strong>Reactor (Dispatcher)</strong>: Calls epoll to get available file descriptors and dispatches events</li>
+<li><strong>Acceptor</strong>: Handles connection creation events</li>
+<li><strong>Handler</strong>: Processes I&#x2F;O read&#x2F;write events</li>
+</ul>
+</li>
+</ul>
+<h2 id="Redis-Data-Types-and-Underlying-Structures"><a href="#Redis-Data-Types-and-Underlying-Structures" class="headerlink" title="Redis Data Types and Underlying Structures"></a>Redis Data Types and Underlying Structures</h2><h3 id="String"><a href="#String" class="headerlink" title="String"></a>String</h3><ul>
+<li><strong>Implementation</strong>: SDS (Simple Dynamic String)</li>
+<li><strong>Use cases</strong>: User info caching, counters, distributed locks (SETNX)</li>
+</ul>
+<h3 id="Hash"><a href="#Hash" class="headerlink" title="Hash"></a>Hash</h3><ul>
+<li><strong>Implementation</strong>: ziplist (small data) + hashtable (large data)</li>
+<li><strong>Use cases</strong>: Storing objects</li>
+</ul>
+<h3 id="List"><a href="#List" class="headerlink" title="List"></a>List</h3><ul>
+<li><strong>Implementation</strong>: Doubly linked list or ziplist</li>
+<li><strong>Use cases</strong>: Message queues, latest articles list</li>
+</ul>
+<h3 id="Set"><a href="#Set" class="headerlink" title="Set"></a>Set</h3><ul>
+<li><strong>Implementation</strong>: intset (integer set) or hashtable</li>
+<li><strong>Use cases</strong>: Tag systems, mutual friends (SINTER for intersection)</li>
+</ul>
+<h3 id="Sorted-Set-ZSet"><a href="#Sorted-Set-ZSet" class="headerlink" title="Sorted Set (ZSet)"></a>Sorted Set (ZSet)</h3><ul>
+<li><strong>Implementation</strong>: ziplist + skiplist (skip list)</li>
+<li><strong>Use cases</strong>: Leaderboards (ZADD&#x2F;ZRANGE), delayed queues</li>
+</ul>
+<h2 id="Redis-Data-Persistence"><a href="#Redis-Data-Persistence" class="headerlink" title="Redis Data Persistence"></a>Redis Data Persistence</h2><h3 id="Key-Concepts-2"><a href="#Key-Concepts-2" class="headerlink" title="Key Concepts"></a>Key Concepts</h3><ul>
+<li><strong>AOF (Append Only File)</strong></li>
+<li><strong>RDB (Redis Database)</strong></li>
+<li><strong>Hybrid mode</strong></li>
+</ul>
+<h3 id="RDB-Redis-Database-Backup"><a href="#RDB-Redis-Database-Backup" class="headerlink" title="RDB (Redis Database Backup)"></a>RDB (Redis Database Backup)</h3><ul>
+<li><strong>Mechanism</strong>: Periodically generates binary snapshot files of memory data</li>
+<li><strong>Process</strong>: Forks child process to avoid blocking main thread</li>
+<li><strong>Frequency</strong>: Executes <code>BGSAVE</code> every 5+ minutes</li>
+<li><strong>Drawback</strong>: Potential data loss between snapshots</li>
+</ul>
+<h3 id="AOF-Append-Only-File"><a href="#AOF-Append-Only-File" class="headerlink" title="AOF (Append Only File)"></a>AOF (Append Only File)</h3><ul>
+<li><strong>Mechanism</strong>: Records all write operation commands</li>
+<li><strong>Sync strategies</strong>:<ul>
+<li><strong>Every second</strong> (<code>appendfsync everysec</code>) - Default, good balance</li>
+<li><strong>Every modification</strong> (<code>appendfsync always</code>) - Safest but slowest</li>
+<li><strong>No sync</strong> (<code>appendfsync no</code>) - Fastest but risky</li>
+</ul>
+</li>
+<li><strong>Rewrite mechanism</strong>: Compacts AOF file by removing redundant commands</li>
+</ul>
+<h3 id="Comparison"><a href="#Comparison" class="headerlink" title="Comparison"></a>Comparison</h3><ul>
+<li><strong>RDB</strong>: Fast recovery, smaller files, but potential data loss during failures</li>
+<li><strong>AOF</strong>: Better data integrity, but larger files and slower recovery</li>
+</ul>
+<h2 id="Redis-Cluster-Deployment-Modes"><a href="#Redis-Cluster-Deployment-Modes" class="headerlink" title="Redis Cluster Deployment Modes"></a>Redis Cluster Deployment Modes</h2><h3 id="Master-Slave-Replication"><a href="#Master-Slave-Replication" class="headerlink" title="Master-Slave Replication"></a>Master-Slave Replication</h3><ul>
+<li><strong>Read operations</strong>: Both master and slave nodes can handle reads</li>
+<li><strong>Write operations</strong>: Only master handles writes, then syncs to slaves</li>
+<li><strong>Benefits</strong>: Read scaling, basic fault tolerance</li>
+</ul>
+<h3 id="Sentinel-Mode"><a href="#Sentinel-Mode" class="headerlink" title="Sentinel Mode"></a>Sentinel Mode</h3><ul>
+<li><p><strong>Purpose</strong>: Automatic failover when master fails</p>
+</li>
+<li><p><strong>Key functions</strong>:</p>
+<ul>
+<li><strong>Monitoring</strong>: Continuously checks master&#x2F;slave health</li>
+<li><strong>Election</strong>: Selects new master when current master fails</li>
+<li><strong>Notification</strong>: Informs clients of topology changes</li>
+</ul>
+</li>
+<li><p><strong>Failure detection</strong>:</p>
+<ul>
+<li><strong>Subjective down</strong>: Single sentinel marks master as down</li>
+<li><strong>Objective down</strong>: Majority of sentinels agree master is down</li>
+</ul>
+</li>
+<li><p><strong>Master selection criteria</strong>:</p>
+<ol>
+<li>Slave priority configuration</li>
+<li>Replication progress (most up-to-date)</li>
+<li>Smallest slave ID</li>
+</ol>
+</li>
+</ul>
+<h3 id="Cluster-Sharding"><a href="#Cluster-Sharding" class="headerlink" title="Cluster Sharding"></a>Cluster Sharding</h3><ul>
+<li><strong>Purpose</strong>: Handles large datasets (&gt;25GB) and utilizes multi-core CPUs</li>
+<li><strong>Hash slots</strong>: Uses 16,384 fixed hash slots for data distribution</li>
+<li><strong>Benefits</strong>: <ul>
+<li>Horizontal scaling</li>
+<li>Automatic failover</li>
+<li>No single point of failure</li>
+</ul>
+</li>
+</ul>
+<h2 id="Caching-Patterns-and-Consistency"><a href="#Caching-Patterns-and-Consistency" class="headerlink" title="Caching Patterns and Consistency"></a>Caching Patterns and Consistency</h2><h3 id="Key-Concepts-3"><a href="#Key-Concepts-3" class="headerlink" title="Key Concepts"></a>Key Concepts</h3><ul>
+<li><strong>Cache-Aside pattern</strong></li>
+<li><strong>Read Through, Write Through, Write Back</strong></li>
+<li><strong>Cache invalidation strategies</strong></li>
+</ul>
+<h3 id="Cache-Aside-Pattern"><a href="#Cache-Aside-Pattern" class="headerlink" title="Cache-Aside Pattern"></a>Cache-Aside Pattern</h3><ul>
+<li><strong>Read</strong>: Check cache first; if miss, query database and populate cache</li>
+<li><strong>Write</strong>: Update database first, then delete cache</li>
+</ul>
+<h3 id="Ensuring-Cache-Database-Consistency"><a href="#Ensuring-Cache-Database-Consistency" class="headerlink" title="Ensuring Cache-Database Consistency"></a>Ensuring Cache-Database Consistency</h3><p><strong>Delayed Double Delete</strong>:</p>
+<ol>
+<li>Update database</li>
+<li>Delete cache immediately</li>
+<li>Wait brief period (100-500ms)</li>
+<li>Delete cache again</li>
+<li><strong>Trade-off</strong>: Lower cache hit rate for better consistency</li>
+</ol>
+<p><strong>Fallback strategies</strong>:</p>
+<ul>
+<li>Set cache expiration times</li>
+<li>Use message queues for asynchronous synchronization</li>
+</ul>
+<h2 id="Cache-Problems-Penetration-Breakdown-Avalanche"><a href="#Cache-Problems-Penetration-Breakdown-Avalanche" class="headerlink" title="Cache Problems: Penetration, Breakdown, Avalanche"></a>Cache Problems: Penetration, Breakdown, Avalanche</h2><h3 id="Cache-Avalanche"><a href="#Cache-Avalanche" class="headerlink" title="Cache Avalanche"></a>Cache Avalanche</h3><ul>
+<li><strong>Problem</strong>: Many cache keys expire simultaneously or Redis instance crashes</li>
+<li><strong>Solutions</strong>:<ul>
+<li>Random expiration times</li>
+<li>Circuit breaker and rate limiting</li>
+<li>High-availability cluster deployment</li>
+<li>Service degradation</li>
+</ul>
+</li>
+</ul>
+<h3 id="Cache-Penetration"><a href="#Cache-Penetration" class="headerlink" title="Cache Penetration"></a>Cache Penetration</h3><ul>
+<li><strong>Problem</strong>: Queries for non-existent data bypass cache and hit database</li>
+<li><strong>Solutions</strong>:<ul>
+<li>Cache null&#x2F;default values with short TTL</li>
+<li><strong>Bloom Filter</strong>:<ul>
+<li>Data structure: Bit array + multiple hash functions</li>
+<li>Write: Hash element multiple times, set corresponding bits to 1</li>
+<li>Query: If all hash positions are 1, element might exist (false positives possible)</li>
+</ul>
+</li>
+<li>Input validation at application layer</li>
+</ul>
+</li>
+</ul>
+<h3 id="Cache-Breakdown-Hotspot-Invalid"><a href="#Cache-Breakdown-Hotspot-Invalid" class="headerlink" title="Cache Breakdown (Hotspot Invalid)"></a>Cache Breakdown (Hotspot Invalid)</h3><ul>
+<li><strong>Problem</strong>: Single popular cache key expires, causing traffic spike to database</li>
+<li><strong>Solutions</strong>:<ul>
+<li>Never expire hot data</li>
+<li>Use distributed locks to prevent multiple database hits</li>
+<li>Pre-warming cache before expiration</li>
+</ul>
+</li>
+</ul>
+<h2 id="Distributed-Locking-with-Redis"><a href="#Distributed-Locking-with-Redis" class="headerlink" title="Distributed Locking with Redis"></a>Distributed Locking with Redis</h2><h3 id="Key-Concepts-4"><a href="#Key-Concepts-4" class="headerlink" title="Key Concepts"></a>Key Concepts</h3><ul>
+<li><strong>SETNX</strong>: Only one client can successfully set the same key</li>
+<li><strong>Expiration time</strong>: Prevents deadlocks</li>
+<li><strong>Lock renewal</strong>: Extends lock duration for long-running operations</li>
+</ul>
+<h3 id="Lock-Retry-on-Failure"><a href="#Lock-Retry-on-Failure" class="headerlink" title="Lock Retry on Failure"></a>Lock Retry on Failure</h3><ul>
+<li><strong>Wait time determination</strong>: Based on 99th percentile business execution time</li>
+<li><strong>Implementation approaches</strong>:<ul>
+<li>Sleep-based retry</li>
+<li>Event-driven (listen for DEL events)</li>
+<li>Lua script for atomic timeout retry</li>
+</ul>
+</li>
+</ul>
+<h3 id="Expiration-Time-Management"><a href="#Expiration-Time-Management" class="headerlink" title="Expiration Time Management"></a>Expiration Time Management</h3><ul>
+<li><strong>Why needed</strong>: Prevents deadlocks when lock holder crashes</li>
+<li><strong>Setting strategy</strong>: <ul>
+<li>Analyze 99% of business operations completion time</li>
+<li>Set 2x safety margin (e.g., if 99% complete in 1s, set 2s expiration)</li>
+<li>For critical operations, consider 10s or 1 minute</li>
+</ul>
+</li>
+</ul>
+<h3 id="Lock-Renewal"><a href="#Lock-Renewal" class="headerlink" title="Lock Renewal"></a>Lock Renewal</h3><ul>
+<li><strong>When needed</strong>: Business operations exceed expiration time</li>
+<li><strong>Implementation</strong>:<ul>
+<li>Reset expiration before current expiration</li>
+<li>Daemon thread periodically checks and renews</li>
+<li><strong>Redisson watchdog mechanism</strong>: Automatic renewal</li>
+</ul>
+</li>
+</ul>
+<h3 id="Lock-Release"><a href="#Lock-Release" class="headerlink" title="Lock Release"></a>Lock Release</h3><ul>
+<li><strong>Verification</strong>: Always verify lock ownership before release</li>
+<li><strong>Prevention</strong>: Avoid releasing locks held by other threads</li>
+<li><strong>Implementation</strong>: Use Lua script for atomic check-and-delete</li>
+</ul>
+<h3 id="Advanced-Patterns"><a href="#Advanced-Patterns" class="headerlink" title="Advanced Patterns"></a>Advanced Patterns</h3><ul>
+<li><strong>Redlock Algorithm</strong>: Distributed consensus for multiple Redis instances</li>
+<li><strong>SingleFlight Pattern</strong>: Prevents cache stampede by allowing only one request for the same resource</li>
+</ul>
+<h2 id="Best-Practices-Summary"><a href="#Best-Practices-Summary" class="headerlink" title="Best Practices Summary"></a>Best Practices Summary</h2><ol>
+<li><strong>Choose appropriate data structures</strong> based on use case</li>
+<li><strong>Implement proper persistence strategy</strong> (RDB + AOF hybrid recommended)</li>
+<li><strong>Design for high availability</strong> with clustering and replication</li>
+<li><strong>Handle cache problems proactively</strong> with proper expiration and fallback strategies</li>
+<li><strong>Use distributed locks carefully</strong> with proper timeout and renewal mechanisms</li>
+<li><strong>Monitor and optimize performance</strong> regularly</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
